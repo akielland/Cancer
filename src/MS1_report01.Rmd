@@ -1,0 +1,433 @@
+---
+title: "Milestone 1: Play with the data"
+author: "Anders"
+date: "6/9/2022"
+output: pdf_document
+#output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+
+# Load R packages
+```{r include=FALSE}
+# install.packages("glmnet", repos = "https://cran.us.r-project.org")
+library(MASS)
+library(glmnet)
+library(mboost)
+library(pcalg)
+```
+
+## Read data "6 genes" and create dataframes and matrixes
+### NAN is removed
+```{r}
+df01 <- readxl::read_xlsx('/Users/anders/Documents/Master/data/SCR_SUR_6genes_noNAN.xlsx')
+df02 <- df01[df01$timepoint %in% "SCR", ]
+df03 <- df01[df01$timepoint %in% "SUR", ]
+df04 <- df02
+df04$ProliferationScore <- df03$ProliferationScore
+df05 <- subset(df04, TrialArmNeo %in% "Letro+Ribo", select=-c(UniqueID, timepoint, TrialArmNeo))
+
+ma02 <- as.matrix(subset(df02, select=-c(UniqueID, timepoint, TrialArmNeo)))
+ma03 <- as.matrix(subset(df03, select=-c(UniqueID, timepoint, TrialArmNeo)))
+ma04 <- as.matrix(subset(df04, select=-c(UniqueID, timepoint, TrialArmNeo)))
+ma05 <- as.matrix(subset(df05))
+```
+
+## Formula for modles
+```{r}
+fm01 = ProliferationScore ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
+fm02 = ProliferationScore ~ CCND1*RB1 + CCND1*CDKN1A + CCND1*ESR1 + CCNE1*CDKN1A + CCNE1*RB1 + MYC*ESR1 + MYC*CDKN1A
+fm03 = ProliferationScore ~ CCND1:RB1 + CCND1:CDKN1A + CCND1:ESR1 + CCNE1:CDKN1A + CCNE1:RB1 + MYC:ESR1 + MYC:CDKN1A
+```
+
+
+# A: Variable selection focusing on one timpoint at a time (SCR or SUR)
+
+## plot at SCR
+```{r echo=FALSE}
+par(mfrow=c(2,3), mar=rep(2,4))
+names = c('CCND1', 'CCNE1', 'CDKN1A', 'ESR1', 'MYC','RB1') 
+for(i in 1:6){
+  x = ma02[,i+1]
+  y = ma02[,1]
+  plot(x, y, main=names[i])
+  abline(lm(y ~ x), col = "red", lwd=3)
+  mtext(paste("Correlation:", round(cor(x, y), 2)), side=1, line=-1.5, cex=1.2)
+  cat(names[i])
+  print(cor(x,y), method = c("pearson"))
+}
+```
+
+## plot at SUR
+```{r echo=FALSE}
+par(mfrow=c(2,3), mar=rep(2,4))
+names = c('CCND1', 'CCNE1', 'CDKN1A', 'ESR1', 'MYC','RB1') 
+for(i in 1:6){
+  x = ma03[,i+1]
+  y = ma03[,1]
+  plot(x, y, main=names[i])
+  abline(lm(y ~ x), col = "red", lwd=3)
+  mtext(paste("Correlation:", round(cor(x, y), 2)), side=1, line=-1.5, cex=1.2)
+  cat(names[i])
+  print(cor(x,y), method = c("pearson"))
+}
+```
+
+## plot prolif: SCR vs SUR
+```{r echo=FALSE}
+par(mfrow=c(1,1))
+x=df02$ProliferationScore; y=df03$ProliferationScore
+plot(x, y)
+abline(lm(y ~ x), col = "red", lwd=3)
+mtext(paste("Correlation:", round(cor(x, y), 2)), side=1, line=-1.5, cex=1.2)
+```
+
+
+## plot SCR genes vs SUR Proliferation
+### But: the two treatments are pooled 
+```{r echo=FALSE}
+par(mfrow=c(2,3), mar=rep(2,4))
+names = c('CCND1', 'CCNE1', 'CDKN1A', 'ESR1', 'MYC','RB1') 
+for(i in 1:6){
+  x = ma02[,i+1]
+  y = ma03[,1]
+  plot(x, y, main=names[i])
+  abline(lm(y ~ x), col = "red", lwd=3)
+  mtext(paste("Correlation:", round(cor(x, y), 2)), side=1, line=-1.5, cex=1.2)
+  cat(names[i])
+  print(cor(x,y), method = c("pearson"))
+}
+```
+
+## SCR: Step AIC/BIC
+```{r}
+lm01 = lm(fm01, data = df02)
+lm02 = lm(fm02, data = df02)
+summary(lm01)
+summary(lm02)
+
+stepAIC(lm01, direction="both", trace=0,)
+stepAIC(lm02, direction="both", trace=0,)
+stepAIC(lm01, direction="both", trace=0, k = log(95))
+stepAIC(lm02, direction="both", trace=0, k = log(95))
+```
+## SUR: Step AIC/BIC
+```{r}
+lm03 = lm(fm01, data = df03)
+lm04 = lm(fm02, data = df03)
+summary(lm03)
+summary(lm04)
+
+stepAIC(lm03, direction="both", trace=0,)
+stepAIC(lm04, direction="both", trace=0,)
+stepAIC(lm03, direction="both", trace=0, k = log(95))
+stepAIC(lm04, direction="both", trace=0, k = log(95))
+```
+
+## SCR: Lasso
+```{r}
+par(mfrow=c(1,1))
+lasso01 <- glmnet(ma02[,-1], ma02[,1])
+plot(lasso01, label = T)
+print("coefficients values:")
+coef(lasso01, s = 0.02)
+```
+
+## SUR: Lasso
+```{r}
+par(mfrow=c(1,1))
+lasso02 <- glmnet(ma03[,-1], ma03[,1])
+plot(lasso02, label = T)
+print("coefficients values:")
+coef(lasso01, s = 0.02)
+```
+
+## SCR: Lasso with cross validation
+```{r}
+lasso.cv01 <- cv.glmnet(ma02[,-1], ma02[,1])
+plot(lasso.cv01)
+
+lasso.cv01$lambda.min
+lasso.cv01$lambda.1se
+coef(lasso.cv01, s = "lambda.min")
+coef(lasso.cv01, s = "lambda.1se")
+```
+
+## SUR: Lasso with cross validation
+```{r}
+lasso.cv02 <- cv.glmnet(ma03[,-1], ma03[,1])
+plot(lasso.cv02)
+
+lasso.cv02$lambda.min
+lasso.cv02$lambda.1se
+coef(lasso.cv02, s = "lambda.min")
+coef(lasso.cv02, s = "lambda.1se")
+```
+
+## SCR: boosting with linear base learner
+```{r}
+boost00 = glmboost(fm01, data = df02)
+coef(boost00, which = "")
+plot(boost00, ylim=range(coef(boost00, which = colnames(df02)[5:10])))
+
+boost01 = gamboost(fm01, data = df02,
+                   family=Gaussian(),
+                   baselearner="bols",
+                   boost_control(mstop = 5, nu=0.1))
+coef(boost01, which = "")
+par(mfrow=c(2,3))
+#plot(boost01, off2int=TRUE)
+plot(boost01)
+cols_chosen = unique(boost01$xselect())
+colnames(df02)[cols_chosen+4]
+boost01$xselect()
+#unique(boost01$xselect())
+
+# With interactions
+boost02 = glmboost(fm02, data = df02)
+coef(boost02, which = "")
+#plot(boost02, ylim=range(coef(boost02, which = "CCND1,RB1,CDKN1A,ESR1,CCNE1, MYC, CCND1:RB1, CCND1:CDKN1A, #CCND1:ESR1,CDKN1A:CCNE1, RB1:CCNE1, ESR1:MYC,CDKN1A:MYC" )))
+
+boost03 = gamboost(fm02, 
+                   data = df02,
+                   baselearner="bols")
+unique(boost03$xselect())
+print("RB1, CCND1*RB1, CCND1, CCNE1, ESR1, MYC, CDKN1A")
+```
+
+## SCR: boosting with stump as base learner
+```{r}
+stump01 = gamboost(fm01, data = df02, 
+                   family=Gaussian(), 
+                   baselearner='btree',
+                   boost_control(mstop = 10))
+frame()
+dev.new()
+par(mfrow=c(1,2), mar=rep(4,4))
+plot(stump01)
+cols_chosen = unique(stump01$xselect())
+colnames(df02)[cols_chosen+4]
+stump01$xselect()
+```
+
+## Boosting with boostrap cross-validation
+```{r}
+boost00.cv = cvrisk(boost00)
+par(mfrow=c(1,1))
+plot(boost00.cv)
+mstop(boost00.cv)
+boost00[mstop(boost00.cv)]
+names(coef(boost00))
+
+boost01.cv = cvrisk(boost01)
+plot(boost01.cv)
+mstop(boost01.cv)
+boost01[mstop(boost01.cv)]
+names(coef(boost01))
+
+stump01.cv = cvrisk(stump01)
+plot(stump01.cv)
+mstop(stump01.cv)
+stump01[mstop(stump01.cv)]
+names(coef(stump01))
+
+```
+
+# Graphs
+```{r echo=FALSE}
+cor.ma02 <- cor(ma02)
+
+pc.fit.10prec <- pc(suffStat = list(C = cor.ma02, n = 100),
+             indepTest = gaussCItest, # indep.test: partial correlations
+             alpha=0.1, 
+             labels = colnames(cor.ma02), 
+             verbose = TRUE)
+pc.fit.5prec <- pc(suffStat = list(C = cor.ma02, n = 100),
+             indepTest = gaussCItest, # indep.test: partial correlations
+             alpha=0.05, 
+             labels = colnames(cor.ma02), 
+             verbose = TRUE)
+```
+
+```{r}
+par(mfrow=c(1,2))
+plot(pc.fit.10prec, main = "Estimated CPDAG (alpha=10%)")
+plot(pc.fit.5prec, main = "Estimated CPDAG (alpha=5%)")
+#as(pc.fit.10prec, "amat")
+```
+
+
+# B: PREDICTION
+
+## plot gene(SCR) vs Prolif(SUR)
+```{r echo=FALSE}
+par(mfrow=c(2,3), mar=rep(2,4))
+names = c('CCND1', 'CCNE1', 'CDKN1A', 'ESR1', 'MYC','RB1') 
+for(i in 1:6){
+  x = ma04[,i+1]
+  y = ma04[,1]
+  plot(x, y, main=names[i])
+  abline(lm(y ~ x), col = "red", lwd=3)
+  mtext(paste("Correlation:", round(cor(x, y), 2)), side=1, line=-1.5, cex=1.2)
+  cat(names[i])
+  print(cor(x,y), method = c("pearson"))
+}
+```
+
+
+## Lasso prediction
+```{r}
+X  <- subset(df05, select= -ProliferationScore)
+Y  <- subset(df05, select= ProliferationScore)
+
+prediction.lasso <- function(X, Y){
+  X = as.matrix(X)
+  Y = as.matrix(Y)
+  sample = sample.int(n=48, size=45)
+  X_train = X[sample,]
+  X_test = X[-sample,]
+  Y_train = Y[sample,]
+  Y_test = Y[-sample,]
+  
+  lasso.cv <- cv.glmnet(X_train, Y_train)
+  #lasso.pred = predict(lasso, newx = as.matrix(X_test), type = "response", s = "lambda.1se")
+  lasso.pred = predict(lasso.cv, newx = X_test, type = "response", s = "lambda.min")
+  out = data.frame(lasso.pred, Y_test)
+  return(out)
+}
+
+# prediction.lasso(X,Y)
+set.seed(111)
+
+pred.lasso.loop = function(X, Y){
+  df_ <- data.frame(matrix(ncol = 2, nrow = 0))
+  colnames(df_) <- c("lambda.min", "Y_test")
+  
+  for (i in c(1:100)) {
+    df_ = rbind(df_, prediction.lasso(X,Y))
+  }  
+  return(df_)
+}
+  
+df06 = pred.lasso.loop(X,Y)
+```
+## Results: Lasso prediction
+```{r}
+plot(df06[,1], df06[,2])
+abline(lm(df06[,2] ~ df06[,1]), col = "red", lwd=3)
+mtext(paste("Correlation:", round(cor(df06[,2], df06[,1]), 3)), side=1, line=-1, cex=1.4)
+
+mean((df06[,1] - df06[,2])^2)
+```
+
+
+## Stump prediction
+```{r}
+prediction.stump <- function(){
+  sample = sample.int(n=48, size=45)
+  df_train = df05[sample,]
+  df_test = df05[-sample,]
+  
+  stump = gamboost(fm01, data = df_train, 
+                   family=Gaussian(), 
+                   baselearner='btree',
+                   boost_control(mstop = 100))
+
+  stump.cv = cvrisk(stump)
+  stump.pred = predict(stump, newdata = df_test, type = "response")
+  
+  out = data.frame(stump.pred, df_test[,1])
+  return(out)
+}
+
+prediction.stump()
+set.seed(111)
+
+pred.stump.loop = function(){
+  df_ <- data.frame(matrix(ncol = 2, nrow = 0))
+  colnames(df_) <- c("stump.pred", "ProliferationScore")
+  
+  for (i in c(1:100)) {
+    df_ = rbind(df_, prediction.stump())
+  }  
+  return(df_)
+}
+
+df07 <- pred.stump.loop()
+```
+
+## Results: Stump prediction
+```{r}
+plot(df07[,1], df07[,2])
+abline(lm(df07[,2] ~ df07[,1]), col = "red", lwd=3)
+mtext(paste("Correlation:", round(cor(df07[,2], df07[,1]), 3)), side=1, line=-1, cex=1.4)
+
+mean((df07[,1] - df07[,2])^2)
+```
+
+
+
+
+
+## Prediction only at SCR
+```{r}
+
+
+df08 = subset(df02, select=-c(UniqueID, timepoint, TrialArmNeo))
+
+pred.lasso.stump = function(){
+  sample = sample.int(n=95, size=90)
+  df_train = df08[sample,]
+  df_test = df08[-sample,]
+  
+  lasso <- cv.glmnet(as.matrix(df_train[,2:7]), as.matrix(df_train[,1]))
+  
+  # lasso.pred = predict(lasso, newx = as.matrix(X_test), s = "lambda.1se")
+  lasso.pred = predict(lasso, newx = as.matrix(df_test[,2:7]), type = "response", s = "lambda.min")
+
+  stump = gamboost(fm01, data = df_train, 
+                   family=Gaussian(), 
+                   baselearner='btree',
+                   boost_control(mstop = 100))
+  
+  stump.cv = cvrisk(stump)
+  stump.pred = predict(stump, newdata = df_test, type = "response")
+  
+  out = data.frame(lasso.pred, stump.pred, df_test[,1])
+  return(out)
+}
+
+pred.lasso.stump()
+
+pred.l.s = pred.lasso.stump()
+
+set.seed(111)
+
+pred.l.s.loop = function(){
+  df_ <- data.frame(matrix(ncol = 3, nrow = 0))
+  colnames(df_) <- c("lambda.min" ,"stump.pred", "ProliferationScore")
+  
+  for (i in c(1:10)) {
+    df_ = rbind(df_,  pred.lasso.stump())
+  }  
+  return(df_)
+}
+
+df.l.s <- pred.l.s.loop()
+
+par(mfrow=c(1,2), mar=rep(2,4))
+plot(df.l.s$lambda.min, df.l.s$ProliferationScore, main="Lasso")
+abline(lm(df.l.s[,3] ~ df.l.s[,1]), col = "red", lwd=3)
+mtext(paste("Correlation:", round(cor(df.l.s[,3], df.l.s[,1]), 3)), side=1, line=-1, cex=1.4)
+
+plot(df.l.s$stump.pred, df.l.s$ProliferationScore, , main="Stump")
+abline(lm(df.l.s[,3] ~ df.l.s[,2]), col = "red", lwd=3)
+mtext(paste("Correlation:", round(cor(df.l.s[,3], df.l.s[,2]), 3)), side=1, line=-1, cex=1.4)
+
+mean((df.l.s$lambda.min - df.l.s$ProliferationScore)**2)
+mean((df.l.s$stump.pred - df.l.s$ProliferationScore)**2)
+```
+
+
+
