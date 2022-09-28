@@ -5,7 +5,7 @@ library(tidyverse)
 # Importing data
 df01 <- readxl::read_xlsx('/Users/anders/Documents/Master/data/SCR_SUR_6genes_noNAN.xlsx')
 
-
+df01 <- read.delim2('/Users/anders/Documents/MASTER/Cancer/R_codeP01/data/pro')
 
 # Make dataframe with only timepoint SCR (both interventions)
 df01.SCR <- df01[df01$timepoint %in% "SCR", ]
