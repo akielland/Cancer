@@ -6,29 +6,25 @@ fm01 = sur_ProliferationScore ~ scr_CCND1 + scr_CCNE1 + scr_CDKN1A + scr_ESR1 + 
 fm02 = sur_ProliferationScore ~ scr_CCND1*scr_RB1 + scr_CCND1*scr_CDKN1A + scr_CCND1*scr_ESR1 + 
   scr_CCNE1*scr_CDKN1A + scr_CCNE1*scr_RB1 + scr_MYC*scr_ESR1 + scr_MYC*scr_CDKN1A 
 
-# creating train and test set
-n_holdout_test = 0
-int <- sample.int(nrow(df02_LR), size = nrow(df02_LR) - n_holdout_test, replace = FALSE)
-train = df02_LR[int,]
-test = df02_LR[-int,]
 
 # simple linear model
-lm01 = lm(fm01, data = train)
+# here: correlation against a best fit of it self - overfit...:)
+lm01 = lm(fm01, data = df02_LR)
 summary(lm01)
 
-pred01 = predict(lm01, test)
-cor(pred01, test$sur_ProliferationScore)
-plot(pred01, test$sur_ProliferationScore)
-abline(lm(test$sur_ProliferationScore ~ pred01))
+pred01 = predict(lm01, df02_LR)
+cor(pred01, df02_LR$sur_ProliferationScore)
+plot(pred01, df02_LR$sur_ProliferationScore)
+abline(lm(df02_LR$sur_ProliferationScore ~ pred01))
 
 # linear model with interactions
-lm02 = lm(fm02, data = train)
+lm02 = lm(fm02, data = df02_LR)
 summary(lm02)
 
-pred02 = predict(lm02, test)
-cor(pred02, test$sur_ProliferationScore)
-plot(pred02, test$sur_ProliferationScore)
-abline(lm(test$sur_ProliferationScore ~ pred02))
+pred02 = predict(lm02, df02_LR)
+cor(pred02, df02_LR$sur_ProliferationScore)
+plot(pred02, df02_LR$sur_ProliferationScore)
+abline(lm(df02_LR$sur_ProliferationScore ~ pred02))
 
 
 # Leave one observation out for testing and going through all observations
@@ -61,6 +57,36 @@ cat("MSE for linear model with interactions: ")
 print(mean((pred_values_fm02 - df02_LR$sur_ProliferationScore)**2))
 plot(pred_values_fm02, df02_LR$sur_ProliferationScore, main = "Linear model with interaction terms")
 par(mfrow=c(1,1))
+
+
+# boostrap sample for train and leave out  set for testing
+regression_bootstrap <- function(df, formula){
+  N = nrow(df)
+  
+  int <- sample(N, size = N*0.632, replace = TRUE)
+  train <- df[int,]
+  test <- df[-int,]
+  
+  lm01 <- lm(formula, data = train)
+  pred_values <- predict(lm01, newdata = test)
+  out <- cor(pred_values, test$sur_ProliferationScore)
+  return(out)
+}
+
+regression_cor_boot = function(df, formula, n_bootstraps){
+  cor_vec <- rep(NA, n_bootstraps)
+  for (i in c(1:n_bootstraps)) {
+    cor_vec[i] <- regression_bootstrap(df, formula)
+  }  
+  return(cor_vec)
+}
+
+regression_cor_boot <- regression_cor_boot(df02_LR, fm01, 1000)
+
+mean(regression_cor_boot, na.rm=TRUE)
+var(regression_cor_boot, na.rm=TRUE)
+hist(regression_cor_boot, breaks = 50)
+
 
 
 #######################################################
