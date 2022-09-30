@@ -2,6 +2,19 @@
 X <- dplyr::select(df02_LR,  scr_CCND1, scr_CCNE1, scr_CDKN1A, scr_ESR1, scr_MYC, scr_RB1)
 Y <- select(df02_LR, sur_ProliferationScore)
 
+X <- select(df04, -"Proliferation.Score") |> 
+  select(-"Ki67")
+
+Y <- select(df04, "Proliferation.Score")
+
+
+lasso01 <- glmnet(as.matrix(X), as.matrix(Y))
+plot(lasso01, label = T)
+print(lasso01)
+coef(lasso01, s = lambda.min)
+
+fit = glmnet(as.matrix(X), as.matrix(Y))
+test = coef(fit, s = cv.glmnet(as.matrix(X), as.matrix(Y))$lambda.1se)
 
 # Leave one observation out for testing and going through all observations
 lasso_loo <- function(X, Y, lambda.min=TRUE){
@@ -12,7 +25,6 @@ lasso_loo <- function(X, Y, lambda.min=TRUE){
   for(i in 1:nrow(X)){
     X_test <- X[i,]
     X_train <- X[-i,]
-    # Y_test <- Y[i,]
     Y_train <- Y[-i,]
     
     lasso.cv <- cv.glmnet(X_train, Y_train)
@@ -30,21 +42,23 @@ lasso_loo <- function(X, Y, lambda.min=TRUE){
 pred_values_lasso.min <- lasso_loo(X, Y, TRUE)
 pred_values_lasso.1se <- lasso_loo(X, Y, FALSE)
 
+PS <- df04$Proliferation.Score
+
 # Result of lasso with lambda at min:
 par(mfrow=c(1,2))
 cat("Correlation for lasso using lambda.min: ")
-print(cor(pred_values_lasso.min, df02_LR$sur_ProliferationScore))
+print(cor(pred_values_lasso.min, PS))
 cat("MSE for lasso using lambda.min: ")
-print(mean((pred_values_lasso.min - df02_LR$sur_ProliferationScore)**2))
-plot(pred_values_lasso.min, df02_LR$sur_ProliferationScore, main = "Lasso")
+print(mean((pred_values_lasso.min - PS)**2))
+plot(pred_values_lasso.min, PS, main = "Lasso")
+abline(lm(PS ~ pred_values_lasso.min), pred_values_lasso.min)
 
 # Result of lasso wih lambda at 1 se from min:
 cat("Correlation for lasso using lambda.min: ")
-print(cor(pred_values_lasso.1se, df02_LR$sur_ProliferationScore))
+print(cor(pred_values_lasso.1se, PS))
 cat("MSE for lasso using lambda.min: ")
-print(mean((pred_values_lasso.1se - df02_LR$sur_ProliferationScore)**2))
-plot(pred_values_lasso.1se, df02_LR$sur_ProliferationScore, main = "Lasso")
-par(mfrow=c(1,1))
+print(mean((pred_values_lasso.1se - PS)**2))
+plot(pred_values_lasso.1se, PS, main = "Lasso")
 
 ######################################################################
 
@@ -86,6 +100,7 @@ cor_vec_boot <- lasso_cor_boot(X,Y,1000)
 sum(is.na(cor_vec_boot))/1000
 mean(cor_vec_boot, na.rm=TRUE)
 var(cor_vec_boot, na.rm=TRUE)
+par(mfrow=c(1,1))
 hist(cor_vec_boot, breaks = 50)
 
 
