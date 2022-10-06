@@ -14,7 +14,7 @@ Y[is.na(Y)] = 0
 
 lasso01 <- glmnet(as.matrix(X), as.matrix(Y))
 plot(lasso01, label = T)
-co <- coef(lasso01, s = 1)
+coef(lasso01, s = 1)
 
 lasso02 = cv.glmnet(as.matrix(X), as.matrix(Y), nfolds=5)
 co <- coef(lasso02, s = "lambda.min")
@@ -49,16 +49,15 @@ lasso_loo <- function(X, Y, lambda.min=TRUE){
 pred_values_lasso.min <- lasso_loo(X, Y, TRUE)
 pred_values_lasso.1se <- lasso_loo(X, Y, FALSE)
 
-PS <- df04$Proliferation.Score
 
 # Result of lasso with lambda at min:
 par(mfrow=c(1,2))
 cat("Correlation for lasso using lambda.min: ")
-print(cor(pred_values_lasso.min, PS))
+print(cor(pred_values_lasso.min, df04$Proliferation.Score))
 cat("MSE for lasso using lambda.min: ")
-print(mean((pred_values_lasso.min - PS)**2))
-plot(pred_values_lasso.min, PS, main = "Lasso")
-abline(lm(PS ~ pred_values_lasso.min), pred_values_lasso.min)
+print(mean((pred_values_lasso.min - df04$Proliferation.Score)**2))
+plot(pred_values_lasso.min, df04$Proliferation.Score, main = "Lasso")
+abline(lm(df04$Proliferation.Score ~ pred_values_lasso.min), pred_values_lasso.min)
 
 # Result of lasso with lambda at 1 se from min:
 cat("Correlation for lasso using lambda.min: ")
@@ -98,8 +97,9 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
     pred_values = predict(lasso.cv, newx = X_test, type = "response", s = "lambda.1se")      
   }
   cor <- suppressWarnings(cor(pred_values, Y_test))
-  return(c(cor, variables))
-}
+  #return(c(cor, variables))
+  return(cor)
+  }
 
 lasso_bootstrap_sample(X, Y, TRUE)
 
@@ -118,11 +118,16 @@ lasso_cor_boot = function(X, Y, n_bootstraps){
 }
 
 cor_vec_boot <- lasso_cor_boot(X,Y,1000)
+cor_vec_boot_ <- as.numeric(cor_vec_boot)
+sum(is.na(cor_vec_boot_))/1000
+mean(cor_vec_boot_, na.rm=TRUE)
+var(cor_vec_boot_, na.rm=TRUE)
+par(mfrow=c(1,1))
+hist(cor_vec_boot_, breaks = 50)
+
+
 sum(is.na(cor_vec_boot))/1000
 mean(cor_vec_boot, na.rm=TRUE)
 var(cor_vec_boot, na.rm=TRUE)
 par(mfrow=c(1,1))
 hist(cor_vec_boot, breaks = 50)
-
-
-
