@@ -87,6 +87,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   
   co <- coef(lasso.cv, s = "lambda.min")
   inds <- which(co!=0)
+  inds <- inds[-1]
   variables <- row.names(co)[inds]
   variables <- variables[!(variables %in% '(Intercept)')];
     
@@ -97,27 +98,29 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
     pred_values = predict(lasso.cv, newx = X_test, type = "response", s = "lambda.1se")      
   }
   cor <- suppressWarnings(cor(pred_values, Y_test))
-  #return(c(cor, variables))
-  return(cor)
+  #return(c(cor, variables, inds))
+  return(inds)
   }
 
-lasso_bootstrap_sample(X, Y, TRUE)
+temp <- lasso_bootstrap_sample(X, Y, TRUE)
 
 lasso_cor_boot = function(X, Y, n_bootstraps){
-  # run many boostraps
+  # run many bootstraps
   # output: vector with correlations
   cor_vec <- rep(NA, n_bootstraps)
   #var_vec <- data_frame(NA, n_bootstraps)
+  inds_vec <- integer(length = 0)
   
   for (i in c(1:n_bootstraps)) {
     cor_var <- lasso_bootstrap_sample(X, Y, TRUE)
-    cor_vec[i] = cor_var[1]
+    #cor_vec[i] = cor_var[1]
     #var_vec[i] = as.list(cor_var[-1])
+    inds_vec <- c(inds_vec, cor_var)
   }  
-  return(cor_vec)
+  return(inds_vec)
 }
 
-cor_vec_boot <- lasso_cor_boot(X,Y,1000)
+cor_vec_boot <- lasso_cor_boot(X,Y,100)
 cor_vec_boot_ <- as.numeric(cor_vec_boot)
 sum(is.na(cor_vec_boot_))/1000
 mean(cor_vec_boot_, na.rm=TRUE)
@@ -131,3 +134,27 @@ mean(cor_vec_boot, na.rm=TRUE)
 var(cor_vec_boot, na.rm=TRUE)
 par(mfrow=c(1,1))
 hist(cor_vec_boot, breaks = 50)
+
+
+vector_1 <- c(1:771)
+vector_2 <- cor_vec_boot
+sumup <- rowSums(outer(vector_1, vector_2, "=="))
+
+output <- setNames(sumup, colnames(X))
+output_ind <- which(output!=0)
+output <- output[output_ind]
+max(output)
+rowSums(outer(c(1:max(output)), output, "=="))
+
+name_of_interest <- function(times_selected)
+ <- which(output!=0)
+variable_name <- row.names(co)[inds]
+
+output_minus01 <- output[which(output!=1)]
+hist(output_minus01)
+rowSums(outer(c(1:max(output_minus01)), output_minus01, "=="))
+
+
+
+
+
