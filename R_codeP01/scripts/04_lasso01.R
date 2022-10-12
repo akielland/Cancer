@@ -10,7 +10,7 @@ X <- select(df04, -"Proliferation.Score") |>
 # Y's from the full data set
 Y <- select(df04, "Proliferation.Score")
 Y <- select(df04, "Ki67")
-Y[is.na(Y)] = 0
+Y[is.na(Y)] = 0  # change NA too 0
 
 lasso01 <- glmnet(as.matrix(X), as.matrix(Y))
 plot(lasso01, label = T)
@@ -102,7 +102,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   return(list(cor, inds))
   }
 
-temp <- lasso_bootstrap_sample(X, Y, TRUE)
+lasso_bootstrap_sample(X, Y, TRUE)
 
 lasso_cor_boot = function(X, Y, n_bootstraps){
   # run many bootstraps
@@ -124,11 +124,11 @@ lasso_cor_boot = function(X, Y, n_bootstraps){
 
 # making list object with correlation and integer values of covariates 
 # from the different lasso bootstrap models
-lb_object <- lasso_cor_boot(X,Y,10)
+lb_object <- lasso_cor_boot(X,Y,1000)
 
 # Summery result of lasso bootstrap object
 cor_vec <- as.numeric(lb_object[[1]])
-sum(is.na(cor_vec))/1000
+sum(is.na(cor_vec))/length(cor_vec)    # fraction of NA
 mean(cor_vec, na.rm=TRUE)
 var(cor_vec, na.rm=TRUE)
 par(mfrow=c(1,1))
@@ -141,6 +141,7 @@ vector_2 <- lb_object[[2]]
 covariates_count <- rowSums(outer(vector_1, vector_2, "=="))
 # put gene names on the covariates_count vector
 covariates_w_names <- setNames(covariates_count, colnames(X))
+show(covariates_w_names)
 
 # extract covariates selected at least once
 covariates_w_names_ind <- which(covariates_w_names!=0)
@@ -164,14 +165,45 @@ genes_of_interest <- function(vector, times_selected, above=TRUE){
   return(variable_names)
 }
   
-test_genes = genes_of_interest(covariates_w_names, 3, TRUE)
+test_genes = genes_of_interest(covariates_w_names, 2, TRUE)
+show(test_genes)
+
+fm_test_genes = as.formula(paste("Proliferation.Score", "~", paste(test_genes, collapse = "+")))
+lm(fm_test_genes, data = df04)
+
+regression_bootstrap_test_genes <- function(df, formula, boot_fraction=0.632){
+  N = nrow(df)
+  
+  int <- sample(N, size = N*boot_fraction, replace = TRUE)
+  train <- df[int,]
+  test <- df[-int,]
+  
+  lm <- lm(formula, data = train)
+  pred_values <- predict(lm, newdata = test)
+  out <- cor(pred_values, test$Proliferation.Score)
+  return(out)
+}
+
+regression_cor_boot_test_genes = function(df, formula, boot_fraction=0.632, n_bootstraps){
+  cor_vec <- rep(NA, n_bootstraps)
+  for (i in c(1:n_bootstraps)) {
+    cor_vec[i] <- regression_bootstrap_test_genes(df, formula)
+  }  
+  return(cor_vec)
+}
+
+regression_test_genes <- regression_cor_boot_test_genes(df04, fm_test_genes, boot_fraction=0.632, 1000)
+
+par(mfrow=c(1,1))
+mean(regression_test_genes, na.rm=TRUE)
+var(regression_test_genes, na.rm=TRUE)
+hist(regression_test_genes, breaks = 50, xlim = c(-0.5, 0.8))
 
 
-form = as.formula(paste(y, "~", paste(test_genes, collapse = "+")))
 
-form_predictores = paste(test_genes, collapse = "+")
-form = as.formula(paste(ProliferationScore, "~", form_predictore))
-fmX <- ProliferationScore ~  form_predictores
+
+
+
 
 output_minus1 <- output[which(output!=1)]
 hist(output_minus1)
