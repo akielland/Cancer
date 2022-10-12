@@ -66,7 +66,7 @@ cat("MSE for lasso using lambda.min: ")
 print(mean((pred_values_lasso.1se - PS)**2))
 plot(pred_values_lasso.1se, PS, main = "Lasso")
 
-######################################################################
+#################
 ##  bootstrap  ##
 #################
 
@@ -85,11 +85,11 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   
   lasso.cv <- cv.glmnet(X_train, Y_train, nfolds = 5)
   
-  co <- coef(lasso.cv, s = "lambda.min")
-  inds <- which(co!=0)
+  covariates <- coef(lasso.cv, s = "lambda.min")
+  inds <- which(covariates != 0)
   inds <- inds[-1]
-  variables <- row.names(co)[inds]
-  variables <- variables[!(variables %in% '(Intercept)')];
+  # variables <- row.names(co)[inds]
+  # variables <- variables[!(variables %in% '(Intercept)')];
     
   if (lambda.min == TRUE) {
     pred_values = predict(lasso.cv, newx = X_test, type = "response", s = "lambda.min")      
@@ -99,7 +99,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   }
   cor <- suppressWarnings(cor(pred_values, Y_test))
   #return(c(cor, variables, inds))
-  return(inds)
+  return(list(cor, inds))
   }
 
 temp <- lasso_bootstrap_sample(X, Y, TRUE)
@@ -112,48 +112,66 @@ lasso_cor_boot = function(X, Y, n_bootstraps){
   inds_vec <- integer(length = 0)
   
   for (i in c(1:n_bootstraps)) {
-    cor_var <- lasso_bootstrap_sample(X, Y, TRUE)
+    #cor_var <- lasso_bootstrap_sample(X, Y, TRUE)
     #cor_vec[i] = cor_var[1]
     #var_vec[i] = as.list(cor_var[-1])
-    inds_vec <- c(inds_vec, cor_var)
+    out <- lasso_bootstrap_sample(X, Y, TRUE)
+    cor_vec[i] = as.numeric(out[1])
+    inds_vec <- c(inds_vec, as.integer(out[[2]]))
   }  
-  return(inds_vec)
+  return(list(cor_vec, inds_vec))
 }
 
-cor_vec_boot <- lasso_cor_boot(X,Y,100)
-cor_vec_boot_ <- as.numeric(cor_vec_boot)
-sum(is.na(cor_vec_boot_))/1000
-mean(cor_vec_boot_, na.rm=TRUE)
-var(cor_vec_boot_, na.rm=TRUE)
+# making list object with correlation and integer values of covariates 
+# from the different lasso bootstrap models
+lb_object <- lasso_cor_boot(X,Y,10)
+
+# Summery result of lasso bootstrap object
+cor_vec <- as.numeric(lb_object[[1]])
+sum(is.na(cor_vec))/1000
+mean(cor_vec, na.rm=TRUE)
+var(cor_vec, na.rm=TRUE)
 par(mfrow=c(1,1))
-hist(cor_vec_boot_, breaks = 50)
+hist(cor_vec, breaks = 50)
 
-
-sum(is.na(cor_vec_boot))/1000
-mean(cor_vec_boot, na.rm=TRUE)
-var(cor_vec_boot, na.rm=TRUE)
-par(mfrow=c(1,1))
-hist(cor_vec_boot, breaks = 50)
-
-
+# Analyzing selected covariates/genes in lb_object
+# count the presence of the individual covariates for all bootstrap models
 vector_1 <- c(1:771)
-vector_2 <- cor_vec_boot
-sumup <- rowSums(outer(vector_1, vector_2, "=="))
+vector_2 <- lb_object[[2]]
+covariates_count <- rowSums(outer(vector_1, vector_2, "=="))
+# put gene names on the covariates_count vector
+covariates_w_names <- setNames(covariates_count, colnames(X))
 
-output <- setNames(sumup, colnames(X))
-output_ind <- which(output!=0)
-output <- output[output_ind]
-max(output)
-rowSums(outer(c(1:max(output)), output, "=="))
+# extract covariates selected at least once
+covariates_w_names_ind <- which(covariates_w_names!=0)
+covariates_w_names <- covariates_w_names[covariates_w_names_ind]
+max(covariates_w_names)
+# count the number of times the selected covarioates are present in the models
+covariates_count_selected <- rowSums(outer(c(1:max(covariates_w_names)), covariates_w_names, "=="))
+names(covariates_count_selected) <- c(1:max(covariates_w_names))
+show(covariates_count_selected)
 
-name_of_interest <- function(vector, times_selected){
-  inds <- which(vector == times_selected)
+# extract covariates selected at certain amount of times
+genes_of_interest <- function(vector, times_selected, above=TRUE){
+  # return: names of genes selected a distinct numbers of times
+  if (max(vector) < times_selected){
+    return(print("argument times_selected has to high value"))
+  }
+  if (above == TRUE){inds <- which(vector >= times_selected)}
+  else{inds <- which(vector == times_selected)}
+  
   variable_names <- names(inds)
   return(variable_names)
 }
   
-name_of_interest(output, 4)
+test_genes = genes_of_interest(covariates_w_names, 3, TRUE)
 
+
+form = as.formula(paste(y, "~", paste(test_genes, collapse = "+")))
+
+form_predictores = paste(test_genes, collapse = "+")
+form = as.formula(paste(ProliferationScore, "~", form_predictore))
+fmX <- ProliferationScore ~  form_predictores
 
 output_minus1 <- output[which(output!=1)]
 hist(output_minus1)
