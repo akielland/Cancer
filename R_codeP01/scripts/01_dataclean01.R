@@ -6,7 +6,9 @@
 
 
 # df01: 6 genes; timepoint SCR and SUR
-df01 <- read.delim2('/Users/anders/Documents/MASTER/Cancer/R_codeP01/data/processed/SCR_SUR_6genes_noNAN(ANO).txt')
+path_6genes <- "/Users/anders/Documents/MASTER/data/SCR_SUR_6genes_noNAN(ANO).txt"
+
+df01 <- read.delim2(path_6genes)
 df01 <- select(df01, 1:9)
 
 # df02: df01 but done wider by removimin the timpoint colum and make uniqe names for features at each timepiont
