@@ -146,15 +146,20 @@ output <- output[output_ind]
 max(output)
 rowSums(outer(c(1:max(output)), output, "=="))
 
-name_of_interest <- function(times_selected)
- <- which(output!=0)
-variable_name <- row.names(co)[inds]
+name_of_interest <- function(vector, times_selected){
+  inds <- which(vector == times_selected)
+  variable_names <- names(inds)
+  return(variable_names)
+}
+  
+name_of_interest(output, 4)
 
-output_minus01 <- output[which(output!=1)]
-hist(output_minus01)
-rowSums(outer(c(1:max(output_minus01)), output_minus01, "=="))
 
-
+output_minus1 <- output[which(output!=1)]
+hist(output_minus1)
+test = rowSums(outer(c(1:max(output_minus1)), output_minus1, "=="))
+names(test) <- c(1:length(test))
+test
 
 
 
