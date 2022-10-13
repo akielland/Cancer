@@ -51,3 +51,29 @@ df04_sur_prolif <- df04 |>
   select("Proliferation.Score", "Ki67")
 
 df04 <- cbind(df04_sur_prolif, df04_scr_genes)
+
+
+#########################
+## X and Y's for lasso ##
+#########################
+
+# X and Y from the 6 gene data
+X <- dplyr::select(df02_LR,  scr_CCND1, scr_CCNE1, scr_CDKN1A, scr_ESR1, scr_MYC, scr_RB1)
+Y <- select(df02_LR, sur_ProliferationScore)
+
+# X from the full data set
+X <- select(df04, -"Proliferation.Score") |> 
+  select(-"Ki67")
+
+# Y's from the full data set
+Y <- select(df04, "Proliferation.Score")
+Y <- select(df04, "Ki67")
+Y[is.na(Y)] = 0  # change NA too 0
+
+
+
+#########################
+##   ##
+#########################
+
+

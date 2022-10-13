@@ -1,27 +1,14 @@
-
-# X and Y from the 6 gene data
-X <- dplyr::select(df02_LR,  scr_CCND1, scr_CCNE1, scr_CDKN1A, scr_ESR1, scr_MYC, scr_RB1)
-Y <- select(df02_LR, sur_ProliferationScore)
-
-# X from the full data set
-X <- select(df04, -"Proliferation.Score") |> 
-  select(-"Ki67")
-
-# Y's from the full data set
-Y <- select(df04, "Proliferation.Score")
-Y <- select(df04, "Ki67")
-Y[is.na(Y)] = 0  # change NA too 0
-
+# standard lasso
 lasso01 <- glmnet(as.matrix(X), as.matrix(Y))
 plot(lasso01, label = T)
 coef(lasso01, s = 1)
 
+# lasso w/ cross-validation to determine optimal lambda hyperparameter
 lasso02 = cv.glmnet(as.matrix(X), as.matrix(Y), nfolds=5)
 co <- coef(lasso02, s = "lambda.min")
 inds <- which(co!=0)
 variables <- row.names(co)[inds]
 variables <- variables[!(variables %in% '(Intercept)')];
-
 
 # Leave one observation out for testing and going through all observations
 lasso_loo <- function(X, Y, lambda.min=TRUE){
@@ -46,11 +33,8 @@ lasso_loo <- function(X, Y, lambda.min=TRUE){
   return(pred_values)
 }
 
-pred_values_lasso.min <- lasso_loo(X, Y, TRUE)
-pred_values_lasso.1se <- lasso_loo(X, Y, FALSE)
-
-
 # Result of lasso with lambda at min:
+pred_values_lasso.min <- lasso_loo(X, Y, TRUE)
 par(mfrow=c(1,2))
 cat("Correlation for lasso using lambda.min: ")
 print(cor(pred_values_lasso.min, df04$Proliferation.Score))
@@ -60,6 +44,7 @@ plot(pred_values_lasso.min, df04$Proliferation.Score, main = "Lasso")
 abline(lm(df04$Proliferation.Score ~ pred_values_lasso.min), pred_values_lasso.min)
 
 # Result of lasso with lambda at 1 se from min:
+pred_values_lasso.1se <- lasso_loo(X, Y, FALSE)
 cat("Correlation for lasso using lambda.min: ")
 print(cor(pred_values_lasso.1se, PS))
 cat("MSE for lasso using lambda.min: ")
@@ -72,7 +57,9 @@ plot(pred_values_lasso.1se, PS, main = "Lasso")
 
 lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   # one bootstrap sample
-  # output: correlation between prediction and true of the leave-out of the bootstrap sample
+  # output: 
+  # 1. correlation between prediction and true of the leave-out of the bootstrap sample
+  # 2. indices of selected variables
   X = as.matrix(X)
   Y = as.matrix(Y)
   N = length(Y)
@@ -98,7 +85,6 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
     pred_values = predict(lasso.cv, newx = X_test, type = "response", s = "lambda.1se")      
   }
   cor <- suppressWarnings(cor(pred_values, Y_test))
-  #return(c(cor, variables, inds))
   return(list(cor, inds))
   }
 
@@ -108,13 +94,9 @@ lasso_cor_boot = function(X, Y, n_bootstraps){
   # run many bootstraps
   # output: vector with correlations
   cor_vec <- rep(NA, n_bootstraps)
-  #var_vec <- data_frame(NA, n_bootstraps)
   inds_vec <- integer(length = 0)
   
   for (i in c(1:n_bootstraps)) {
-    #cor_var <- lasso_bootstrap_sample(X, Y, TRUE)
-    #cor_vec[i] = cor_var[1]
-    #var_vec[i] = as.list(cor_var[-1])
     out <- lasso_bootstrap_sample(X, Y, TRUE)
     cor_vec[i] = as.numeric(out[1])
     inds_vec <- c(inds_vec, as.integer(out[[2]]))
@@ -146,8 +128,13 @@ show(covariates_w_names)
 # extract covariates selected at least once
 covariates_w_names_ind <- which(covariates_w_names!=0)
 covariates_w_names <- covariates_w_names[covariates_w_names_ind]
+show(covariates_w_names)
 max(covariates_w_names)
-# count the number of times the selected covarioates are present in the models
+ind <- which(covariates_w_names == max(covariates_w_names))
+covariates_w_names[ind]
+covariates_w_names[order(covariates_w_names, decreasing = TRUE)]
+
+# count the number of times the selected covariates are present in the models
 covariates_count_selected <- rowSums(outer(c(1:max(covariates_w_names)), covariates_w_names, "=="))
 names(covariates_count_selected) <- c(1:max(covariates_w_names))
 show(covariates_count_selected)
@@ -165,7 +152,7 @@ genes_of_interest <- function(vector, times_selected, above=TRUE){
   return(variable_names)
 }
   
-test_genes = genes_of_interest(covariates_w_names, 2, TRUE)
+test_genes = genes_of_interest(covariates_w_names, 1, TRUE)
 show(test_genes)
 
 fm_test_genes = as.formula(paste("Proliferation.Score", "~", paste(test_genes, collapse = "+")))
@@ -194,9 +181,9 @@ regression_cor_boot_test_genes = function(df, formula, boot_fraction=0.632, n_bo
 
 regression_test_genes <- regression_cor_boot_test_genes(df04, fm_test_genes, boot_fraction=0.632, 1000)
 
-par(mfrow=c(1,1))
 mean(regression_test_genes, na.rm=TRUE)
 var(regression_test_genes, na.rm=TRUE)
+par(mfrow=c(1,1))
 hist(regression_test_genes, breaks = 50, xlim = c(-0.5, 0.8))
 
 
