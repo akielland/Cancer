@@ -64,7 +64,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   Y = as.matrix(Y)
   N = length(Y)
 
-  int <- sample(N, size = N*0.632, replace = TRUE)
+  int <- sample(N, size = N*0.632, replace = FALSE)
   X_train = X[int,]
   X_test = X[-int,]
   Y_train = Y[int]
@@ -88,7 +88,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   return(list(cor, inds))
   }
 
-lasso_bootstrap_sample(X, Y, TRUE)
+# lasso_bootstrap_sample(X, Y, TRUE)
 
 lasso_cor_boot = function(X, Y, n_bootstraps){
   # run many bootstraps
@@ -152,7 +152,7 @@ genes_of_interest <- function(vector, times_selected, above=TRUE){
   return(variable_names)
 }
   
-test_genes = genes_of_interest(covariates_w_names, 1, TRUE)
+test_genes = genes_of_interest(covariates_w_names, 2, TRUE)
 show(test_genes)
 
 fm_test_genes = as.formula(paste("Proliferation.Score", "~", paste(test_genes, collapse = "+")))
