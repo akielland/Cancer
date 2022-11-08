@@ -114,7 +114,8 @@ sum(is.na(cor_vec))/length(cor_vec)    # fraction of NA
 mean(cor_vec, na.rm=TRUE)
 var(cor_vec, na.rm=TRUE)
 par(mfrow=c(1,1))
-hist(cor_vec, breaks = 50)
+hist(cor_vec, breaks = 100)
+cor(df08$proliferation, df08$ProliferationScore)
 
 # Analyzing selected covariates/genes in lb_object
 # count the presence of the individual covariates for all bootstrap models

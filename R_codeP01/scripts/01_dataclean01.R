@@ -1,9 +1,33 @@
 # importing and creating various dataframes and matrices
 
+
+#############################
+## ALL DATA with NODE DATA ##
+#############################
+
+path <- "/Users/anders/Documents/MASTER/data/CORALLEEN_02.csv"
+df05 <- read.table(path, header = TRUE, sep = ",", dec = ".")
+
+# Adding node values to all data
+path <- "/Users/anders/Documents/MASTER/data/model_predictors.tsv"
+df06 <- read.delim(path_nodes)
+colnames(df06)[1] <- colnames(df05)[1]
+df07 = full_join(df06, df05, by = c(colnames(df05)[1]))
+
+
+############################################
+## Selecting data NODE DATA as predictors ##
+############################################
+
+df08 <- df07 |> filter(timepoint=="SUR") |>
+  filter(TrialArmNeo=="Letro+Ribo") |>
+  select(-1) |>
+  select(-c(10:12))
+
+
 #############
 ## 6 GENES ##
 #############
-
 
 # df01: 6 genes; timepoint SCR and SUR
 path_6genes <- "/Users/anders/Documents/MASTER/data/SCR_SUR_6genes_noNAN(ANO).txt"
@@ -70,7 +94,11 @@ Y <- select(df04, "Proliferation.Score")
 Y <- select(df04, "Ki67")
 Y[is.na(Y)] = 0  # change NA too 0
 
-
+# X from the node values
+X <- dplyr::select(df08, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1, proliferation)
+X <- dplyr::select(df08, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1)
+# Y from tabel with the node values
+Y <- select(df08, "ProliferationScore")
 
 #########################
 ##   ##
