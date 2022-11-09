@@ -10,7 +10,7 @@ df05 <- read.table(path, header = TRUE, sep = ",", dec = ".")
 
 # Adding node values to all data
 path <- "/Users/anders/Documents/MASTER/data/model_predictors.tsv"
-df06 <- read.delim(path_nodes)
+df06 <- read.delim(path)
 colnames(df06)[1] <- colnames(df05)[1]
 df07 = full_join(df06, df05, by = c(colnames(df05)[1]))
 
