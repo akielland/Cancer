@@ -21,7 +21,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   
   covariates <- coef(lasso.cv, s = "lambda.min")
   inds <- which(covariates != 0)
-  inds <- inds[-1] # dropping the first covariates 
+  # inds <- inds[-1] # dropping the first covariates 
   # variables <- row.names(co)[inds]
   # variables <- variables[!(variables %in% '(Intercept)')];
     
@@ -40,7 +40,8 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
 lasso_cor_boot = function(X, Y, n_bootstraps){
   # run many bootstraps
   # output: - vector with correlations 
-  #         - selected covariates as integers values wrt to X
+  #         - vector with selected covariates as integers values wrt to X
+  #           chronologically add in each bootstrap sample
   cor_vec <- rep(NA, n_bootstraps)
   inds_vec <- integer(length = 0)
   
@@ -74,8 +75,8 @@ cor(df08$proliferation, df08$ProliferationScore)
 # count the presence of the individual covariates for all bootstrap models
 covariates_n <- 771  # IF genes
 covariates_n <- 8    # IF nodes
-vector_1 <- c(1:covariates_n)
-vector_2 <- lb_object[[2]] # vector: chronologically add integer of selected covariates
+vector_1 <- c(1: covariates_n)
+vector_2 <- lb_object[[2]] - 1 # shift numbers so intercept becomes 0 and first covariate is 1
 covariates_count <- rowSums(outer(vector_1, vector_2, "=="))
 # put gene names on the covariates_count vector
 covariates_w_names <- setNames(covariates_count, colnames(X))
