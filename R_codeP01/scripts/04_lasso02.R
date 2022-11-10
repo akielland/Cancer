@@ -21,7 +21,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   
   covariates <- coef(lasso.cv, s = "lambda.min")
   inds <- which(covariates != 0)
-  # inds <- inds[-1] # dropping the first covariates 
+  inds <- inds[-1] # dropping the first covariates 
   # variables <- row.names(co)[inds]
   # variables <- variables[!(variables %in% '(Intercept)')];
     
@@ -55,6 +55,11 @@ lasso_cor_boot = function(X, Y, n_bootstraps){
 # making list object with correlation and integer values of covariates 
 # from the different lasso bootstrap models
 lb_object <- lasso_cor_boot(X,Y,1000)
+save(lb_object, file="lb_object_AllGenes01.RData")
+load("lb_object_AllGenes01.RData")
+save(lb_object, file="lb_object_nodes01.RData")
+load("lb_object_nodes01.RData")
+
 
 # Summery result of lasso bootstrap object
 cor_vec <- as.numeric(lb_object[[1]])

@@ -11,6 +11,7 @@ variables <- row.names(co)[inds]
 variables <- variables[!(variables %in% '(Intercept)')]
 show(variables)
 
+
 # Using LOO cross-validation for testing 
 # (going through all observations with LOO as test set)
 lasso_loo <- function(X, Y, lambda.min=TRUE){
