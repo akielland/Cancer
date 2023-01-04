@@ -134,7 +134,7 @@ surf = ax.plot_surface(X1, X2, fun_vals_true, cmap=cm.coolwarm, linewidth=0, ant
 surf = ax.plot_surface(X1, X2, result_boost_03, linewidth=0, color='black', alpha=0.2, antialiased=False)
 
 
-
+####################
 
 surf = ax.plot_surface(X, Y, Z, rstride=1, cstride=1, cmap=cm.coolwarm,
                        linewidth=0, antialiased=False)
