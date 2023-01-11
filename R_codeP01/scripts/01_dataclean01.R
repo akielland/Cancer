@@ -1,18 +1,22 @@
 # importing and creating various dataframes and matrices
 
 
-#############################
-## ALL DATA with NODE DATA ##
-#############################
+##############################################
+## ALL DATA as they came original (I think) ##
+##############################################
 
 path <- "/Users/anders/Documents/MASTER/data/CORALLEEN_02.csv"
-df05 <- read.table(path, header = TRUE, sep = ",", dec = ".")
+df01 <- read.table(path, header = TRUE, sep = ",", dec = ".")
+
+###################################
+## ALL DATA with added NODE DATA ##
+###################################
 
 # Adding node values to all data
 path <- "/Users/anders/Documents/MASTER/data/model_predictors.tsv"
-df06 <- read.delim(path)
-colnames(df06)[1] <- colnames(df05)[1]
-df07 = full_join(df06, df05, by = c(colnames(df05)[1]))
+df_nodes <- read.delim(path)
+colnames(df_nodes)[1] <- colnames(df01)[1]
+df02 = full_join(df_nodes, df01, by = c(colnames(df01)[1]))
 
 
 ############################################
@@ -29,6 +33,32 @@ df08 <- df07 |> filter(timepoint=="SUR") |>
 ## 6 GENES ##
 #############
 
+df_6genes_with_output <- function(output){
+  #Y_6genes <- output
+
+  df_genes <- df01 |> select(c(UniqueID, CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1, timepoint, TrialArmNeo)) |>
+    filter(timepoint=="SCR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_output <- df01 |> select(c(UniqueID, output, timepoint, TrialArmNeo)) |>
+    filter(timepoint=="SUR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_6genes <- full_join(df_genes, df_output, by = "UniqueID")
+  #rename(df_6genes, c("Y") = c(output))
+  colnames(df_6genes)[which(names(df_6genes) == output)] <- "Y"
+  print(output)
+  df_6genes <- na.omit(df_6genes)
+  return(df_6genes)
+}
+  
+Proliferation_6genes <- as.data.frame(df_6genes_with_output("ProliferationScore"))
+
+
+
+
+####################################################################
+## Prevoius code:
 # df01: 6 genes; timepoint SCR and SUR
 path_6genes <- "/Users/anders/Documents/MASTER/data/SCR_SUR_6genes_noNAN(ANO).txt"
 
@@ -37,9 +67,11 @@ df01 <- select(df01, 1:9)
 
 # df02: df01 but done wider by removimin the timpoint colum and make uniqe names for features at each timepiont
 # ex scr_CCNED1 and sur_CCNED1
-df01_scr <- df01 |> filter(timepoint=="SCR")
+df01_scr <- df01 |> 
+  filter(timepoint=="SCR")
 colnames(df01_scr) <- paste("scr", colnames(df01_scr), sep = "_")
-df01_sur <- df01 |> filter(timepoint=="SUR")
+df01_sur <- df01 |> 
+  filter(timepoint=="SUR")
 colnames(df01_sur) <- paste("sur", colnames(df01_sur), sep = "_")
 
 df02 <- cbind(df01_scr, df01_sur) |> 
