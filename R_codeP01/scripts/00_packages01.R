@@ -24,3 +24,6 @@ If Rtools is not up to date, then among packages that have not yet been compiled
 will successfully update some (or none) and will fail on some (or none). 
 If any fail, then update.packages() can be run again, selecting [No] to get the latest versions 
 available without updating Rtools.
+
+class(data_in$Y)
+data1[, "Y"]

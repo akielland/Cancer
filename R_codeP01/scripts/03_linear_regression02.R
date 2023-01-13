@@ -1,3 +1,7 @@
+## Linear regression with the 6 genes used in he mechanistic model is tested
+## Interaction is tested for the gene products which are known to interact
+
+
 ## Boot library is used to perform bootstrap with 1000 iterations 
 ## A linear regression model fitted on the bootstrap sample (a random subset of the data) in each iteration
 ## Mean squared error is calculated between the prediction of the models and the original data-set in each iteration
@@ -94,15 +98,16 @@ model <- train(Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1,
                data = data_in, 
                method = "lm",
                trControl = train.control)
+
 # Summarize the results
 print(model)
 dt <- model$resample
 
 dt %>% 
-  group_by(Resample) %>% 
+  mutate(Resample = str_sub(Resample, start = 7L)) |> 
+  group_by(Resample) %>%
   summarise(avg = mean(RMSE))
 
--ends_with("timepoint")
 
 
 
