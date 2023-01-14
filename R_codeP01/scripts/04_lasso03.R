@@ -1,6 +1,6 @@
-##############################################################
-##  Bootstrap  Lasso - using out-of-boot sample as test set ##
-##############################################################
+########################
+##  Bootstrap  Lasso  ##
+########################
 
 lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   # one bootstrap sample

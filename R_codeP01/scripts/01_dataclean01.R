@@ -8,9 +8,9 @@
 path <- "/Users/anders/Documents/MASTER/data/CORALLEEN_02.csv"
 df01 <- read.table(path, header = TRUE, sep = ",", dec = ".")
 
-###################################
-## ALL DATA with added NODE DATA ##
-###################################
+##########################################################
+## ALL DATA with added NODE DATA from MECHANISTIC MODEL ##
+##########################################################
 
 # Adding node values to all data
 path <- "/Users/anders/Documents/MASTER/data/model_predictors.tsv"
@@ -19,23 +19,11 @@ colnames(df_nodes)[1] <- colnames(df01)[1]
 df02 = full_join(df_nodes, df01, by = c(colnames(df01)[1]))
 
 
-############################################
-## Selecting data NODE DATA as predictors ##
-############################################
-
-df08 <- df07 |> filter(timepoint=="SUR") |>
-  filter(TrialArmNeo=="Letro+Ribo") |>
-  select(-1) |>
-  select(-c(10:12))
-
-
 #############
 ## 6 GENES ##
 #############
 
 df_6genes_with_output <- function(output){
-  #Y_6genes <- output
-
   df_genes <- df01 |> select(c(UniqueID, CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1, timepoint, TrialArmNeo)) |>
     filter(timepoint=="SCR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
@@ -51,14 +39,42 @@ df_6genes_with_output <- function(output){
   df_6genes <- na.omit(df_6genes)
   return(df_6genes)
 }
+
+Proliferation_6genes <- df_6genes_with_output("ProliferationScore")
+
+
+
+#################
+## NODES DATA  ##
+#################
+
+df_Nodes_with_output <- function(output){
+  df_features <- df02 |>
+    select(c(UniqueID, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1, timepoint, TrialArmNeo)) |> 
+    filter(timepoint=="SCR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
   
-Proliferation_6genes <- as.data.frame(df_6genes_with_output("ProliferationScore"))
+  df_output <- df02 |> select(c(UniqueID, output, timepoint, TrialArmNeo)) |>
+    filter(timepoint=="SUR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_Nodes_Y <- full_join(df_features, df_output, by = "UniqueID")
+  #rename(df_6genes, c("Y") = c(output))
+  colnames(df_Nodes_Y)[which(names(df_Nodes_Y) == output)] <- "Y"
+  print(output)
+  df_Nodes_Y <- na.omit(df_Nodes_Y) # remove row containing NA
+  return(df_Nodes_Y)
+}
+
+Nodes_Proliferation <- df_Nodes_with_output("ProliferationScore")
 
 
 
+#####################
+## Previous code:
+#####################
 
-####################################################################
-## Prevoius code:
+
 # df01: 6 genes; timepoint SCR and SUR
 path_6genes <- "/Users/anders/Documents/MASTER/data/SCR_SUR_6genes_noNAN(ANO).txt"
 
