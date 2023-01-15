@@ -1,13 +1,15 @@
 library(MASS)
 #
-library(tidymodels)
-
 library(tidyverse)
+library(tidymodels)
 library(dplyr)
 
 library(glmnet)
 
 library(boot)
+
+library(caret)
+
 
 install.packages("caret", dependencies = c("Depends", "Suggests"))
 # https://topepo.github.io/caret/

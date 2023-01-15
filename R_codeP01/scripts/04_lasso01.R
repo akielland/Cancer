@@ -1,3 +1,12 @@
+
+
+
+
+
+
+library(glmnet)
+
+
 # standard lasso
 lasso01 <- glmnet(as.matrix(X), as.matrix(Y))
 plot(lasso01, label = T)
