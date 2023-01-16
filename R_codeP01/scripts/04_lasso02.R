@@ -1,52 +1,49 @@
-
-
-
+## Lasso using bootstrap sample to train 1000 models
+## Cross-validation (5-fold) used for training/tuning lambda and selecting features
+## Test against original data sample and leave-out bootstrap sample
 
 library(glmnet)
-
 
 ##########################################################
 ##  Bootstrap  Lasso - using original sample as test set ##
 ##########################################################
 
 
-
 lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   # one bootstrap sample
   # output: 
-  # 1. correlation between prediction and true of the leave-out of the bootstrap sample
+  # 1. correlation between prediction and full input sample
   # 2. indices of selected variables
-  X = as.matrix(X)
-  Y = as.matrix(Y)
-  N = length(Y)
+  n = length(Y)
   
-  int <- sample(N, size = N*0.632, replace = FALSE)
+  int <- sample.int(n, size = n, replace = FALSE)
   X_train = X[int,]
-  X_test = X[-int,]
   Y_train = Y[int]
-  Y_test = Y[-int]
   
   lasso.cv <- cv.glmnet(X_train, Y_train, nfolds = 5)
   
-  covariates <- coef(lasso.cv, s = "lambda.min")
-  inds <- which(covariates != 0)
+  features <- coef(lasso.cv, s = "lambda.min")
+  inds <- which(features != 0)
+  # If want to print selected features
   # inds <- inds[-1] # dropping the first covariates 
   # variables <- row.names(co)[inds]
   # variables <- variables[!(variables %in% '(Intercept)')];
   
   if (lambda.min == TRUE) {
-    pred_values = predict(lasso.cv, newx = X_test, type = "response", s = "lambda.min")      
+    pred_values = predict(lasso.cv, newx = X, type = "response", s = "lambda.min")      
   }
   if (lambda.min == FALSE) {
-    pred_values = predict(lasso.cv, newx = X_test, type = "response", s = "lambda.1se")      
+    pred_values = predict(lasso.cv, newx = X, type = "response", s = "lambda.1se")      
   }
-  cor <- suppressWarnings(cor(pred_values, Y_test))
+  cor <- suppressWarnings(cor(pred_values, Y))
   return(list(cor, inds))
 }
 
-# lasso_bootstrap_sample(X, Y, TRUE)
+lasso_bootstrap_sample(X, Y, TRUE)
 
-lasso_cor_boot = function(X, Y, n_bootstraps){
+
+# 1000 bootstrap fits
+lasso_cor_boot = function(X, Y, n_bootstraps=1000){
   # run many bootstraps
   # output: - vector with correlations 
   #         - vector with selected covariates as integers values wrt to X
@@ -62,9 +59,11 @@ lasso_cor_boot = function(X, Y, n_bootstraps){
   return(list(cor_vec, inds_vec))
 }
 
-# making list object with correlation and integer values of covariates 
-# from the different lasso bootstrap models
-lb_object <- lasso_cor_boot(X,Y,1000)
+# making list object with correlation and 
+# integer values of features selected in each bootstrap model
+lb_object <- lasso_cor_boot(X, Y, 1000)
+save(lb_object, file="lb_object_6genes.RData")
+load("lb_object_6Genes.RData")
 save(lb_object, file="lb_object_AllGenes01.RData")
 load("lb_object_AllGenes01.RData")
 save(lb_object, file="lb_object_nodes01.RData")
@@ -80,10 +79,11 @@ par(mfrow=c(1,1))
 hist(cor_vec, breaks = 100)
 cor(df08$proliferation, df08$ProliferationScore)
 
-# Analyzing selected covariates (genes/nodes...) in lb_object
-# count the presence of the individual covariates for all bootstrap models
-covariates_n <- 771  # IF genes
-covariates_n <- 8    # IF nodes
+# Analyzing selected features (genes/nodes...) in lb_object
+# count the presence of the individual features for all bootstrap models
+covariates_n <- 6  # If 6 genes
+covariates_n <- 771  # If ALL genes
+covariates_n <- 8    # If nodes
 vector_1 <- c(1: covariates_n)
 vector_2 <- lb_object[[2]] - 1 # shift numbers so intercept becomes 0 and first covariate is 1
 covariates_count <- rowSums(outer(vector_1, vector_2, "=="))
@@ -118,7 +118,7 @@ genes_of_interest <- function(vector, times_selected, above=TRUE){
   return(variable_names)
 }
 
-test_genes = genes_of_interest(covariates_w_names, 2, TRUE)
+test_genes = genes_of_interest(covariates_w_names, 10, TRUE)
 show(test_genes)
 
 fm_test_genes = as.formula(paste("Proliferation.Score", "~", paste(test_genes, collapse = "+")))

@@ -1,5 +1,6 @@
 # importing and creating various dataframes and matrices
 
+library(tidyverse)
 
 ##############################################
 ## ALL DATA as they came original (I think) ##
@@ -24,7 +25,7 @@ df02 = full_join(df_nodes, df01, by = c(colnames(df01)[1]))
 #############
 
 df_6genes_with_output <- function(output){
-  df_genes <- df01 |> select(c(UniqueID, CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1, timepoint, TrialArmNeo)) |>
+  df_genes <- df01 |> select(UniqueID, CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1, timepoint, TrialArmNeo) |>
     filter(timepoint=="SCR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
@@ -42,7 +43,10 @@ df_6genes_with_output <- function(output){
 
 Proliferation_6genes <- df_6genes_with_output("ProliferationScore")
 
-
+# Matrices for lasso
+X <- as.matrix(Proliferation_6genes |> 
+                 select(CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1))
+Y <- as.matrix(select(Proliferation_6genes, Y))
 
 #################
 ## NODES DATA  ##
@@ -50,11 +54,11 @@ Proliferation_6genes <- df_6genes_with_output("ProliferationScore")
 
 df_Nodes_with_output <- function(output){
   df_features <- df02 |>
-    select(c(UniqueID, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1, timepoint, TrialArmNeo)) |> 
+    select(UniqueID, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1, timepoint, TrialArmNeo) |> 
     filter(timepoint=="SCR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_output <- df02 |> select(c(UniqueID, output, timepoint, TrialArmNeo)) |>
+  df_output <- df02 |> select(UniqueID, output, timepoint, TrialArmNeo) |>
     filter(timepoint=="SUR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
@@ -68,12 +72,52 @@ df_Nodes_with_output <- function(output){
 
 Nodes_Proliferation <- df_Nodes_with_output("ProliferationScore")
 
+# Matrices for lasso
+X <- as.matrix(Nodes_Proliferation |> 
+                 select(cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1))
+Y <- as.matrix(select(Nodes_Proliferation, Y))
+
+
+###############
+## 771 GENES ##
+###############
+# This code snip is more generic and can be used insetead off others i think
+
+genes <- colnames(df01 |> select(41:811))
+length(genes)
+
+df_771genes_with_output <- function(predictors, output){
+  features <- c("UniqueID", "timepoint", "TrialArmNeo", predictors)
+  
+  df_genes <- df01 |> select(all_of(features)) |>
+    filter(timepoint=="SCR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_output <- df01 |> select(c(UniqueID, output, timepoint, TrialArmNeo)) |>
+    filter(timepoint=="SUR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_ALLgenes <- full_join(df_genes, df_output, by = "UniqueID") |> 
+    select(-UniqueID)
+  
+  colnames(df_ALLgenes)[which(names(df_ALLgenes) == output)] <- "Y"
+  print(output)
+  df_ALLgenes <- na.omit(df_ALLgenes) # remove rows with missing values
+  return(df_ALLgenes)
+}
+
+Proliferation_ALLgenes <- df_771genes_with_output(genes, "ProliferationScore")
+
+# Matrices for lasso
+X <- as.matrix(Proliferation_ALLgenes |> 
+                 select(genes))
+Y <- as.matrix(select(Proliferation_ALLgenes, Y))
+
 
 
 #####################
 ## Previous code:
 #####################
-
 
 # df01: 6 genes; timepoint SCR and SUR
 path_6genes <- "/Users/anders/Documents/MASTER/data/SCR_SUR_6genes_noNAN(ANO).txt"
@@ -124,7 +168,6 @@ df04_sur_prolif <- df04 |>
 
 df04 <- cbind(df04_sur_prolif, df04_scr_genes)
 
-
 #########################
 ## X and Y's for lasso ##
 #########################
@@ -145,8 +188,10 @@ Y[is.na(Y)] = 0  # change NA too 0
 # X from the node values
 X <- dplyr::select(df08, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1, proliferation)
 X <- dplyr::select(df08, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1)
-# Y from tabel with the node values
+# Y from table with the node values
 Y <- select(df08, "ProliferationScore")
+
+
 
 #########################
 ##   ##
