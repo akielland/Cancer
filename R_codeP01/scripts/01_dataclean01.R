@@ -1,6 +1,7 @@
 # importing and creating various dataframes and matrices
 
 library(tidyverse)
+library(readxl)
 
 ##############################################
 ## ALL DATA as they came original (I think) ##
@@ -18,6 +19,16 @@ path <- "/Users/anders/Documents/MASTER/data/model_predictors.tsv"
 df_nodes <- read.delim(path)
 colnames(df_nodes)[1] <- colnames(df01)[1]
 df02 = full_join(df_nodes, df01, by = c(colnames(df01)[1]))
+
+
+#############################################################
+## ALL data with added prediction of the Mechanistic model ##
+#############################################################
+
+# prediction of proliferation.score
+# residuals = ??
+path <- "/Users/anders/Documents/Master/data/COR_and_validation_data_with_model_prediction/CORALLEEN_data_with_model_prediction.xlsx"
+df_03 <- read_excel(path, range = cell_cols("A:V")) |> mutate(residuals = Proliferation.Score - model_prediction)
 
 
 #############
@@ -81,7 +92,7 @@ Y <- as.matrix(select(Nodes_Proliferation, Y))
 ###############
 ## 771 GENES ##
 ###############
-# This code snip is more generic and can be used insetead off others i think
+# This code snip is more generic and can be used instead off others i think
 
 genes <- colnames(df01 |> select(41:811))
 length(genes)
@@ -107,6 +118,7 @@ df_771genes_with_output <- function(predictors, output){
 }
 
 Proliferation_ALLgenes <- df_771genes_with_output(genes, "ProliferationScore")
+Proliferation_ALLgenes <- df_771genes_with_output(genes, "ROR_P_Subtype_Proliferation")
 
 # Matrices for lasso
 X <- as.matrix(Proliferation_ALLgenes |> 
