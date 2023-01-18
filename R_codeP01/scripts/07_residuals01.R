@@ -19,8 +19,8 @@ lasso_bootstrap_residuals <- function(X, Y, pred_mech, lambda.min=TRUE){
 
   n = length(Y)
   
-  res <- Y - pred_mech
-  #res <- pred_mech/Y
+  #res <- Y - pred_mech
+  res <- pred_mech/Y
   
   int <- sample.int(n, size = n, replace = TRUE)
   X_train = X[int,]
@@ -42,8 +42,8 @@ lasso_bootstrap_residuals <- function(X, Y, pred_mech, lambda.min=TRUE){
     pred_res = predict(fit.cv, newx = X, type = "response", s = "lambda.1se")      
   }
   
-  pred_assembly <- pred_mech + pred_res
-  #pred_assembly <- pred_mech * pred_res
+  #pred_assembly <- pred_mech + pred_res
+  pred_assembly <- pred_mech / pred_res
   
   cor <- suppressWarnings(cor(pred_assembly, Y))
   SEM <- mean((Y - pred_assembly)^2)

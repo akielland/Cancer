@@ -3,12 +3,25 @@
 library(tidyverse)
 library(readxl)
 
-##############################################
-## ALL DATA as they came original (I think) ##
-##############################################
+########################################################
+## ALL DATA from the second trail (a test set for us) ##
+########################################################
 
-path <- "/Users/anders/Documents/MASTER/data/CORALLEEN_02.csv"
-df01 <- read.table(path, header = TRUE, sep = ",", dec = ".")
+path <- "~/Documents/Master/data/COR_and_validation_data_with_model_prediction/cdk_cohort_with_model_prediction.tsv"
+df04 <- read.delim(path)
+
+
+# extracting genes
+test.X <- df04 |> 
+  select(42:812)
+
+dim(X.test)
+
+# extracting progress free survival (PFS)
+test.PFS_months <- df04 |> select(PFS_months)
+test.PFS_status <- df04 |> select(PFS_status)
+
+###  OLD CODE:
 
 ##########################################################
 ## ALL DATA with added NODE DATA from MECHANISTIC MODEL ##

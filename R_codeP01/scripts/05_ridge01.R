@@ -22,7 +22,6 @@ ridge_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   Y_train = Y[int]
   
   fit.cv <- cv.glmnet(X_train, Y_train, nfolds=5, alpha=0)
-  fit.cv <- cv.glmnet(X_train, Y_train, nfolds=5, alpha= seq(0,1, by=0.1))
   
   co <- coef(fit.cv, s = "lambda.min")
   

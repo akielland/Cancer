@@ -22,6 +22,16 @@ variables <- variables[!(variables %in% '(Intercept)')]
 show(variables)
 
 
+pred_ROR <- predict(lasso02, newx = X, type = "response", s = "lambda.min")
+cor(pred_ROR, Y)
+
+df$id[df$id == 55 & df$gender == 'm'] <- "60"
+
+df <- mutate(df, id = case_when(
+  id == 30 ~ 40, 
+  TRUE   ~ id 
+))
+
 # Using LOO cross-validation for testing 
 # going through all observations with LOO as test set,
 
