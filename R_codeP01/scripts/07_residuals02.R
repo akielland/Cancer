@@ -1,34 +1,30 @@
-## Lasso using bootstrap sample to train 1000 models
+## Ridge using bootstrap sample to train 1000 models
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## Test against original data sample and leave-out bootstrap sample
-## output: selected genes; proliferation.score correlation; SEM
+## output: proliferation.score correlation; SEM
 
 library(glmnet)
 
 ##########################################################
-##  Bootstrap  Lasso - using original sample as test set ##
+##  Bootstrap  Ridge - using original sample as test set ##
 ##########################################################
 
 
-lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
+ridge_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   # one bootstrap sample
   # output: 
   # 1. correlation between prediction and full input sample
-  # 2. indices of selected variables
+  # 2. Coefficients of variables
   n = length(Y)
   
   int <- sample.int(n, size = n, replace = TRUE)
   X_train = X[int,]
   Y_train = Y[int]
   
-  fit.cv <- cv.glmnet(X_train, Y_train, nfolds = 5)
+  fit.cv <- cv.glmnet(X_train, Y_train, nfolds=5, alpha=0)
+  # fit.cv <- cv.glmnet(X_train, Y_train, nfolds=5, alpha= seq(0,1, by=0.1))
   
-  features <- coef(fit.cv, s = "lambda.min")
-  inds <- which(features != 0)
-  # If want to print selected features
-  # inds <- inds[-1] # dropping the first covariates 
-  # variables <- row.names(co)[inds]
-  # variables <- variables[!(variables %in% '(Intercept)')];
+  co <- coef(fit.cv, s = "lambda.min")
   
   if (lambda.min == TRUE) {
     pred_values = predict(fit.cv, newx = X, type = "response", s = "lambda.min")      
@@ -38,21 +34,22 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   }
   cor <- suppressWarnings(cor(pred_values, Y))
   SEM <- mean((Y - pred_values)^2)
-  return(list(cor, inds, SEM))
+  return(list(cor, co, SEM))
 }
 
-lasso_bootstrap_sample(X, Y, TRUE)
+ridge_bootstrap_sample(X, Y, TRUE)
 
+matrix(NA, nrow = 3, ncol = 3)
 
 # 1000 bootstrap fits
-lasso_cor_boot = function(X, Y, n_bootstraps=1000){
+ridge_cor_boot = function(X, Y, n_bootstraps=1000){
   # run many bootstraps
   # output: - vector with correlations 
   #         - vector with selected features as integers values wrt to X
   #           chronologically added in each bootstrap sample
   #         - vector with SEM
   cor_vec <- rep(NA, n_bootstraps)
-  inds_vec <- integer(length = 0)
+  co_matrix <- matrix(NA, nrow = n_bootstraps, ncol = dim(X)[2])
   SEM_vec <- rep(NA, n_bootstraps)
   for (i in c(1:n_bootstraps)) {
     out <- lasso_bootstrap_sample(X, Y, TRUE)
@@ -60,31 +57,30 @@ lasso_cor_boot = function(X, Y, n_bootstraps=1000){
     inds_vec <- c(inds_vec, as.integer(out[[2]]))
     SEM_vec[i] <- as.numeric(out[3])
   }  
-  return(list(cor_vec, inds_vec, SEM_vec))
+  return(list(cor_vec, co_matrix, SEM_vec))
 }
 
 # making list object with 
 # 1. correlation  
 # 2. integer values of features selected in each bootstrap model
 # 3. SEM
-set.seed(123)
-lb_object <- lasso_cor_boot(X, Y, 1000)
+rb_object <- lasso_cor_boot(X, Y, 1000)
 
 # Various objects
-save(lb_object, file="lb_object_6genes.RData")
-save(lb_object, file="lb_object_nodes01.RData")
-save(lb_object, file="lb_object_AllGenes01.RData")
-save(lb_object, file="lb_object_ALLGenes_ROR.RData")
+save(rb_object, file="lb_object_6genes.RData")
+save(rb_object, file="lb_object_nodes01.RData")
+save(rb_object, file="lb_object_AllGenes01.RData")
+save(rb_object, file="lb_object_ALLGenes_ROR.RData")
 
 # stored object can be loaded to save time
-load("lb_object_6Genes.RData")
-load("lb_object_nodes01.RData")
-load("lb_object_AllGenes01.RData")
-load("lb_object_ALLGenes_ROR.RData")
+load("rb_object_6Genes.RData")
+load("rb_object_nodes01.RData")
+load("rb_object_AllGenes01.RData")
+load("rb_object_ALLGenes_ROR.RData")
 
 ## Summery result of lasso bootstrap object
 # Correlation
-cor_vec <- as.numeric(lb_object[[1]])
+cor_vec <- as.numeric(rb_object[[1]])
 sum(is.na(cor_vec))/length(cor_vec)    # fraction of NA
 mean(cor_vec, na.rm=TRUE)
 var(cor_vec, na.rm=TRUE)
@@ -92,9 +88,9 @@ par(mfrow=c(1,1))
 hist(cor_vec, breaks = 100)
 
 # SEM
-SEM_vec <- as.numeric(lb_object[[3]])
+SEM_vec <- as.numeric(rb_object[[3]])
 mean(SEM_vec)
-mean(sqrt(SEM_vec))
+var(SEM_vec)
 hist(SEM_vec, breaks=100)
 
 ## Analyzing selected features (genes/nodes...) in lb_object
@@ -103,7 +99,7 @@ covariates_n <- 6  # If 6 genes
 covariates_n <- 771  # If ALL genes
 covariates_n <- 8    # If nodes
 vector_1 <- c(1: covariates_n)
-vector_2 <- lb_object[[2]] - 1 # shift numbers so intercept becomes 0 and first covariate is 1
+vector_2 <- rb_object[[2]] - 1 # shift numbers so intercept becomes 0 and first covariate is 1
 covariates_count <- rowSums(outer(vector_1, vector_2, "=="))
 # put gene names on the covariates_count vector
 covariates_w_names <- setNames(covariates_count, colnames(X))
@@ -137,9 +133,6 @@ show(test_genes)
 
 fm_test_genes = as.formula(paste("Proliferation.Score", "~", paste(test_genes, collapse = "+")))
 lm(fm_test_genes, data = df04)
-
-
-
 
 ## Bellow is code I dont use so much anymore
 

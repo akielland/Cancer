@@ -25,12 +25,18 @@ df02 = full_join(df_nodes, df01, by = c(colnames(df01)[1]))
 ## ALL data with added prediction of the Mechanistic model ##
 #############################################################
 
+############################################################
+## ALL data with added residuals of the Mechanistic model ##
+############################################################
+
 # prediction of proliferation.score
 # residuals = ??
 path <- "/Users/anders/Documents/Master/data/COR_and_validation_data_with_model_prediction/CORALLEEN_data_with_model_prediction.xlsx"
-df_03 <- read_excel(path, range = cell_cols("A:V")) |> mutate(residuals = Proliferation.Score - model_prediction)
-
-
+# df_03 <- read_excel(path, range = cell_cols("A:V")) |> mutate(residuals = Proliferation.Score - model_prediction)
+df03 <- read_excel(path) |>
+  mutate(residuals = Proliferation.Score - model_prediction) |> 
+  rename(TrialArmNeo = "Trial Arm Neo")
+s
 #############
 ## 6 GENES ##
 #############
@@ -94,37 +100,98 @@ Y <- as.matrix(select(Nodes_Proliferation, Y))
 ###############
 # This code snip is more generic and can be used instead off others i think
 
+# select all gene names from original data table structure
 genes <- colnames(df01 |> select(41:811))
 length(genes)
 
-df_771genes_with_output <- function(predictors, output){
+
+df_genes_with_output <- function(df, predictors, output){
   features <- c("UniqueID", "timepoint", "TrialArmNeo", predictors)
   
-  df_genes <- df01 |> select(all_of(features)) |>
+  df_genes <- df |> select(all_of(features)) |>
     filter(timepoint=="SCR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_output <- df01 |> select(c(UniqueID, output, timepoint, TrialArmNeo)) |>
+  df_output <- df |> select(c(UniqueID, output, timepoint, TrialArmNeo)) |>
     filter(timepoint=="SUR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_ALLgenes <- full_join(df_genes, df_output, by = "UniqueID") |> 
+  df_out <- full_join(df_genes, df_output, by = "UniqueID") |> 
     select(-UniqueID)
   
-  colnames(df_ALLgenes)[which(names(df_ALLgenes) == output)] <- "Y"
+  colnames(df_out)[which(names(df_out) == output)] <- "Y"
   print(output)
-  df_ALLgenes <- na.omit(df_ALLgenes) # remove rows with missing values
-  return(df_ALLgenes)
+  df_out <- na.omit(df_out) # remove rows with missing values
+  return(df_out)
 }
 
-Proliferation_ALLgenes <- df_771genes_with_output(genes, "ProliferationScore")
-Proliferation_ALLgenes <- df_771genes_with_output(genes, "ROR_P_Subtype_Proliferation")
+Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ProliferationScore")
+Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ROR_P_Subtype_Proliferation")
 
 # Matrices for lasso
 X <- as.matrix(Proliferation_ALLgenes |> 
                  select(genes))
 Y <- as.matrix(select(Proliferation_ALLgenes, Y))
 
+
+#################################
+## 771 GENES + MECH prediction ##
+#################################
+
+# select all gene names from original data table structure
+genes <- colnames(df03 |> select(41:811))
+length(genes)
+
+
+df_genes_with_mech.pred_and_output <- function(df, predictors, output){
+  features <- c("UniqueID", "timepoint", "TrialArmNeo", predictors)
+  
+  df_genes <- df |> select(all_of(features)) |>
+    filter(timepoint=="SCR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_SUR <- df |> select(c(UniqueID, timepoint, TrialArmNeo, model_prediction, output)) |>
+    filter(timepoint=="SUR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_out <- full_join(df_genes, df_SUR, by = "UniqueID") |> 
+    select(-UniqueID)
+  
+  colnames(df_out)[which(names(df_out) == output)] <- "Y"
+  print(output)
+  df_out <- na.omit(df_out) # remove rows with missing values
+  return(df_out)
+}
+
+df.all_genes.pred_mech <- df_genes_with_mech.pred_and_output(df03, genes, "Proliferation.Score") 
+
+## scale mech model prediction to scale of proliferation score by a linear model
+# fit model
+fit_ <- lm(df.all_genes.pred_mech$Y ~ df.all_genes.pred_mech$model_prediction)
+summary(fit_)
+plot(df.all_genes.pred_mech$model_prediction, Y)
+abline(fit_ , col = "blue")
+
+# scale value of mechanistic model by the linear model
+mech_pred_scaled <- predict(fit_, newdata =  as.data.frame(df.all_genes.pred_mech$model_prediction))
+cor(df.all_genes.pred_mech$model_prediction, mech_pred_scaled)
+hist(df.all_genes.pre_mech.scaled$model_prediction)
+cor(Y, df.all_genes.pre_mech.scaled$model_prediction)
+plot(mech_pred_scaled, Y)
+
+# substitute in the data frame (make new dataframe with scaled values of pred)
+df.all_genes.pred_mech.scaled <- df.all_genes.pred_mech |> 
+  mutate(model_prediction = mech_pred_scaled)
+
+# check if data looks the same
+hist(df.all_genes.pred_mech.scaled$model_prediction)
+
+
+# Matrices for lasso
+X <- as.matrix(df.all_genes.pred_mech.scaled |> 
+                 select(genes))
+pred_mech <- as.matrix(select(df.all_genes.pred_mech.scaled, model_prediction))
+Y <- as.matrix(select(df.all_genes.pred_mech.scaled, Y))
 
 
 #####################

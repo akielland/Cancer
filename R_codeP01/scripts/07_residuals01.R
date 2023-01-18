@@ -1,86 +1,92 @@
+#################################################################
+##  Bootstrap  Lasso - learning residuals of mechanistic model  ##
+#################################################################
+
 ## Lasso using bootstrap sample to train 1000 models
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## Test against original data sample and leave-out bootstrap sample
-## output: selected genes; proliferation.score correlation; SEM
+## output: preditions from residuals; selected genes; proliferation.score correlation; SEM
 
 library(glmnet)
 
-##########################################################
-##  Bootstrap  Lasso - using original sample as test set ##
-##########################################################
 
-
-lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
+lasso_bootstrap_residuals <- function(X, Y, pred_mech, lambda.min=TRUE){
   # one bootstrap sample
   # output: 
   # 1. correlation between prediction and full input sample
   # 2. indices of selected variables
+  # 3. SEM
+
   n = length(Y)
+  
+  res <- Y - pred_mech
+  #res <- pred_mech/Y
   
   int <- sample.int(n, size = n, replace = TRUE)
   X_train = X[int,]
-  Y_train = Y[int]
+  Y_train = res[int]
   
   fit.cv <- cv.glmnet(X_train, Y_train, nfolds = 5)
   
   features <- coef(fit.cv, s = "lambda.min")
   inds <- which(features != 0)
-  # If want to print selected features
-  # inds <- inds[-1] # dropping the first covariates 
-  # variables <- row.names(co)[inds]
-  # variables <- variables[!(variables %in% '(Intercept)')];
+  # If want to print selected features:
+  #   inds <- inds[-1] # dropping the first covariates 
+  #   variables <- row.names(co)[inds]
+  #   variables <- variables[!(variables %in% '(Intercept)')];
   
   if (lambda.min == TRUE) {
-    pred_values = predict(fit.cv, newx = X, type = "response", s = "lambda.min")      
+    pred_res = predict(fit.cv, newx = X, type = "response", s = "lambda.min")      
   }
   if (lambda.min == FALSE) {
-    pred_values = predict(fit.cv, newx = X, type = "response", s = "lambda.1se")      
+    pred_res = predict(fit.cv, newx = X, type = "response", s = "lambda.1se")      
   }
-  cor <- suppressWarnings(cor(pred_values, Y))
-  SEM <- mean((Y - pred_values)^2)
-  return(list(cor, inds, SEM))
+  
+  pred_assembly <- pred_mech + pred_res
+  #pred_assembly <- pred_mech * pred_res
+  
+  cor <- suppressWarnings(cor(pred_assembly, Y))
+  SEM <- mean((Y - pred_assembly)^2)
+  return(list(cor, inds, SEM, pred_assembly))
 }
 
-lasso_bootstrap_sample(X, Y, TRUE)
-
+ob_ <- lasso_bootstrap_residuals(X, Y, pred_mech, TRUE)
+cbind(ob_[[4]], pred_mech, Y)
 
 # 1000 bootstrap fits
-lasso_cor_boot = function(X, Y, n_bootstraps=1000){
+lasso_boot = function(X, Y, pred_mech, n_bootstraps=1000){
   # run many bootstraps
   # output: - vector with correlations 
   #         - vector with selected features as integers values wrt to X
   #           chronologically added in each bootstrap sample
   #         - vector with SEM
+  
   cor_vec <- rep(NA, n_bootstraps)
   inds_vec <- integer(length = 0)
   SEM_vec <- rep(NA, n_bootstraps)
+  pred_vec <- matrix(NA, nrow = length(Y), ncol = n_bootstraps)
+  
   for (i in c(1:n_bootstraps)) {
-    out <- lasso_bootstrap_sample(X, Y, TRUE)
+    out <- lasso_bootstrap_residuals(X, Y, pred_mech, TRUE)
     cor_vec[i] = as.numeric(out[1])
     inds_vec <- c(inds_vec, as.integer(out[[2]]))
     SEM_vec[i] <- as.numeric(out[3])
+    pred_vec[,i] <- as.numeric(out[[4]])
   }  
-  return(list(cor_vec, inds_vec, SEM_vec))
+  return(list(cor_vec, inds_vec, SEM_vec, pred_vec))
 }
 
-# making list object with 
-# 1. correlation  
-# 2. integer values of features selected in each bootstrap model
-# 3. SEM
+
 set.seed(123)
-lb_object <- lasso_cor_boot(X, Y, 1000)
+lb_object <- lasso_boot(X, Y, pred_mech, 100)
+
+#cbind(lb_object[[4]], pred_mech, Y)
 
 # Various objects
-save(lb_object, file="lb_object_6genes.RData")
-save(lb_object, file="lb_object_nodes01.RData")
-save(lb_object, file="lb_object_AllGenes01.RData")
-save(lb_object, file="lb_object_ALLGenes_ROR.RData")
+save(lb_object, file="lb_object_ALLGenes_Residuals_prolif.RData")
 
 # stored object can be loaded to save time
-load("lb_object_6Genes.RData")
-load("lb_object_nodes01.RData")
-load("lb_object_AllGenes01.RData")
-load("lb_object_ALLGenes_ROR.RData")
+load(file="/Users/anders/Documents/Master/Cancer/R_codeP01/lb_object_ALLGenes_Residuals_prolif.RData")
 
 ## Summery result of lasso bootstrap object
 # Correlation
@@ -137,9 +143,6 @@ show(test_genes)
 
 fm_test_genes = as.formula(paste("Proliferation.Score", "~", paste(test_genes, collapse = "+")))
 lm(fm_test_genes, data = df04)
-
-
-
 
 ## Bellow is code I dont use so much anymore
 
