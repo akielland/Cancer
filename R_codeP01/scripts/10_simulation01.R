@@ -2,7 +2,6 @@
 
 
 
-
 set.seed(123)
 n <- 100 # number of samples
 p <- 20 # number of genetic features
@@ -13,13 +12,6 @@ p_half <- p/2
 beta <- c(rnorm(p_half), rep(0, p_half)) # generate random coefficients for the first half of the genes and 0 for the other half
 
 Y_ <- X_ %*% beta + rnorm(n) # generate outcome variable Y
-
-
-
-
-
-
-
 
 
 

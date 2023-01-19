@@ -31,15 +31,3 @@ idx = which(fit$cvm == min_error)
 best_alpha = fit$alpha[idx]
 best_lambda = fit$lambda[idx]
 
-
-df <- data.frame(col1 = rnorm(100), 
-                 col2 = rnorm(100), 
-                 col3 = rnorm(100))
-
-# Use ggplot to create a histogram
-ggplot(df, aes(x = names(df))) + 
-  geom_histogram(aes(y = ..count..), 
-                 binwidth = 0.5, 
-                 fill = "blue", 
-                 color = "black") + 
-  ggtitle("Histogram of Column Values")

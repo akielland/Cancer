@@ -2,6 +2,49 @@
 ##  Bootstrap  Elastic Net - using original sample as test set ##
 #################################################################
 
+
+
+library(glmnet)
+
+# In this example, a range of alpha values is specified in the alphas variable, and the cv.glmnet function is called with the alpha argument set to alphas. The cv.glmnet function will then search for the optimal value of alpha and lambda by computing the cross-validated error for each combination of alpha and lambda. The optimal alpha and lambda values are then printed and the cross-validated error is plotted as a function of lambda and alpha.
+# 
+# You can also use expand.grid function to generate a grid of all possible combinations of alpha and lambda.
+
+
+# load data
+data(mtcars)
+x = model.matrix(mpg ~ ., mtcars)[,-1]
+y = mtcars$mpg
+
+# specify a range of alpha values to search
+alphas = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
+
+# specify lambda values
+lambdas = 10^seq(3, -3, length.out = 100)
+
+# run elastic net with cross-validation and alpha search
+fit = cv.glmnet(x, y, alpha = alphas, lambda = lambdas, nfolds = 5)
+
+# print the optimal alpha and lambda values
+print(fit$alpha.min)
+print(fit$lambda.min)
+
+# plot cross-validated error as a function of lambda and alpha
+plot(fit)
+
+# Use expand.grid to generate all possible combinations of a and l
+alpha_lambda_grid = expand.grid(alpha = alphas, lambda = lambdas)
+fit = cv.glmnet(x, y, alpha_lambda_grid, nfolds = 5)
+
+
+
+
+
+
+
+
+
+
 ## Elastic using bootstrap sample to train 1000 models
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## Test against original data sample and leave-out bootstrap sample

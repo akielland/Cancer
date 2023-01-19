@@ -120,14 +120,18 @@ features_ordered <- covariates_w_names[order(covariates_w_names, decreasing = TR
 show(features_ordered)
 features_ordered <- as.data.frame(features_ordered)
 
-features_ordered_5 <- features_ordered |> filter(features_ordered > 300 )
-features_ordered_5 <- rownames_to_column(features_ordered_5)
+# extract features selected the most
+times_selected <- 100
+features_ordered.topp_list <- features_ordered |> filter(features_ordered > times_selected )
+cat("Numbers of genes selected and percentages of the 771 genes selected: ")
+dim(features_ordered.topp_list)[1]
+dim(features_ordered.topp_list)[1]/771 *100
+features_ordered.topp_list <- rownames_to_column(features_ordered.topp_list)
 
-# make rowname an ordered factor
-features_ordered_5$rowname <- factor(features_ordered_5$rowname, levels = features_ordered_5$rowname)
-
-ggplot(features_ordered_5, aes(y = rowname, x = features_ordered)) + 
-  geom_bar(stat="identity")
+# Bar diagram on features ordered by amount of times selected
+ggplot(features_ordered.topp_list, aes(y = rowname, x = features_ordered)) +
+  geom_col() +
+  scale_y_discrete(limits = features_ordered.topp_list$rowname)
 
 
 # extract covariates selected at certain amount of times
