@@ -128,11 +128,17 @@ df_genes_with_output <- function(df, predictors, output){
 
 Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ProliferationScore")
 Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ROR_P_Subtype_Proliferation")
+head(Proliferation_ALLgenes[,1:5])
+lastcol <- ncol(Proliferation_ALLgenes)
+head(Proliferation_ALLgenes[, (lastcol-5): lastcol])
+
 
 # Matrices for lasso
-X <- as.matrix(Proliferation_ALLgenes |> 
-                 select(genes))
+X <- as.matrix(Proliferation_ALLgenes |> select(genes))
 Y <- as.matrix(select(Proliferation_ALLgenes, Y))
+
+# Standardizing features
+X_Z <- scale(X)
 
 
 #################################
@@ -189,8 +195,7 @@ hist(df.all_genes.pred_mech.scaled$model_prediction)
 
 
 # Matrices for lasso
-X <- as.matrix(df.all_genes.pred_mech.scaled |> 
-                 select(genes))
+X <- as.matrix(df.all_genes.pred_mech.scaled |> select(genes))
 pred_mech <- as.matrix(select(df.all_genes.pred_mech.scaled, model_prediction))
 Y <- as.matrix(select(df.all_genes.pred_mech.scaled, Y))
 

@@ -16,18 +16,22 @@ library(readxl)
 
 path <- "~/Documents/Master/data/COR_and_validation_data_with_model_prediction/cdk_cohort_with_model_prediction.tsv"
 df04 <- read.delim(path)
-
+dim(df04)
 
 # extracting genes
-ext.X <- df04 |> 
-  select(42:812)
+ext.X <- df04 |> select(42:812)
 
 dim(ext.X)
 ext.X <- as.matrix(ext.X)
+ext.X_Z <- scale(ext.X)
+
 
 # extracting progress free survival (PFS)
 ext.PFS_months <- df04 |> select(PFS_months)
-ext.PFS_status <- df04 |> select(PFS_status)
+ext.OS_months <- df04 |> select(OS_months)
+
+
+
 
 
 
@@ -75,19 +79,6 @@ test |> select(ROR_P_Group, ROR_P_GroupSubtypeProliferation)
 
 
 
-# substitute in the data frame (make new dataframe with scaled values of pred)
-df.all_genes.pred_mech.scaled <- df.all_genes.pred_mech |> 
-  mutate(model_prediction = mech_pred_scaled)
-
-# check if data looks the same
-hist(df.all_genes.pred_mech.scaled$model_prediction)
-
-
-# Matrices for lasso
-X <- as.matrix(df.all_genes.pred_mech.scaled |> 
-                 select(genes))
-pred_mech <- as.matrix(select(df.all_genes.pred_mech.scaled, model_prediction))
-Y <- as.matrix(select(df.all_genes.pred_mech.scaled, Y))
 
 
 

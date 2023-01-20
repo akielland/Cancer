@@ -3,14 +3,16 @@
 ## Test against original data sample and leave-out bootstrap sample
 ## output: selected genes; proliferation.score correlation; SEM
 
+## Post Lasso model is made at the bottom
+
 library(glmnet)
 
-##########################################################
+###########################################################
 ##  Bootstrap  Lasso - using original sample as test set ##
-##########################################################
+###########################################################
 
 
-lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
+lasso_bootstrap_sample <- function(X, Y, ext.X, ext.Y, lambda.min=TRUE){
   # one bootstrap sample
   # output: 
   # 1. correlation between prediction and full input sample
@@ -31,21 +33,21 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   # variables <- variables[!(variables %in% '(Intercept)')];
   
   if (lambda.min == TRUE) {
-    pred_values = predict(fit.cv, newx = X, type = "response", s = "lambda.min")      
+    pred_values = predict(fit.cv, newx = ext.X, type = "response", s = "lambda.min")      
   }
   if (lambda.min == FALSE) {
-    pred_values = predict(fit.cv, newx = X, type = "response", s = "lambda.1se")      
+    pred_values = predict(fit.cv, newx = ext.X, type = "response", s = "lambda.1se")      
   }
-  cor <- suppressWarnings(cor(pred_values, Y))
-  SEM <- mean((Y - pred_values)^2)
+  cor <- suppressWarnings(cor(pred_values, ext.Y, method = "spearman"))
+  SEM <- mean((ext.Y - pred_values)^2)
   return(list(cor, inds, SEM))
 }
 
-lasso_bootstrap_sample(X, Y, TRUE)
+lasso_bootstrap_sample(X, Y, X, Y, TRUE)
 
 
 # 1000 bootstrap fits
-lasso_cor_boot = function(X, Y, n_bootstraps=1000){
+lasso_cor_boot = function(X, Y, ext.X, ext.Y, n_bootstraps=100){
   # run many bootstraps
   # output: - vector with correlations 
   #         - vector with selected features as integers values wrt to X
@@ -55,12 +57,13 @@ lasso_cor_boot = function(X, Y, n_bootstraps=1000){
   inds_vec <- integer(length = 0)
   SEM_vec <- rep(NA, n_bootstraps)
   for (i in c(1:n_bootstraps)) {
-    out <- lasso_bootstrap_sample(X, Y, TRUE)
+    out <- lasso_bootstrap_sample(X, Y, ext.X, ext.Y, TRUE)
     cor_vec[i] = as.numeric(out[1])
     inds_vec <- c(inds_vec, as.integer(out[[2]]))
     SEM_vec[i] <- as.numeric(out[3])
   }  
   return(list(cor_vec, inds_vec, SEM_vec))
+  #return(list(cor_vec, inds_vec))
 }
 
 # making list object with 
@@ -68,7 +71,9 @@ lasso_cor_boot = function(X, Y, n_bootstraps=1000){
 # 2. integer values of features selected in each bootstrap model
 # 3. SEM
 set.seed(123)
-lb_object <- lasso_cor_boot(X, Y, 1000)
+lb_object <- lasso_cor_boot(X_Z, Y, ext.X_Z, ext.Y = ext.PFS_months, 100)
+
+lb_object <- lasso_cor_boot(X_Z, order(Y), ext.X_Z, ext.Y = order(ext.OS_months, decreasing=TRUE), 100)
 
 # Various objects
 save(lb_object, file="lb_object_6genes.RData")
@@ -87,8 +92,9 @@ load("lb_object_ALLGenes_ROR.RData")
 cor_vec <- as.numeric(lb_object[[1]])
 sum(is.na(cor_vec))/length(cor_vec)    # fraction of NA
 mean(cor_vec, na.rm=TRUE)
+median(cor_vec, na.rm=TRUE)
 var(cor_vec, na.rm=TRUE)
-par(mfrow=c(1,1))
+# par(mfrow=c(1,1))
 hist(cor_vec, breaks = 100)
 
 # SEM
@@ -99,9 +105,9 @@ hist(SEM_vec, breaks=100)
 
 ## Analyzing selected features (genes/nodes...) in lb_object
 # count the presence of the individual features for all bootstrap models
-covariates_n <- 6  # If 6 genes
 covariates_n <- 771  # If ALL genes
-covariates_n <- 8    # If nodes
+# covariates_n <- 6  # If 6 genes
+# covariates_n <- 8    # If nodes
 vector_1 <- c(1: covariates_n)
 vector_2 <- lb_object[[2]] - 1 # shift numbers so intercept becomes 0 and first covariate is 1
 covariates_count <- rowSums(outer(vector_1, vector_2, "=="))
@@ -120,7 +126,7 @@ features_ordered <- covariates_w_names[order(covariates_w_names, decreasing = TR
 show(features_ordered)
 features_ordered <- as.data.frame(features_ordered)
 
-# extract features selected the most
+# extract features selected most times (e.g. > 100)
 times_selected <- 100
 features_ordered.topp_list <- features_ordered |> filter(features_ordered > times_selected )
 cat("Numbers of genes selected and percentages of the 771 genes selected: ")
@@ -134,29 +140,11 @@ ggplot(features_ordered.topp_list, aes(y = rowname, x = features_ordered)) +
   scale_y_discrete(limits = features_ordered.topp_list$rowname)
 
 
-# extract covariates selected at certain amount of times
-genes_of_interest <- function(vector, times_selected, above=TRUE){
-  # return: names of genes selected a distinct numbers of times
-  if (max(vector) < times_selected){
-    return(print("argument times_selected has to high value"))
-  }
-  if (above == TRUE){inds <- which(vector >= times_selected)}
-  else{inds <- which(vector == times_selected)}
-  
-  variable_names <- names(inds)
-  return(variable_names)
-}
-
-test_genes = genes_of_interest(covariates_w_names, 100, TRUE)
-show(test_genes)
-
-fm_test_genes = as.formula(paste("Proliferation.Score", "~", paste(test_genes, collapse = "+")))
-lm(fm_test_genes, data = df04)
 
 
-
-
-## Bellow is code I dont use so much anymore
+################################################
+## Bellow is code I don't use so much anymore ##
+################################################
 
 # count the number of times the selected covariates are present in the models
 covariates_count_selected <- rowSums(outer(c(1:max(covariates_w_names)), covariates_w_names, "=="))
@@ -264,7 +252,10 @@ lasso_cor_boot = function(X, Y, n_bootstraps){
 
 # making list object with correlation and integer values of covariates 
 # from the different lasso bootstrap models
+
 lb_object <- lasso_cor_boot(X,Y,1000)
+lb_object <- lasso_cor_boot(X,order(Y),100)
+
 save(lb_object, file="lb_object_AllGenes01.RData")
 load("lb_object_AllGenes01.RData")
 save(lb_object, file="lb_object_nodes01.RData")
