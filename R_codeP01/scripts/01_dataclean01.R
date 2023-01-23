@@ -103,6 +103,8 @@ Y <- as.matrix(select(Nodes_Proliferation, Y))
 
 # select all gene names from original data table structure
 genes <- colnames(df01 |> select(41:811))
+genes <- colnames(df01 |> select(41:44))
+
 length(genes)
 
 
@@ -128,16 +130,27 @@ df_genes_with_output <- function(df, predictors, output){
 
 Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ProliferationScore")
 Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ROR_P_Subtype_Proliferation")
+
 head(Proliferation_ALLgenes[,1:5])
 lastcol <- ncol(Proliferation_ALLgenes)
 head(Proliferation_ALLgenes[, (lastcol-5): lastcol])
 
+# dataframe for caret
+dfA03 <- Proliferation_ALLgenes |> 
+  select(- c(timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))
 
 # Matrices for lasso
 X <- as.matrix(Proliferation_ALLgenes |> select(genes))
 Y <- as.matrix(select(Proliferation_ALLgenes, Y))
 
 # Standardizing features
+# it is extremely important that all PREDICTOR variables are on the same scale. 
+# These regularization methods are sensitive to the size of coefficients by design, 
+# so coefficients on different scales are enormously problematic. 
+# Based on how these data were simulated, we know that our predictors are already on the same scale, 
+# but as good practice, we will center and scale them anyways.
+
+pred <- scale(pred)
 X_Z <- scale(X)
 
 

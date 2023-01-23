@@ -21,7 +21,22 @@ ridge_bootstrap_sample <- function(X, Y, ext.X, ext.Y, lambda.min=TRUE, method="
   X_train = X[int,]
   Y_train = Y[int]
   
-  fit.cv <- cv.glmnet(X_train, Y_train, nfolds=5, alpha=0)
+  
+  alphas = seq(0, 1, by=0.1)
+  
+  # To store results
+  fit.cv <- list()
+  cvm = rep(0, length(alphas))
+  
+  # run elastic net with cross-validation and alpha search
+  for (i in 1:length(alphas)){
+    fit.cv[[i]] <- cv.glmnet(X_train, Y_train, alpha = alphas[i], nfolds = 5)
+    cvm[i] <- min(fit.cv[[i]]$cvm)
+  }
+  
+  opt.idx <- which.min(cvm)
+  fit.cv <- fit.cv[[opt.idx]]
+  # plot cross-validated error as a function of lambda and alpha
   
   co <- as.vector(coef(fit.cv, s = "lambda.min"))
   
@@ -212,7 +227,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   X = as.matrix(X)
   Y = as.matrix(Y)
   N = length(Y)
-
+  
   int <- sample(N, size = N*0.632, replace = FALSE)
   X_train = X[int,]
   X_test = X[-int,]
@@ -226,7 +241,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   # inds <- inds[-1] # dropping the first covariates 
   # variables <- row.names(co)[inds]
   # variables <- variables[!(variables %in% '(Intercept)')];
-    
+  
   if (lambda.min == TRUE) {
     pred_values = predict(lasso.cv, newx = X_test, type = "response", s = "lambda.min")      
   }
@@ -235,7 +250,7 @@ lasso_bootstrap_sample <- function(X, Y, lambda.min=TRUE){
   }
   cor <- suppressWarnings(cor(pred_values, Y_test))
   return(list(cor, inds))
-  }
+}
 
 # lasso_bootstrap_sample(X, Y, TRUE)
 
@@ -310,7 +325,7 @@ genes_of_interest <- function(vector, times_selected, above=TRUE){
   variable_names <- names(inds)
   return(variable_names)
 }
-  
+
 test_genes = genes_of_interest(covariates_w_names, 2, TRUE)
 show(test_genes)
 

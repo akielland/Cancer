@@ -6,46 +6,109 @@
 
 library(glmnet)
 
-# In this example, a range of alpha values is specified in the alphas variable, and the cv.glmnet function is called with the alpha argument set to alphas. The cv.glmnet function will then search for the optimal value of alpha and lambda by computing the cross-validated error for each combination of alpha and lambda. The optimal alpha and lambda values are then printed and the cross-validated error is plotted as a function of lambda and alpha.
+# In this example, a range of alpha values is specified in the alphas variable, 
+# and the cv.glmnet function is called with the alpha argument set to alphas. 
+# The cv.glmnet function will then search for the optimal value of alpha and lambda 
+# by computing the cross-validated error for each combination of alpha and lambda. 
+# The optimal alpha and lambda values are then printed and the cross-validated error is plotted 
+# as a function of lambda and alpha.
+# (You can also use expand.grid function to generate a grid of all possible combinations of alpha and lambda.)
+
+################
+## Testing without bootstrap
+################
+
+## 1) First Caret packed for simplicity
+histogram(dfA03$Y, xlab = "Proliferation score", 
+          main = "Trail arm Letro+Ribo")
+
 # 
-# You can also use expand.grid function to generate a grid of all possible combinations of alpha and lambda.
+
+cv_5 = trainControl(method = "cv", number = 5)
+
+# Caret only try alpha = 0.1, 0.55, 1.0. by default 
+# set tuneLength = i, makes i x i search
+# set tuneGrid = expand.grid ...
+lasso_grid <- expand.grid(alpha = seq(0.1, 1, by=0.1),
+                          lambda = la)
+lasso_grid
+
+# fit model:
+set.seed(123)
+elnet01 = train(
+  Y ~ ., data = dfA03,
+  method = "glmnet",
+  trControl = cv_5,
+  #tuneLength = 20
+  # tuneGrid = expand.grid(alpha = seq(0.1, 1, by=0.1),
+                         #lambda = la)
+)
+
+# Look at alphas and lambdas
+length(unique(elnet01$results$alpha))
+length(unique(elnet01$results$lambda)) 
+# lowest MSE
+elnet01$bestTune
+# more information at lowest MSE
+get_best_result(elnet01).          # mean absolute error (MAE) 
+
+get_best_result = function(caret_fit) {
+  # extract parameters at lowest MSE
+  best = which(rownames(caret_fit$results) == rownames(caret_fit$bestTune))
+  best_result = caret_fit$results[best, ]
+  rownames(best_result) = NULL
+  best_result
+}
 
 
-# load data
-data(mtcars)
-x = model.matrix(mpg ~ ., mtcars)[,-1]
-y = mtcars$mpg
+# # load data
+# data(mtcars)
+# x = model.matrix(mpg ~ ., mtcars)[,-1]
+# y = mtcars$mpg
 
-# specify a range of alpha values to search
+
+## 2) Custom loop over alpha values
+
+# specify range of alpha values to search
 alphas = c(0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1)
+alphas = seq(0, 1, by=0.1)
+alphas = 1
+# specify lambda values if want to:
+# lambdas = 10^seq(3, -3, length.out = 100)
+# lambdas = exp(seq(log(0.25), log(0.002), length.out=100))
+# lambdas = test$lambda
 
-# specify lambda values
-lambdas = 10^seq(3, -3, length.out = 100)
+# To store results
+fit.cv <- list()
+cvm = rep(0, length(alphas))
 
 # run elastic net with cross-validation and alpha search
-fit = cv.glmnet(x, y, alpha = alphas, lambda = lambdas, nfolds = 5)
+set.seed(123)
+for (i in 1:length(alphas)){
+  fit.cv[[i]] <- cv.glmnet(x, y, alpha = alphas[i], nfolds = 5)
+  cvm[i] <- min(fit.cv[[i]]$cvm)
+}
+cvm
 
-# print the optimal alpha and lambda values
-print(fit$alpha.min)
-print(fit$lambda.min)
-
+opt.idx <- which.min(cvm)
+alphas[opt.idx]
+fit.cv.opt <- fit.cv[[opt.idx]]
+fit.cv.opt
 # plot cross-validated error as a function of lambda and alpha
-plot(fit)
+plot(fit.cv.opt)
 
-# Use expand.grid to generate all possible combinations of a and l
-alpha_lambda_grid = expand.grid(alpha = alphas, lambda = lambdas)
-fit = cv.glmnet(x, y, alpha_lambda_grid, nfolds = 5)
+co <- coef(fit.cv, s = "lambda.min")
 
-
+test <- cv.glmnet(X, Y, nfolds = 5)
 
 
 
 
 
 
-
-
-## Elastic using bootstrap sample to train 1000 models
+###########################################################
+## Elastic using bootstrap sample to train 1000 models ##
+###########################################################
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## Test against original data sample and leave-out bootstrap sample
 ## output: proliferation.score correlation; SEM

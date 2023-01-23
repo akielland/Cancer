@@ -15,7 +15,7 @@ library(glmnet)
 lasso_bootstrap_sample <- function(X, Y, ext.X, ext.Y, lambda.min=TRUE){
   # one bootstrap sample
   # output: 
-  # 1. correlation between prediction and full input sample
+  # 1. correlation between prediction and full input sample (pearson or spearman should be set)
   # 2. indices of selected variables
   n = length(Y)
   
