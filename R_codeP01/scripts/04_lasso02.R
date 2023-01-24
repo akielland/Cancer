@@ -75,6 +75,11 @@ lb_object <- lasso_cor_boot(X_Z, Y, ext.X_Z, ext.Y = ext.PFS_months, 100)
 
 lb_object <- lasso_cor_boot(X_Z, order(Y), ext.X_Z, ext.Y = order(ext.OS_months, decreasing=TRUE), 100)
 
+histogram(lb_object$cor_vec, breaks = 99,
+          xlab = "Proliferation score", 
+          main = "Lasso, (trail 1, arm Letro+Ribo)")
+
+
 # Various objects
 save(lb_object, file="lb_object_6genes.RData")
 save(lb_object, file="lb_object_nodes01.RData")

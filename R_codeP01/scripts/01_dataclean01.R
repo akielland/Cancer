@@ -103,7 +103,7 @@ Y <- as.matrix(select(Nodes_Proliferation, Y))
 
 # select all gene names from original data table structure
 genes <- colnames(df01 |> select(41:811))
-genes <- colnames(df01 |> select(41:44))
+genes <- colnames(df01 |> select(41:46)) # just for testing with fewer features
 
 length(genes)
 
@@ -139,8 +139,8 @@ head(Proliferation_ALLgenes[, (lastcol-5): lastcol])
 dfA03 <- Proliferation_ALLgenes |> 
   select(- c(timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))
 
-# Matrices for lasso
-X <- as.matrix(Proliferation_ALLgenes |> select(genes))
+# Matrices for glmnet
+X <- as.matrix(Proliferation_ALLgenes |> select(all_of(genes)))
 Y <- as.matrix(select(Proliferation_ALLgenes, Y))
 
 # Standardizing features

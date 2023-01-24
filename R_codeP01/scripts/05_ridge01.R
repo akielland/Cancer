@@ -1,7 +1,7 @@
 ## Ridge using bootstrap sample to train 1000 models
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## Test against original data sample and leave-out bootstrap sample
-## output: proliferation.score correlation; SEM
+## output: proliferation.score correlation; MSE; coefficients of best model in each bootstrap
 
 library(glmnet)
 
@@ -15,6 +15,7 @@ ridge_bootstrap_sample <- function(X, Y, ext.X, ext.Y, lambda.min=TRUE, method="
   # output: 
   # 1. correlation between prediction and full input sample  (pearson or spearman should be set)
   # 2. Coefficients of variables 
+  # 3. MSE
   n = length(Y)
   
   int <- sample.int(n, size = n, replace = TRUE)
@@ -23,7 +24,7 @@ ridge_bootstrap_sample <- function(X, Y, ext.X, ext.Y, lambda.min=TRUE, method="
   
   fit.cv <- cv.glmnet(X_train, Y_train, nfolds=5, alpha=0)
   
-  co <- as.vector(coef(fit.cv, s = "lambda.min"))
+  co <- as.vector(coef(fit.cv, s = "lambda.min")) # as.vector makes an easier object to work with
   
   if (lambda.min == TRUE) {
     pred_values = predict(fit.cv, newx = ext.X, type = "response", s = "lambda.min")      
@@ -36,11 +37,11 @@ ridge_bootstrap_sample <- function(X, Y, ext.X, ext.Y, lambda.min=TRUE, method="
   return(list(cor=cor, co=co, MSE=MSE))
 }
 
-ridge_bootstrap_sample(X, Y, X, Y, TRUE)$co
+ridge_bootstrap_sample(X, Y, X, Y, TRUE)$cor
 
 
 # 1000 bootstrap fits
-ridge_cor_boot = function(X, Y, ext.X, ext.Y, n_bootstraps=1000, method = "pearson") {
+ridge_boot = function(X, Y, ext.X, ext.Y, n_bootstraps=1000, method = "pearson") {
   # run many bootstraps
   # output: - vector with correlations 
   #         - matrix with features coefficients
@@ -48,65 +49,79 @@ ridge_cor_boot = function(X, Y, ext.X, ext.Y, n_bootstraps=1000, method = "pears
   cor_vec <- rep(NA, n_bootstraps)
   co_matrix <- matrix(NA, nrow = dim(X)[2], ncol = n_bootstraps)
   rownames(co_matrix) <- colnames(X) 
-  
   MSE_vec <- rep(NA, n_bootstraps)
+  
   for (i in c(1:n_bootstraps)) {
     out <- ridge_bootstrap_sample(X, Y, ext.X, ext.Y, TRUE, method = method)
     # browser()
+    cor_vec[i] <- out$cor
     co_matrix[,i] <- out$co[-1]
     MSE_vec[i] <- out$MSE
   } 
   return(list(cor_vec=cor_vec, co_matrix=co_matrix, MSE_vec = MSE_vec))
 }
+
 set.seed(123)
-rb_object <- ridge_cor_boot(X, Y, X, Y, 2)
-rb_object
-# making list object with 
-# 1. correlation  
-# 2. integer values of features selected in each bootstrap model
-# 3. SEM
+rb_object <- ridge_boot(X, Y, X, Y, 1000)
+# rb_object
+histogram(rb_object$cor_vec, breaks = 99,
+          xlab = "Proliferation score", 
+          main = "Ridge, (trail 1, arm Letro+Ribo)")
 
-dim(rb_object[[2]])
-head(rb_object[[2]])
-
-
-B <- matrix(NA,nrow = 2, ncol = 4)
-colnames(B) <- colnames(X) 
-# Set row names
-rownames(B) <- c("Row 1", "Row 2")
-rownames(B) <- paste0("Row ", 1:nrow(B)) # Equivalent
-
-# Set column names
-colnames(B) <- c("Column 1", "Column 2", "Column 3")
-colnames(B) <- paste0("Column ", 1:ncol(B)) # Equivalent
-B
 
 # Various objects
-save(rb_object, file="lb_object_6genes.RData")
-save(rb_object, file="lb_object_nodes01.RData")
-save(rb_object, file="lb_object_AllGenes01.RData")
-save(rb_object, file="lb_object_ALLGenes_ROR.RData")
+save(rb_object, file="rb_object_6genes.RData")
+save(rb_object, file="rb_object_nodes.RData")
+save(rb_object, file="rb_object_AllGenes_Prolif.RData")
+save(rb_object, file="rb_object_ALLGenes_ROR.RData")
 
 # stored object can be loaded to save time
 load("rb_object_6Genes.RData")
-load("rb_object_nodes01.RData")
-load("rb_object_AllGenes01.RData")
+load("rb_object_Nodes.RData")
+load("rb_object_AllGenes_Prolif.RData")
 load("rb_object_ALLGenes_ROR.RData")
 
 ## Summery result of lasso bootstrap object
+# plot cross-validated error as a function of lambda and alpha
+
 # Correlation
-cor_vec <- as.numeric(rb_object[[1]])
+cor_vec <- rb_object$cor_vec
 sum(is.na(cor_vec))/length(cor_vec)    # fraction of NA
 mean(cor_vec, na.rm=TRUE)
 var(cor_vec, na.rm=TRUE)
 par(mfrow=c(1,1))
 hist(cor_vec, breaks = 100)
 
-# SEM
-SEM_vec <- as.numeric(rb_object[[3]])
-mean(SEM_vec)
-var(SEM_vec)
-hist(SEM_vec, breaks=100)
+# MSE
+MSE_vec <- rb_object$MSE_vec
+mean(MSE_vec)
+var(MSE_vec)
+hist(MSE_vec, breaks=100)
+
+# Features
+genes_mean <- rowMeans(rb_object$co_matrix)
+apply(rb_object$co_matrix, 1, var)
+sort(genes_mean, decreasing = TRUE)
+sort(abs(genes_mean), decreasing = TRUE)[1:3]
+
+# Bar diagram on features ordered by amount of times selected
+df_ <- as.data.frame(genes_mean)
+df_["genes_names"] <- row.names(df_)
+df_ <- df_[order(df_$genes_mean, decreasing = TRUE),]
+df_pluss <- df_[1:2,]
+gene_n <- dim(df_)[1];   gene_n2 <- gene_n-1
+df_minus <- df_[gene_n2: gene_n, ]
+
+# lock in factor level order
+df_$genes_names <- factor(df_$genes_names, levels = df_$genes_names)
+
+# plot
+ggplot(data=df_, aes(x=genes_names, y=genes_mean)) + 
+  geom_bar(stat="identity") + coord_flip()
+
+ggplot(data=df_, aes(x=genes_names, y=genes_mean)) + 
+  geom_col() + coord_flip()
+
 
 ## Analyzing selected features (genes/nodes...) in lb_object
 # count the presence of the individual features for all bootstrap models
@@ -143,13 +158,23 @@ genes_of_interest <- function(vector, times_selected, above=TRUE){
   return(variable_names)
 }
 
+
+
 test_genes = genes_of_interest(covariates_w_names, 100, TRUE)
 show(test_genes)
 
 fm_test_genes = as.formula(paste("Proliferation.Score", "~", paste(test_genes, collapse = "+")))
 lm(fm_test_genes, data = df04)
 
+#############################################
 ## Bellow is code I dont use so much anymore
+
+B <- matrix(NA,nrow = 2, ncol = 4)
+colnames(B) <- colnames(X) 
+# Set row names
+rownames(B) <- c("Row 1", "Row 2")
+rownames(B) <- paste0("Row ", 1:nrow(B)) # Equivalent
+
 
 # count the number of times the selected covariates are present in the models
 covariates_count_selected <- rowSums(outer(c(1:max(covariates_w_names)), covariates_w_names, "=="))
