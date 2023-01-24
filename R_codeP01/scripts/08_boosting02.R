@@ -13,6 +13,8 @@
 
 library(mboost)
 
+# linear base learner
+fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 
 boost_bootstrap_sample <- function(df_train, df_test, method="pearson"){
   # one bootstrap sample
@@ -23,30 +25,61 @@ boost_bootstrap_sample <- function(df_train, df_test, method="pearson"){
   n = dim(df_train)[1]
   
   int <- sample.int(n, size = n, replace = TRUE)
-  X_train = X[int,]
-  Y_train = Y[int]
+  data_train = df_train[int,]
   
-  fit <- gamboost(fm01, data = Proliferation_6genes,
-                       baselearner = "bbs", # dfbase=4
-                       control = boost_control(mstop = 50))
+  # fit <- glmboost(fm01, data = data_train)
+  # fit <- gamboost(fm01, data = data_train,
+  #                      baselearner = "bbs", # dfbase=4
+  #                      control = boost_control(mstop = 50))
   
+  fit = gamboost(fm01, data = data_train, 
+                     family=Gaussian(), 
+                     baselearner='btree',
+                     boost_control(mstop = 50))
   
+  # co <- coef(fit, which = "")
+  cols_chosen = unique(fit$xselect())
+  co <- colnames(Proliferation_6genes)[cols_chosen]
+  inds <- cols_chosen
+
+  pred_values = predict(fit, df_test)
   
-  co <- as.vector(coef(fit.cv, s = "lambda.min")) # as.vector makes an easier object to work with
-  
-  pred_fit = predict(fit, Proliferation_6genes)
-  
-  cor <- suppressWarnings(cor(pred_values, ext.Y, method = method))
-  MSE <- mean((ext.Y - pred_values)^2)
-  return(list(cor=cor, co=co, MSE=MSE))
+  cor <- suppressWarnings(cor(pred_values, df_test$Y, method = method))
+  MSE <- mean((df_test$Y - pred_values)^2)
+  return(list(cor=cor, co=co, inds=inds, MSE=MSE))
 }
 
+boost_bootstrap_sample(Proliferation_6genes, Proliferation_6genes)
+
+# 1000 bootstrap fits
+boost_boot = function(df_train, df_test, method="pearson", n_bootstraps=1000){
+  # run many bootstraps
+  # output: - vector with correlations 
+  #         - vector with selected features as integers values wrt to X
+  #           chronologically added in each bootstrap sample
+  #         - vector with SEM
+  cor_vec <- rep(NA, n_bootstraps)
+  inds_vec <- integer(length = 0)
+  MSE_vec <- rep(NA, n_bootstraps)
+  for (i in c(1:n_bootstraps)) {
+    out <- boost_bootstrap_sample(df_train, df_test, method="pearson")
+    cor_vec[i] = as.numeric(out$cor)
+    inds_vec <- c(inds_vec, as.integer(out$inds))
+    MSE_vec[i] <- as.numeric(out$MSE)
+    cat(i," ")
+  }  
+  return(list(cor_vec=cor_vec, inds_vec=inds_vec, MSE_vec=MSE_vec))
+}
+
+set.seed(123)
+bb_object_test <- boost_boot(Proliferation_6genes, Proliferation_6genes, n_bootstraps=10)
+
+histogram(bb_object$cor_vec, breaks = 99,
+          xlab = "Proliferation score", 
+          main = "Boosting (trail 1, arm Letro+Ribo)")
 
 
 
-
-# linear base learner
-fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 boost_m01 = glmboost(fm01, data = Proliferation_6genes)
 coef(boost_m01, which = "")
 par(mfrow=c(1,2))
@@ -63,11 +96,15 @@ abline(lm(Proliferation_6genes$Y ~ pred_boost01))
 # smooth - P-spline as base learner
 spline01 <- gamboost(fm01, data = Proliferation_6genes,
                      baselearner = "bbs", # dfbase=4
-                     control = boost_control(mstop = 50))
+                     control = boost_control(mstop = 40))
 
 coef(spline01, which = "")
 par(mfrow=c(2,3))
 plot(spline01, off2int=TRUE)
+
+cols_chosen = unique(spline01$xselect())
+colnames(Proliferation_6genes)[cols_chosen]
+
 
 pred_spline01 = predict(spline01, Proliferation_6genes)
 
@@ -83,7 +120,7 @@ stump01 = gamboost(fm01, data = Proliferation_6genes,
                    boost_control(mstop = 100))
 
 cols_chosen = unique(stump01$xselect())
-colnames(Proliferation_6genes$Y)[cols_chosen+2]
+colnames(Proliferation_6genes)[cols_chosen+2]
 
 par(mfrow=c(2,3))
 plot(stump01)

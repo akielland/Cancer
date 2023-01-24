@@ -55,6 +55,7 @@ df_6genes_with_output <- function(output){
   #rename(df_6genes, c("Y") = c(output))
   colnames(df_6genes)[which(names(df_6genes) == output)] <- "Y"
   print(output)
+  df_6genes <- df_6genes |> select(-c(UniqueID, timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))
   df_6genes <- na.omit(df_6genes)
   return(df_6genes)
 }
