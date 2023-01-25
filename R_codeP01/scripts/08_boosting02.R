@@ -15,8 +15,9 @@ library(mboost)
 
 # linear base learner
 fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
+fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
-boost_bootstrap_sample <- function(df_train, df_test, method="pearson"){
+boost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson"){
   # one bootstrap sample
   # output: 
   # 1. correlation between prediction and full input sample  (pearson or spearman should be set)
@@ -27,12 +28,12 @@ boost_bootstrap_sample <- function(df_train, df_test, method="pearson"){
   int <- sample.int(n, size = n, replace = TRUE)
   data_train = df_train[int,]
   
-  # fit <- glmboost(fm01, data = data_train)
-  # fit <- gamboost(fm01, data = data_train,
+  # fit <- glmboost(fm, data = data_train)
+  # fit <- gamboost(fm, data = data_train,
   #                      baselearner = "bbs", # dfbase=4
   #                      control = boost_control(mstop = 50))
   
-  fit = gamboost(fm01, data = data_train, 
+  fit = gamboost(fm, data = data_train, 
                      family=Gaussian(), 
                      baselearner='btree',
                      boost_control(mstop = 50))
@@ -49,10 +50,10 @@ boost_bootstrap_sample <- function(df_train, df_test, method="pearson"){
   return(list(cor=cor, co=co, inds=inds, MSE=MSE))
 }
 
-boost_bootstrap_sample(Proliferation_6genes, Proliferation_6genes)
+boost_bootstrap_sample(fm01, Proliferation_6genes, Proliferation_6genes)
 
 # 1000 bootstrap fits
-boost_boot = function(df_train, df_test, method="pearson", n_bootstraps=1000){
+boost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=1000){
   # run many bootstraps
   # output: - vector with correlations 
   #         - vector with selected features as integers values wrt to X
@@ -62,7 +63,7 @@ boost_boot = function(df_train, df_test, method="pearson", n_bootstraps=1000){
   inds_vec <- integer(length = 0)
   MSE_vec <- rep(NA, n_bootstraps)
   for (i in c(1:n_bootstraps)) {
-    out <- boost_bootstrap_sample(df_train, df_test, method="pearson")
+    out <- boost_bootstrap_sample(fm, df_train, df_test, method="pearson")
     cor_vec[i] = as.numeric(out$cor)
     inds_vec <- c(inds_vec, as.integer(out$inds))
     MSE_vec[i] <- as.numeric(out$MSE)
@@ -72,11 +73,32 @@ boost_boot = function(df_train, df_test, method="pearson", n_bootstraps=1000){
 }
 
 set.seed(123)
-bb_object_test <- boost_boot(Proliferation_6genes, Proliferation_6genes, n_bootstraps=10)
+bb_object_t <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=2)
+bb_object <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=1000)
+bb_object <- boost_boot(fm05, dfA03, dfA03, n_bootstraps=1000)
+
 
 histogram(bb_object$cor_vec, breaks = 99,
           xlab = "Proliferation score", 
           main = "Boosting (trail 1, arm Letro+Ribo)")
+
+# Various objects
+save(bb_object, file="bb_object_6genes.RData")
+save(bb_object, file="bb_object_nodes01.RData")
+save(bb_object, file="bb_object_AllGenes01.RData")
+save(bb_object, file="bb_object_ALLGenes_ROR.RData")
+
+# stored object can be loaded to save time
+load("bb_object_6Genes.RData")
+load("bb_object_nodes01.RData")
+load("bb_object_AllGenes01.RData")
+load("bb_object_ALLGenes_ROR.RData")
+
+
+
+
+
+
 
 
 

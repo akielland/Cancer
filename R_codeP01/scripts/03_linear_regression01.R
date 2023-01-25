@@ -11,6 +11,12 @@ fm02 <- Y ~ CCND1*RB1 + CCND1*CDKN1A + CCND1*ESR1 + CCNE1*CDKN1A + CCNE1*RB1 + M
 fm03 <- Y ~ CDKN1A + ESR1 + MYC + ESR1:MYC + CDKN1A:MYC
 # nodes:
 fm04 <- Y ~ cyclinD1 + cyclinD1Palbo + p21 + cyclinD1p21 + cMyc + cyclinEp21 + Rb1 + ppRb1
+# 771 genes:
+fm05 <- Y ~ page(genes, collapse("+"))
+fm05 <- as.formula(paste(Y, "~", genes))
+fm05 <- formula(paste(x, collapse = " ")) 
+fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
+
 
 ##############################################
 ## Linear models evaluated at training data ##
