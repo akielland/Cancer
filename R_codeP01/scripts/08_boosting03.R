@@ -11,48 +11,58 @@
 ## Test against original data sample
 ## output: proliferation.score correlation; SEM; Coefficient of genes
 
-library(mboost)
+library(xgboost)
+library(Matrix)
 
 # linear base learner
 fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
-boost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson"){
+XGboost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson") {
   # one bootstrap sample
+  # data input need to be dataframe
   # output: 
   # 1. correlation between prediction and full input sample  (pearson or spearman should be set)
   # 2. Coefficients of variables 
   # 3. MSE
+  
   n = dim(df_train)[1]
-  
   int <- sample.int(n, size = n, replace = TRUE)
-  data_train = df_train[int,]
+  df_fit = df_train[int,]
   
-  # fit <- glmboost(fm, data = data_train)
-  # fit <- gamboost(fm, data = data_train,
-  #                      baselearner = "bbs", # dfbase=4
-  #                      control = boost_control(mstop = 50))
-  
-  fit = gamboost(fm, data = data_train, 
-                     family=Gaussian(), 
-                     baselearner='btree',
-                     boost_control(mstop = 10))
+  # Convert the dataMatrix to a DMatrix object
+  train_sparse = sparse.model.matrix(object = fm01, data = df_fit)
+  dtrain = xgb.DMatrix(data = train_sparse, label = df_fit$Y)
+
+  # Validation set
+  validation_sparse = sparse.model.matrix(object = fm01, data = df_test)
+  dvalidation = xgb.DMatrix(data = validation_sparse, label = df_test$Y)
+
+  xgb_params = list(eta = 0.1, max_depth = 1)
+  N_ROUNDS = 1000
+  xgb_model = xgb.train(data = dtrain,
+                        # The following is needed if to monitor training and validation error
+                        watchlist = list(train = dtrain, 
+                                         val = dvalidation),
+                        params = xgb_params,
+                        nrounds = N_ROUNDS,
+                        verbose = FALSE)
   
   # co <- coef(fit, which = "")
-  # print(coef(fit, which = ""))
-  cols_chosen = unique(fit$xselect())
-  co <- colnames(Proliferation_6genes)[cols_chosen]
-  inds <- cols_chosen
-
-  pred_values = predict(fit, df_test)
+  # cols_chosen = unique(fit$xselect())
+  # co <- colnames(Proliferation_6genes)[cols_chosen]
+  # inds <- cols_chosen
+  co <- 1
+  inds =1
+  pred_values = predict(object = xgb_model, 
+                            newdata = dvalidation)
   
   cor <- suppressWarnings(cor(pred_values, df_test$Y, method = method))
   MSE <- mean((df_test$Y - pred_values)^2)
   return(list(cor=cor, co=co, inds=inds, MSE=MSE))
 }
 
-
-boost_bootstrap_sample(fm01, Proliferation_6genes, Proliferation_6genes)
+XGboost_bootstrap_sample(fm01, Proliferation_6genes, Proliferation_6genes)
 
 # 1000 bootstrap fits
 boost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=1000){
@@ -76,7 +86,7 @@ boost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=1000
 
 set.seed(123)
 bb_object_t <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=2)
-bb_object <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=100)
+bb_object <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=1000)
 bb_object <- boost_boot(fm05, dfA03, dfA03, n_bootstraps=1000)
 
 
@@ -99,11 +109,60 @@ load("bb_object_ALLGenes_ROR.RData")
 
 
 
+# Convert the dataframe to a DMatrix object - This dosen't seems to work
+dtrain <- xgb.DMatrix(data = as.matrix(Proliferation_6genes[, -1]), label = Proliferation_6genes$Y)
+dtrain <- xgb.DMatrix(data = data.matrix(Proliferation_6genes[,-1]), label = Proliferation_6genes$Y)
 
+model_formula = fm01
+# Train set: 
+train_sparse = sparse.model.matrix(object = model_formula, data = Proliferation_6genes)
+dtrain = xgb.DMatrix(data = train_sparse, label = Proliferation_6genes$Y)
+class(train_sparse)
+# Validation set
+validation_sparse = sparse.model.matrix(object = model_formula, data = Proliferation_6genes)
+dvalidation = xgb.DMatrix(data = validation_sparse, label = Proliferation_6genes$Y)
+# Test set
+test_sparse = sparse.model.matrix(object = model_formula, data = test_df)
+dtest = xgb.DMatrix(data = test_sparse, label = test_df$y)
 
+# Hyper parameters:
+# eta: the learning rate. Comparable to step size in gradient descent algorithms
+# max_depth: the max depth of each tree. To get stumps: set tree_depth = 1
+xgb_params = list(eta = 0.1, max_depth = 1)
+params <- list(objective = "binary:logistic",
+               eta = 0.3,
+               max_depth = 2)
+# THIS IS WHAT YOU NEED TO UNDERSTAND:
+# If we take small steps (low eta), we require many trees (nrounds) to get a good result.
+# If we make deep trees then each tree is better => probably need fewer trees to get a good result
 
-##########################################################
-## Earlier code
+# How many sequential trees should we train? Number of iterations
+N_ROUNDS = 1000
+
+start_time = Sys.time()
+xgb_model = xgb.train(data = dtrain,
+                      # The following is needed if to monitor training and validation error
+                      watchlist = list(train = dtrain, 
+                                       val = dvalidation),
+                      params = xgb_params,
+                      nrounds = N_ROUNDS,
+                      verbose = FALSE)
+end_time = Sys.time()
+cat("It took ", difftime(end_time, start_time, units = "secs"), " to train the model. \n")
+
+# Extract and plot train and validation error: 
+training_error = data.frame(iteration = xgb_model$evaluation_log$iter,
+                            rmse = xgb_model$evaluation_log$train_rmse, 
+                            type = "train_rmse")
+validation_error = data.frame(iteration = xgb_model$evaluation_log$iter,
+                              rmse = xgb_model$evaluation_log$val_rmse, 
+                              type = "val_rmse")
+
+both_errors = rbind(training_error, validation_error)
+
+ggplot(both_errors, aes(x = iteration, y = rmse, col = type)) + 
+  geom_line()
+
 
 boost_m01 = glmboost(fm01, data = Proliferation_6genes)
 coef(boost_m01, which = "")
@@ -117,15 +176,11 @@ cor(pred_boost01, Proliferation_6genes$Y)
 plot(pred_boost01, Proliferation_6genes$Y)
 abline(lm(Proliferation_6genes$Y ~ pred_boost01))
 
-cvm <- cvrisk(boost_m01)
-cvm
-mstop(cvm)
 
 # smooth - P-spline as base learner
 spline01 <- gamboost(fm01, data = Proliferation_6genes,
                      baselearner = "bbs", # dfbase=4
                      control = boost_control(mstop = 40))
-spline01$xselect()
 
 coef(spline01, which = "")
 par(mfrow=c(2,3))

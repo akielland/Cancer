@@ -32,10 +32,6 @@ ext.OS_months <- df04 |> select(OS_months)
 
 
 
-
-
-
-
 ########################################
 ## 771 GENES + ROR categorical output ##
 ########################################

@@ -52,6 +52,7 @@ df_6genes_with_output <- function(output){
     filter(TrialArmNeo=="Letro+Ribo")
   
   df_6genes <- full_join(df_genes, df_output, by = "UniqueID")
+  
   #rename(df_6genes, c("Y") = c(output))
   colnames(df_6genes)[which(names(df_6genes) == output)] <- "Y"
   print(output)
@@ -62,7 +63,7 @@ df_6genes_with_output <- function(output){
 
 Proliferation_6genes <- df_6genes_with_output("ProliferationScore")
 
-# Matrices for lasso
+# Matrices for lasso and XGboost
 X <- as.matrix(Proliferation_6genes |> 
                  select(CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1))
 Y <- as.matrix(select(Proliferation_6genes, Y))

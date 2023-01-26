@@ -1,3 +1,38 @@
+
+
+
+# Load the dataframe
+data(mtcars)
+
+# Convert the dataframe to a DMatrix object
+dtrain <- xgb.DMatrix(data = as.matrix(mtcars[, -1]), label = mtcars$mpg)
+
+dtrain <- xgb.DMatrix(data = data.matrix(mtcars[,-1]), label = mtcars$mpg)
+
+
+
+
+
+# Create the dataset
+data(agaricus.train, package='xgboost')
+dtrain <- xgb.DMatrix(agaricus.train$data, label = agaricus.train$label)
+
+# Set the xgboost parameters
+params <- list(objective = "binary:logistic",
+               eta = 0.3,
+               max_depth = 2)
+
+# Find the best iteration using the cv function
+cv <- xgb.cv(params = params, data = dtrain, nrounds = 10, nfold = 5, showsd = T, stratified = T)
+best_iteration <- which.min(cv$evaluation_log$test_error_mean)
+
+# Train the model with the best iteration
+xgb.train(params = params, data = dtrain, nrounds = best_iteration)
+
+
+
+
+
 library(glmnet)
 
 # load data
@@ -31,3 +66,16 @@ idx = which(fit$cvm == min_error)
 best_alpha = fit$alpha[idx]
 best_lambda = fit$lambda[idx]
 
+
+
+# Create a dataset for demonstration purposes
+set.seed(123)
+x <- matrix(rnorm(200*5), ncol = 5)
+y <- rnorm(200)
+
+# Fit the model using mboost
+model <- mboost(x, y, control = boost_control(mstop = 5, base_learners = "stump"))
+model <- gamboost(x, y, control = boost_control(mstop = 5, base_learners = "stump"))
+model <- gamboost(y~.,data = df,control = boost_control(mstop = 5, base_learners = "stump"))
+# Print the model
+print(model)
