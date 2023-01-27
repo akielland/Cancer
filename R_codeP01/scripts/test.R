@@ -1,3 +1,56 @@
+# Here I added the following parameters:
+#   max_depth = 1: This tells XGBoost to use a tree with a depth of 1 (i.e., a stump).
+#   min_child_weight = 1: This tells XGBoost to use a single decision tree as the base learner
+#   tree_method = "hist": This tells XGBoost to use histogram-based algorithm for decision tree learning.
+#   You can use different tree_methods like exact, approx and hist, depending on the dataset size, memory and time constraints.
+# 
+
+
+
+# Load the training and test datasets
+train <- read.csv("train.csv")
+test <- read.csv("test.csv")
+
+# Define the label and feature columns
+label_column <- "target"
+feature_columns <- setdiff(colnames(train), label_column)
+
+# Define the xgboost parameters
+param <- list(booster = "gbtree", 
+              objective = "reg:squarederror", 
+              eval_metric = "rmse", 
+              nthread = 4, 
+              max_depth = 1, 
+              min_child_weight = 1,
+              tree_method = "hist")
+
+# Define the xgboost train control with large number of rounds and early stopping
+train_control <- xgb.cv(data = as.matrix(train[, feature_columns]), 
+                        label = train[, label_column], 
+                        nrounds = 10000,
+                        nfold = 5, 
+                        early_stopping_rounds = 10, 
+                        verbose = FALSE, 
+                        print_every_n = 10, 
+                        seed = 123, 
+                        params = param)
+
+# Select the optimal nrounds
+best_nrounds <- train_control$best_ntreelimit
+
+# Train the final model using the optimal nrounds
+model <- xgboost(data = as.matrix(train[, feature_columns]), 
+                 label = train[, label_column], 
+                 nrounds = best_nrounds, 
+                 nthread = 4, 
+                 verbose = FALSE, 
+                 params = param)
+
+# Make predictions on the test dataset
+predictions <- predict(model, as.matrix(test[, feature_columns]))
+
+
+
 
 
 
@@ -29,6 +82,47 @@ best_iteration <- which.min(cv$evaluation_log$test_error_mean)
 # Train the model with the best iteration
 xgb.train(params = params, data = dtrain, nrounds = best_iteration)
 
+#######################################################################
+# Load necessary libraries
+library(xgboost)
+
+# Load the training and test datasets
+train <- read.csv("train.csv")
+test <- read.csv("test.csv")
+
+# Define the label and feature columns
+label_column <- "target"
+feature_columns <- setdiff(colnames(train), label_column)
+
+# Define the xgboost parameters
+param <- list(booster = "gbtree", eval_metric = "auc", nthread = 4)
+
+# Define the xgboost train control with large number of rounds and early stopping
+train_control <- xgb.cv(data = as.matrix(train[, feature_columns]), 
+                        label = train[, label_column], 
+                        nrounds = 10000,
+                        nfold = 5, 
+                        early_stopping_rounds = 10, 
+                        verbose = FALSE, 
+                        print_every_n = 10, 
+                        seed = 123, 
+                        params = param)
+
+# Select the optimal nrounds
+best_nrounds <- train_control$best_ntreelimit
+
+# Train the final model using the optimal nrounds
+model <- xgboost(data = as.matrix(train[, feature_columns]), 
+                 label = train[, label_column], 
+                 nrounds = best_nrounds, 
+                 nthread = 4, 
+                 verbose = FALSE, 
+                 params = param)
+
+# Make predictions on the test dataset
+predictions <- predict(model, as.matrix(test[, feature_columns]))
+
+# Perform any post-processing or evaluation on the predictions
 
 
 

@@ -8,6 +8,12 @@ editor_options:
   chunk_output_type: console
 ---
 
+```{r echo=FALSE} 
+knitr::opts_chunk$set(echo=FALSE) 
+```
+
+{r global-options, echo=FALSE}
+
 
 # Load R packages
 ```{r include=FALSE}
