@@ -1,11 +1,35 @@
+library(caret)
+
+library(mlr)
+repeats <- 100
+folds <- 5
+
+# Create a wrapper function for your function
+wrapper_function <- function(X, Y, X, Y) {
+  lasso_bootstrap_sample(X, Y, X, Y, TRUE)
+}
+
+# Define the task
+task = makeClassifTask(data = X, Y, X, Y)
+
+# Define the resampling method
+cv = makeResampleDesc("CV", iters = repeats, stratify = TRUE, 
+                      folds = folds)
+
+# Run the cross validation
+res = resample(task, wrapper_function, resampling = cv)
+
+
+
+
+
+
 # Here I added the following parameters:
 #   max_depth = 1: This tells XGBoost to use a tree with a depth of 1 (i.e., a stump).
 #   min_child_weight = 1: This tells XGBoost to use a single decision tree as the base learner
 #   tree_method = "hist": This tells XGBoost to use histogram-based algorithm for decision tree learning.
 #   You can use different tree_methods like exact, approx and hist, depending on the dataset size, memory and time constraints.
 # 
-
-
 
 # Load the training and test datasets
 train <- read.csv("train.csv")
