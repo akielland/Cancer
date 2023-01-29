@@ -51,7 +51,7 @@ df_6genes_with_output <- function(output){
     filter(timepoint=="SUR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_6genes <- full_join(df_genes, df_output, by = "UniqueID")
+  df_6genes <- full_join(df_output, df_genes, by = "UniqueID")
   
   #rename(df_6genes, c("Y") = c(output))
   colnames(df_6genes)[which(names(df_6genes) == output)] <- "Y"
@@ -82,10 +82,12 @@ df_Nodes_with_output <- function(output){
     filter(timepoint=="SUR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_Nodes_Y <- full_join(df_features, df_output, by = "UniqueID")
-  #rename(df_6genes, c("Y") = c(output))
+  df_Nodes_Y <- full_join(df_output, df_features, by = "UniqueID")
+
   colnames(df_Nodes_Y)[which(names(df_Nodes_Y) == output)] <- "Y"
   print(output)
+  
+  df_Nodes_Y <- df_Nodes_Y |> select(-c(UniqueID, timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y)) # remove unnecessary columns
   df_Nodes_Y <- na.omit(df_Nodes_Y) # remove row containing NA
   return(df_Nodes_Y)
 }
@@ -120,15 +122,16 @@ df_genes_with_output <- function(df, predictors, output){
   df_output <- df |> select(c(UniqueID, output, timepoint, TrialArmNeo)) |>
     filter(timepoint=="SUR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
-  
-  df_out <- full_join(df_genes, df_output, by = "UniqueID") |> 
-    select(-UniqueID)
+
+  df_out <- full_join(df_output, df_genes, by = "UniqueID")
   
   colnames(df_out)[which(names(df_out) == output)] <- "Y"
-  print(output)
+  
+  df_out <- df_out |> select(-c(UniqueID, timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y)) # remove unnecessary columns
   df_out <- na.omit(df_out) # remove rows with missing values
   return(df_out)
 }
+
 
 Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ProliferationScore")
 Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ROR_P_Subtype_Proliferation")
