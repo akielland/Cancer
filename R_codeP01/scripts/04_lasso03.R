@@ -49,11 +49,13 @@ repeated_kfold_cv <- function(data, func=lasso_sample, folds=5, repeats=100) {
   }
   return(list(correlations=correlations, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
+
 # Set repeats and folds of the cross-validations
 repeats = 100
 folds = 5
-
+# RUN
 lasso_k_ob  <- repeated_kfold_cv(Proliferation_ALLgenes, lasso_sample, folds, repeats)
+
 head(lasso_k_ob$coef_matrix)[,1:10]
 mean(na.omit(lasso_k_ob$correlations))
 
@@ -62,8 +64,7 @@ frequency <- data.frame(Feature = colnames(lasso_k_ob$coef_matrix), Frequency = 
 frequency <- frequency[order(frequency$Frequency, decreasing = TRUE),]
 frequency[1:3, 1:2]
 
-
-# Create a bar plot of the selection frequency of the features
+# Bar plot of the selection frequency of the features
 ggplot(frequency[1:50,], aes(x = Frequency, y = reorder(Feature, Frequency))) +
   geom_bar(stat = "identity") +
   xlab("Selection Frequency") +
@@ -71,7 +72,7 @@ ggplot(frequency[1:50,], aes(x = Frequency, y = reorder(Feature, Frequency))) +
   ggtitle("Selection Frequency of Features") +
   theme(axis.text.y = element_text(angle = 0, hjust = 0))
 
-# Create a histogram over correlations
+# Histogram over correlations
 correlations_finite <- lasso_k_ob$correlations[is.finite(lasso_k_ob$correlations)]
 MSE_df <- data.frame(correlation = correlations_finite)
 
@@ -81,7 +82,7 @@ ggplot(corr_df, aes(x=correlation)) +
   ylab("Frequency") +
   ggtitle("Histogram of Correlation Values")
 
-# Create a histogram over MSE
+# Histogram over MSE
 MSE_finite <- lasso_k_ob$MSE_vec[is.finite(lasso_k_ob$MSE_vec)]
 corr_df <- data.frame(correlation = MSE_finite)
 
@@ -91,7 +92,28 @@ ggplot(corr_df, aes(x=MSE_vec)) +
   ylab("Frequency") +
   ggtitle("Histogram of Correlation Values")
 
+## Extracting best features
+# calculate the number of features to keep
+num_features_to_keep <- round(0.1 * ncol(lasso_k_ob$coef_matrix))
 
+# count the frequency of each feature in coef_matrix
+counts <- colSums(lasso_k_ob$coef_matrix != 0)
+
+# sort the features based on their frequency
+sorted_features <- names(sort(counts, decreasing = TRUE))
+
+
+# extract the top 10% features
+top_features_with_index = which(colSums(lasso_k_ob$coef_matrix != 0) >= 0.1 * repeats)
+top_feature_names = colnames(lasso_k_ob$coef_matrix)[top_features_with_index]
+
+# use these top features for post lasso
+response <- "Y"
+formula_string <- paste(response, "~", paste(top_features, collapse = " + "))
+formula <- as.formula(formula_string)
+
+post_lasso_df <- cbind(Proliferation_ALLgenes[, 1], Proliferation_ALLgenes[, top_features_with_index + 1])
+colnames(post_lasso_df)[1] <- "Y"
 
 ##############################
 # older code
