@@ -12,15 +12,6 @@ editor_options:
 <!-- knitr::opts_chunk$set(echo=FALSE)  -->
 <!-- ``` -->
 
-```{r global-options, include=FALSE}
-knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
-                      echo=FALSE, warning=FALSE, message=FALSE)
-```
-
-```{r}
-library(ggplot2)
-```
-
 
 
 # Data
@@ -74,93 +65,31 @@ Two levels of evaluation is scheduled:
 
 
 # RESULTS
-
-# Lasso
-
-```{r}
-report02_out <- function(object){
-  cor_vec <- object$correlations
-  n_models <- length(cor_vec)
-  fr <- sum(is.na(cor_vec))/n_models
-  cat("Fraction of model fits with no selected genes:", fr, "\n")
-  print("Correlation results:")
-  cat("Mean correlation:", mean(na.omit(cor_vec)), "\n") 
-  cat("Median correlation:", median(cor_vec, na.rm=TRUE), "\n")
-  cat("Variance", var(cor_vec, na.rm=TRUE), "\n")
-  print("st.dev.:")
-  print(sd(na.omit(lasso_k_ob$correlations)))
-  
-  # Histogram correlations
-  correlations_finite <- cor_vec[is.finite(cor_vec)]
-  cor_df <- data.frame(correlation = correlations_finite)
-  
-  h <- ggplot(cor_df, aes(x=correlation)) +
-    geom_histogram(bins = 30, color = "black", fill = "white") +
-    xlab("Correlation") +
-    ylab("Frequency") +
-    ggtitle("Histogram of Correlation Values")
-  show(h)
-  
-  #hist(cor_vec, breaks = 100)
-  
-  ## MSE
-  MSE_vec <- object$MSE_vec
-  print(mean(MSE_vec))
-  print(sd(MSE_vec))
-  # Histogram MSE
-  MSE_df <- data.frame(MSE = MSE_vec)
-  
-  h <- ggplot(MSE_df, aes(x=MSE)) +
-    geom_histogram(bins = 30, color = "black", fill = "white") +
-    xlab("MSE") +
-    ylab("Frequency") +
-    ggtitle("Histogram of MSE Values")
-  show(h)
-  
-  ## Most prevalent Features
-  # Order the features based on their selection frequency
-  coef_matrix <- lasso_k_ob$coef_matrix
-  frequency <- data.frame(Feature = colnames(coef_matrix), Frequency = colSums(coef_matrix != 0) / (n_models))
-  frequency <- frequency[order(frequency$Frequency, decreasing = TRUE),]
-  
-  # Bar plot of the selection frequency of the features
-  n_best <- 50
-  h <- ggplot(frequency[1:n_best ,], aes(x = Frequency, y = reorder(Feature, Frequency))) +
-    geom_bar(stat = "identity") +
-    xlab("Selection Frequency") +
-    ylab("Features") +
-    ggtitle("Selection Frequency of Features") +
-    theme(axis.text.y = element_text(angle = 0, hjust = 0))
-  show(h)
-  
-  # extract the top features
-  perc_best <- 0.9 # how often they where selected in percentage
-  top_features_with_index = which(colSums(coef_matrix != 0) >= perc_best * n_models)
-  top_feature_names = colnames(coef_matrix)[top_features_with_index]
-  print(top_feature_names)
-  
-  num_features_to_keep <- 10 
-  # count the frequency of each feature in coef_matrix
-  counts <- colSums(coef_matrix != 0)
-  # sort the features based on their frequency
-  sorted_features <- names(sort(counts, decreasing = TRUE))
-  print(sorted_features[1:num_features_to_keep])
-}
+```{r global-options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
 ```
 
+
+```{r}
+source("/Users/anders/Documents/Master/Cancer/R_codeP01/scripts/90_output01.R")
+```
+
+# Lasso
 ```{r}
 path <- "/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData"
 load(path)
   
-report02_out(lasso_k_ob)
+results_lasso <- report02_out(lasso_k_ob)
 ```
 
 
-# Post Lasso
+
 # Ridge
 # Elastic Net
 # Boosting with stumps as base learner
 
+# Post Lasso
 
 
 

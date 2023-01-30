@@ -1,5 +1,5 @@
 #################################################################
-##  Bootstrap  Boosting - using original sample as test set ##
+##  XGBoost on Bootstrap samples - using original sample as test set ##
 #################################################################
 
 ## Boosting using bootstrap sample to train 1000 models
@@ -7,7 +7,7 @@
 ## - linear
 ## - spline
 ## - btree
-## Cross-validation (5-fold) used for training/tuning lambda and selecting features
+## 
 ## Test against original data sample
 ## output: proliferation.score correlation; SEM; Coefficient of genes
 

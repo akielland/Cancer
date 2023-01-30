@@ -1,85 +1,101 @@
+#################################
+## create outputs for report 2 ##
+#################################
 
+library(ggplot2)
 
-path <- "/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData"
-
-report02_out <- function(){
-  load(path)  
-  cat(sum(is.na(lasso_k_ob$correlations))/length(lasso_k_ob$correlations))
-}
+report02_out <- function(object){
+  cor_vec <- object$correlations
+  n_models <- length(cor_vec)
+  cat("number of models fitted:", n_models, "\n")
+  fr <- sum(is.na(cor_vec))/n_models
+  cat("Fraction of model fits with no selected genes:", fr, "\n")
+  cat("\n")
   
-report02_out()
+  ## Correlations
+  cat("CORRELATIONS RESULTS", "\n")
+  cor_mean <- mean(na.omit(cor_vec))
+  cat("Mean:", cor_mean, "\n") 
+  cor_median <- median(cor_vec, na.rm=TRUE)
+  cat("Median:", cor_median, "\n")
+  cor_var <- var(cor_vec, na.rm=TRUE)
+  cat("Variance:", cor_var, "\n")
+  cor_sd <- sd(na.omit(cor_vec)) 
+  cat("st.dev.:", cor_sd)
+  
+  # Histogram correlations
+  correlations_finite <- cor_vec[is.finite(cor_vec)]
+  cor_df <- data.frame(correlation = correlations_finite)
+  
+  h <- ggplot(cor_df, aes(x=correlation)) +
+    geom_histogram(bins = 30, color = "black", fill = "white") +
+    xlab("Correlation") +
+    ylab("Frequency") +
+    ggtitle("Histogram of Correlation Values")
+  show(h)
 
-## ANALYSIS
-sum(is.na(lasso_k_ob$correlations))/length(lasso_k_ob$correlations)    # fraction of NA
-
-## Correlations
-mean(na.omit(lasso_k_ob$correlations))
-mean(lasso_k_ob$correlations, na.rm=TRUE)
-median(lasso_k_ob$correlations, na.rm=TRUE)
-var(lasso_k_ob$correlations, na.rm=TRUE)
-sd(na.omit(lasso_k_ob$correlations))
-
-# Histogram
-correlations_finite <- lasso_k_ob$correlations[is.finite(lasso_k_ob$correlations)]
-cor_df <- data.frame(correlation = correlations_finite)
-
-ggplot(cor_df, aes(x=correlation)) +
-  geom_histogram(bins = 30, color = "black", fill = "white") +
-  xlab("Correlation") +
-  ylab("Frequency") +
-  ggtitle("Histogram of Correlation Values")
-
-## MSE
-mean(lasso_k_ob$MSE_vec)
-sd(lasso_k_ob$MSE_vec)
-# Histogram
-MSE_df <- data.frame(MSE = lasso_k_ob$MSE_vec)
-
-ggplot(MSE_df, aes(x=MSE)) +
-  geom_histogram(bins = 30, color = "black", fill = "white") +
-  xlab("MSE") +
-  ylab("Frequency") +
-  ggtitle("Histogram of MSE Values")
-
-
-## Most prevalent Features
-# Order the features based on their selection frequency
-frequency <- data.frame(Feature = colnames(lasso_k_ob$coef_matrix), Frequency = colSums(lasso_k_ob$coef_matrix != 0) / (repeats * folds))
-frequency <- frequency[order(frequency$Frequency, decreasing = TRUE),]
-frequency[1:5, 1:2]
-
-# Bar plot of the selection frequency of the features
-n_best <- 50
-ggplot(frequency[1:n_best ,], aes(x = Frequency, y = reorder(Feature, Frequency))) +
-  geom_bar(stat = "identity") +
-  xlab("Selection Frequency") +
-  ylab("Features") +
-  ggtitle("Selection Frequency of Features") +
-  theme(axis.text.y = element_text(angle = 0, hjust = 0))
-
-
-## Extracting best features
-# calculate the number of features to keep
-perc_best <- 0.1
-num_features_to_keep <- round(perc_best * ncol(lasso_k_ob$coef_matrix))
-# count the frequency of each feature in coef_matrix
-counts <- colSums(lasso_k_ob$coef_matrix != 0)
-# sort the features based on their frequency
-sorted_features <- names(sort(counts, decreasing = TRUE))
-sorted_features[1:num_features_to_keep]
-
-## Extracting best features for POST lasso
-# extract the top features
-perc_best <- 0.1 # the %/100 best fraction 
-top_features_with_index = which(colSums(lasso_k_ob$coef_matrix != 0) >= perc_best * repeats)
-top_feature_names = colnames(lasso_k_ob$coef_matrix)[top_features_with_index]
-# make linear formula of top features
-response <- "Y"
-formula_string <- paste(response, "~", paste(top_features, collapse = " + "))
-formula <- as.formula(formula_string)
-# Make data.frame containing only top features
-post_lasso_df <- cbind(Proliferation_ALLgenes[, 1], Proliferation_ALLgenes[, top_features_with_index + 1])
-colnames(post_lasso_df)[1] <- "Y"
-
-```
-
+  
+  ## MSE
+  MSE_vec <- object$MSE_vec
+  cat("MSE RESULTS", "\n")
+  MSE_mean <- mean(na.omit(MSE_vec))
+  cat("Mean:", MSE_mean, "\n") 
+  MSE_median <- median(MSE_vec, na.rm=TRUE)
+  cat("Median:", MSE_median, "\n")
+  MSE_var <- var(MSE_vec, na.rm=TRUE)
+  cat("Variance:", MSE_var, "\n")
+  MSE_sd <- sd(na.omit(MSE_vec)) 
+  cat("st.dev.:", MSE_sd)
+  
+  
+  # Histogram MSE
+  MSE_df <- data.frame(MSE = MSE_vec)
+  
+  h <- ggplot(MSE_df, aes(x=MSE)) +
+    geom_histogram(bins = 30, color = "black", fill = "white") +
+    xlab("MSE") +
+    ylab("Frequency") +
+    ggtitle("Histogram of MSE Values")
+  show(h)
+  
+  ## Most prevalent Features
+  # Order the features based on their selection frequency
+  coef_matrix <- object$coef_matrix
+  frequency <- data.frame(Feature = colnames(coef_matrix), Frequency = colSums(coef_matrix != 0) / (n_models))
+  frequency <- frequency[order(frequency$Frequency, decreasing = TRUE),]
+  
+  # Bar plot of the selection frequency of the features
+  n_best <- 50
+  h <- ggplot(frequency[1:n_best ,], aes(x = Frequency, y = reorder(Feature, Frequency))) +
+    geom_bar(stat = "identity") +
+    xlab("Selection Frequency") +
+    ylab("Features") +
+    ggtitle("Selection Frequency of Features") +
+    theme(axis.text.y = element_text(angle = 0, hjust = 0))
+  show(h)
+  
+  # extract the top features
+  perc_best <- 0.5 # how often they where selected in percentage
+  top_features_with_index = which(colSums(coef_matrix != 0) >= perc_best * n_models)
+  top_feature_names = colnames(coef_matrix)[top_features_with_index]
+  cat("\n")
+  cat("Genes selected 50% or more times:", "\n")
+  cat(top_feature_names, "\n")
+  
+  num_features_to_keep <- 20 
+  # count the frequency of each feature in coef_matrix
+  counts <- colSums(coef_matrix != 0)
+  # sort the features based on their frequency
+  sorted_features <- names(sort(counts, decreasing = TRUE))
+  cat("Top 20 featrues:", "\n")
+  cat(sorted_features[1:num_features_to_keep])
+  out <- list(cor_mean=cor_mean,
+              cor_median=cor_median,
+              cor_var=cor_var,
+              cor_sd=cor_sd,
+              MSE_mean=MSE_mean,
+              MSE_median=MSE_median,
+              MSE_var=MSE_var,
+              MSE_sd=MSE_sd)
+  return(out)
+}
