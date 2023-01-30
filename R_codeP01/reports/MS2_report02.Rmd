@@ -17,15 +17,18 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
                       echo=FALSE, warning=FALSE, message=FALSE)
 ```
 # Data
-Two clinical trails on breast cancer (advanced HR+/HER2- and HER2-E breast cancer) using two different drug combination
-## Trail 1
+One clinical trails on breast cancer (advanced HR+/HER2- and HER2-E breast cancer) using two different drug combination; and a cohorts study (here used as test data set). /
+Both data set have 771 genes. This genes are specifically selected based likely potential role in breast cancer. /
+The gene set is dived into X numbers of "signature genes"; which are thought to represent unities with respect to cancer biology...
+
+## Trail
 Two treatments which differ with respect to drug combination 
 - Target: ribociclib and endocrine therapy (letrozole)
 - Chemotherapy: doxorubicin, cyclophosphamide and paclitaxel. 
 approx. 50 patients in each group.
 Endpoints: proliferation score, ROR score
 
-## Trail 2
+## Cohort
 The primary objective of this study is to compare two cdk4/6 targeted drugs (Palbociclib, n=36; Abemaciclib, n=3 in combination with endocrine therapy (tamoxifen, fulvestrant or aromatase inhibitors,  I think?) 
 
 Endpoints: progression free survival (months), OS?, and status of the two former (dont know what that means)
@@ -35,7 +38,7 @@ Endpoints: progression free survival (months), OS?, and status of the two former
 2. Features selection in order to understand cancer biology
 
 # Major challanges
-Preliminary experiments (on trail 1) showed instability in prediction and feature selection between bootstrap samples og Lasso. I believe this is a classical problem of high-dim data?
+Preliminary experiments (on trail 1) showed instability in prediction and feature selection between bootstrap samples of Lasso. I believe this is a classical problem of high-dim data?
 
 # Approch
 Test all thinkable models to see if some is surperior
@@ -43,7 +46,7 @@ Test all thinkable models to see if some is surperior
 # Evaluation of models
 Two levels of evaluation is scheduled:
 
-## 1. Comparison of models
+## 1. Relative comparison of models
 1000 bootstrap models are fitted and then evaluated on the original sample. This gives a relative comparison of the various models with respect to data similar to the given data set. In addition to Correlation and MSE, frequency of selected features is compared.
 
 ## 2. Expected outcome of future patients
@@ -66,20 +69,98 @@ Two levels of evaluation is scheduled:
 # RESULTS
 
 # Lasso
-```{r include=TRUE}
+```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/lb_object_AllGenes01.RData")
+
 
 # Correlation
 cor_vec <- as.numeric(lb_object[[1]])
-sum(is.na(cor_vec))/length(cor_vec)    # fraction of NA
-mean(cor_vec, na.rm=TRUE)
-median(cor_vec, na.rm=TRUE)
-var(cor_vec, na.rm=TRUE)
+cat("Fraction no selected features:", sum(is.na(cor_vec))/length(cor_vec) )   # fraction of NA
+cat("Mean correlation:", mean(cor_vec, na.rm=TRUE))
+cat("Median correlation:", median(cor_vec, na.rm=TRUE))
+cat("Variance", var(cor_vec, na.rm=TRUE))
 # par(mfrow=c(1,1))
 hist(cor_vec, breaks = 100)
 
 ```
 
+
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData")
+
+## ANALYSIS
+sum(is.na(lasso_k_ob$correlations))/length(lasso_k_ob$correlations)    # fraction of NA
+
+## Correlations
+mean(na.omit(lasso_k_ob$correlations))
+mean(lasso_k_ob$correlations, na.rm=TRUE)
+median(lasso_k_ob$correlations, na.rm=TRUE)
+var(lasso_k_ob$correlations, na.rm=TRUE)
+sd(na.omit(lasso_k_ob$correlations))
+
+# Histogram
+correlations_finite <- lasso_k_ob$correlations[is.finite(lasso_k_ob$correlations)]
+cor_df <- data.frame(correlation = correlations_finite)
+
+ggplot(cor_df, aes(x=correlation)) +
+  geom_histogram(bins = 30, color = "black", fill = "white") +
+  xlab("Correlation") +
+  ylab("Frequency") +
+  ggtitle("Histogram of Correlation Values")
+
+## MSE
+mean(lasso_k_ob$MSE_vec)
+sd(lasso_k_ob$MSE_vec)
+# Histogram
+MSE_df <- data.frame(MSE = lasso_k_ob$MSE_vec)
+
+ggplot(MSE_df, aes(x=MSE)) +
+  geom_histogram(bins = 30, color = "black", fill = "white") +
+  xlab("MSE") +
+  ylab("Frequency") +
+  ggtitle("Histogram of MSE Values")
+
+
+## Most prevalent Features
+# Order the features based on their selection frequency
+frequency <- data.frame(Feature = colnames(lasso_k_ob$coef_matrix), Frequency = colSums(lasso_k_ob$coef_matrix != 0) / (repeats * folds))
+frequency <- frequency[order(frequency$Frequency, decreasing = TRUE),]
+frequency[1:5, 1:2]
+
+# Bar plot of the selection frequency of the features
+n_best <- 50
+ggplot(frequency[1:n_best ,], aes(x = Frequency, y = reorder(Feature, Frequency))) +
+  geom_bar(stat = "identity") +
+  xlab("Selection Frequency") +
+  ylab("Features") +
+  ggtitle("Selection Frequency of Features") +
+  theme(axis.text.y = element_text(angle = 0, hjust = 0))
+
+
+## Extracting best features
+# calculate the number of features to keep
+perc_best <- 0.1
+num_features_to_keep <- round(perc_best * ncol(lasso_k_ob$coef_matrix))
+# count the frequency of each feature in coef_matrix
+counts <- colSums(lasso_k_ob$coef_matrix != 0)
+# sort the features based on their frequency
+sorted_features <- names(sort(counts, decreasing = TRUE))
+sorted_features[1:num_features_to_keep]
+
+## Extracting best features for POST lasso
+# extract the top features
+perc_best <- 0.1 # the %/100 best fraction 
+top_features_with_index = which(colSums(lasso_k_ob$coef_matrix != 0) >= perc_best * repeats)
+top_feature_names = colnames(lasso_k_ob$coef_matrix)[top_features_with_index]
+# make linear formula of top features
+response <- "Y"
+formula_string <- paste(response, "~", paste(top_features, collapse = " + "))
+formula <- as.formula(formula_string)
+# Make data.frame containing only top features
+post_lasso_df <- cbind(Proliferation_ALLgenes[, 1], Proliferation_ALLgenes[, top_features_with_index + 1])
+colnames(post_lasso_df)[1] <- "Y"
+
+```
 
 
 

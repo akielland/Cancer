@@ -15,7 +15,7 @@ library(ggplot2)
 ###########################################################
 
 # Custom function for repeated k-fold cross validation
-repeated_kfold_cv <- function(data, func=lasso_sample, folds=5, repeats=100) {
+repeated_kfold_cv <- function(data, func=lasso_sample, folds=5, repeats=200) {
   
   correlations <- numeric(repeats * folds)
   print(length(correlations))
@@ -50,91 +50,102 @@ repeated_kfold_cv <- function(data, func=lasso_sample, folds=5, repeats=100) {
   return(list(correlations=correlations, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
+# Lasso base function returning a trained object
+lasso_sample <- function(train_data){
+  X_ <- as.matrix(train_data |> select(-1))
+  Y_ <- as.matrix(train_data |>  select(1))
+  fit.cv <- cv.glmnet(X_, Y_, family = "gaussian", alpha = 1, standardize = TRUE, nlambda = 100)
+  return(fit.cv)
+}
+
 # Set repeats and folds of the cross-validations
-repeats = 100
+repeats = 200
 folds = 5
 # RUN
+set.seed(123)
 lasso_k_ob  <- repeated_kfold_cv(Proliferation_ALLgenes, lasso_sample, folds, repeats)
-
 head(lasso_k_ob$coef_matrix)[,1:10]
-mean(na.omit(lasso_k_ob$correlations))
+save(lasso_k_ob, file="/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData")
 
+## ANALYSIS
+sum(is.na(lasso_k_ob$correlations))/length(lasso_k_ob$correlations)    # fraction of NA
+
+## Correlations
+mean(na.omit(lasso_k_ob$correlations))
+mean(lasso_k_ob$correlations, na.rm=TRUE)
+median(lasso_k_ob$correlations, na.rm=TRUE)
+var(lasso_k_ob$correlations, na.rm=TRUE)
+sd(na.omit(lasso_k_ob$correlations))
+
+# Histogram
+correlations_finite <- lasso_k_ob$correlations[is.finite(lasso_k_ob$correlations)]
+cor_df <- data.frame(correlation = correlations_finite)
+
+ggplot(cor_df, aes(x=correlation)) +
+  geom_histogram(bins = 30, color = "black", fill = "white") +
+  xlab("Correlation") +
+  ylab("Frequency") +
+  ggtitle("Histogram of Correlation Values")
+
+## MSE
+mean(lasso_k_ob$MSE_vec)
+sd(lasso_k_ob$MSE_vec)
+# Histogram
+MSE_df <- data.frame(MSE = lasso_k_ob$MSE_vec)
+
+ggplot(MSE_df, aes(x=MSE)) +
+  geom_histogram(bins = 30, color = "black", fill = "white") +
+  xlab("MSE") +
+  ylab("Frequency") +
+  ggtitle("Histogram of MSE Values")
+
+
+## Most prevalent Features
 # Order the features based on their selection frequency
 frequency <- data.frame(Feature = colnames(lasso_k_ob$coef_matrix), Frequency = colSums(lasso_k_ob$coef_matrix != 0) / (repeats * folds))
 frequency <- frequency[order(frequency$Frequency, decreasing = TRUE),]
-frequency[1:3, 1:2]
+frequency[1:5, 1:2]
 
 # Bar plot of the selection frequency of the features
-ggplot(frequency[1:50,], aes(x = Frequency, y = reorder(Feature, Frequency))) +
+n_best <- 50
+ggplot(frequency[1:n_best ,], aes(x = Frequency, y = reorder(Feature, Frequency))) +
   geom_bar(stat = "identity") +
   xlab("Selection Frequency") +
   ylab("Features") +
   ggtitle("Selection Frequency of Features") +
   theme(axis.text.y = element_text(angle = 0, hjust = 0))
 
-# Histogram over correlations
-correlations_finite <- lasso_k_ob$correlations[is.finite(lasso_k_ob$correlations)]
-MSE_df <- data.frame(correlation = correlations_finite)
-
-ggplot(corr_df, aes(x=correlation)) +
-  geom_histogram(bins = 30, color = "black", fill = "white") +
-  xlab("Correlation") +
-  ylab("Frequency") +
-  ggtitle("Histogram of Correlation Values")
-
-# Histogram over MSE
-MSE_finite <- lasso_k_ob$MSE_vec[is.finite(lasso_k_ob$MSE_vec)]
-corr_df <- data.frame(correlation = MSE_finite)
-
-ggplot(corr_df, aes(x=MSE_vec)) +
-  geom_histogram(bins = 30, color = "black", fill = "white") +
-  xlab("Correlation") +
-  ylab("Frequency") +
-  ggtitle("Histogram of Correlation Values")
 
 ## Extracting best features
 # calculate the number of features to keep
-num_features_to_keep <- round(0.1 * ncol(lasso_k_ob$coef_matrix))
-
+perc_best <- 0.1
+num_features_to_keep <- round(perc_best * ncol(lasso_k_ob$coef_matrix))
 # count the frequency of each feature in coef_matrix
 counts <- colSums(lasso_k_ob$coef_matrix != 0)
-
 # sort the features based on their frequency
 sorted_features <- names(sort(counts, decreasing = TRUE))
+sorted_features[1:num_features_to_keep]
 
-
-# extract the top 10% features
-top_features_with_index = which(colSums(lasso_k_ob$coef_matrix != 0) >= 0.1 * repeats)
+## Extracting best features for POST lasso
+# extract the top features
+perc_best <- 0.1 # the %/100 best fraction 
+top_features_with_index = which(colSums(lasso_k_ob$coef_matrix != 0) >= perc_best * repeats)
 top_feature_names = colnames(lasso_k_ob$coef_matrix)[top_features_with_index]
-
-# use these top features for post lasso
+# make linear formula of top features
 response <- "Y"
 formula_string <- paste(response, "~", paste(top_features, collapse = " + "))
 formula <- as.formula(formula_string)
-
+# Make data.frame containing only top features
 post_lasso_df <- cbind(Proliferation_ALLgenes[, 1], Proliferation_ALLgenes[, top_features_with_index + 1])
 colnames(post_lasso_df)[1] <- "Y"
+
+
+
 
 ##############################
 # older code
 
-
-histogram(lb_object$cor_vec, breaks = 99,
-          xlab = "Proliferation score", 
-          main = "Lasso, (trail 1, arm Letro+Ribo)")
-
-
-# Various objects
-save(lb_object, file="lb_object_6genes.RData")
-save(lb_object, file="lb_object_nodes01.RData")
-save(lb_object, file="lb_object_AllGenes01.RData")
-save(lb_object, file="lb_object_ALLGenes_ROR.RData")
-
-# stored object can be loaded to save time
-load("lb_object_6Genes.RData")
-load("lb_object_nodes01.RData")
-load("lb_object_AllGenes01.RData")
-load("lb_object_ALLGenes_ROR.RData")
 
 ## Summery result of lasso bootstrap object
 # Correlation

@@ -108,9 +108,7 @@ Y <- as.matrix(select(Nodes_Proliferation, Y))
 # select all gene names from original data table structure
 genes <- colnames(df01 |> select(41:811))
 genes <- colnames(df01 |> select(41:46)) # just for testing with fewer features
-
 length(genes)
-
 
 df_genes_with_output <- function(df, predictors, output){
   features <- c("UniqueID", "timepoint", "TrialArmNeo", predictors)
