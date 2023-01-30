@@ -1,0 +1,48 @@
+---
+title: "Milestone 2: Core results 01"
+author: "Anders"
+date: "25/1/2023"
+output: pdf_document
+#output: html_notebook
+editor_options: 
+  chunk_output_type: console
+---
+
+
+```{r global-options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
+
+
+
+```{r}
+report02_out <- function(object){
+  
+  fr <- sum(is.na(object$correlations))/length(object$correlations)
+  cat("Fraction of model fits with no selected genes:", fr, "\n")
+  cat("Correlations mean: ", mean(na.omit(lasso_k_ob$correlations))) 
+  
+  # Histogram correlations
+  correlations_finite <- lasso_k_ob$correlations[is.finite(lasso_k_ob$correlations)]
+  cor_df <- data.frame(correlation = correlations_finite)
+  
+  ggplot(cor_df, aes(x=correlation)) +
+    geom_histogram(bins = 30, color = "black", fill = "white") +
+    xlab("Correlation") +
+    ylab("Frequency") +
+    ggtitle("Histogram of Correlation Values")
+}
+```
+
+
+
+```{r}
+path <- "/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData"
+load(path)
+  
+report02_out(lasso_k_ob)
+```
+
+
+
