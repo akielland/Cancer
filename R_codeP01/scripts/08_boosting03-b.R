@@ -19,7 +19,6 @@ fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
 XGBoost_sample <- function(fm, df_train) {
-  
   # Convert the dataMatrix to a DMatrix object
   train_sparse = sparse.model.matrix(object = fm01, data = df_train)
   dtrain = xgb.DMatrix(data = train_sparse, label = df_train$Y)
@@ -85,10 +84,12 @@ XGboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=10
     
     xgb_model <- XGBoost_sample(fm, train_data)
     
-    importance <- xgb.importance(model = xgb_model)
-    features_names <- importance$Feature
-    print(class(importance))
-    
+    # Extract feature importance
+    feature_importance <- data.table(xgb.importance(colnames(df_train), model = xgb_model))
+    print(feature_importance[,1:2])
+    # Sum up the feature importance
+    coef_matrix[i, feature_importance$Feature] <- 1
+    print(coef_matrix)
 
     #coef_matrix[i, ] <- coef(fit, s = "lambda.min")[-1]
 
@@ -101,12 +102,13 @@ XGboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=10
 
   }  
   #return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec))
-  return(list(features_names))
+  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec, 
+              coef_matrix=coef_matrix))
 }
 
 set.seed(123)
-bb_object_t <- 
-  XGboost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=3)
+bb_object_t <- XGboost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=10)
+bb_object_t
 bb_object <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=1000)
 bb_object <- boost_boot(fm05, dfA03, dfA03, n_bootstraps=1000)
 

@@ -44,7 +44,7 @@ train <- as.matrix(train)
 labels <- iris[,5]
 
 # Initialize matrix to store the feature importance
-num_iterations <- 3
+num_iterations <- 5
 num_features <- ncol(train)
 importance_matrix <- matrix(0, nrow=num_iterations, ncol=num_features)
 colnames(importance_matrix) <- colnames(train)
@@ -52,11 +52,13 @@ colnames(importance_matrix) <- colnames(train)
 # Loop through each iteration
 for (i in 1:num_iterations) {
   # Fit XGBoost model
-  model <- xgboost(data = train, label = labels, nrounds = 10, max_depth = 1, objective = "reg:squarederror")
-  
+  model <- xgboost(data = train, label = labels, nrounds = 50, max_depth = 1, objective = "reg:squarederror",
+                   verbose = FALSE, eta=0.05)
+  print(importance_matrix)
   # Extract feature importance
   feature_importance <- data.table(xgb.importance(colnames(train), model = model))
-  feature_importance <- feature_importance[,1:2]
+  print(class(feature_importance))
+  #feature_importance <- feature_importance[,1:2]
   
   # Sum up the feature importance
   importance_matrix[i, feature_importance$Feature] <- 1
