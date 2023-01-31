@@ -14,7 +14,7 @@
 library(xgboost)
 library(Matrix)
 
-# linear base learner
+# structure of base learners
 fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
