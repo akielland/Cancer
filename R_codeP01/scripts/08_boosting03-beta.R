@@ -18,20 +18,15 @@ library(Matrix)
 fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
-XGboost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson") {
-  n = dim(df_train)[1]
-  int <- sample.int(n, size = n, replace = TRUE)
-  df_fit = df_train[int,]
+XGBoost_sample <- function(fm, df_train) {
   
   # Convert the dataMatrix to a DMatrix object
-  train_sparse = sparse.model.matrix(object = fm01, data = df_fit)
-  dtrain = xgb.DMatrix(data = train_sparse, label = df_fit$Y)
+  train_sparse = sparse.model.matrix(object = fm01, data = df_train)
+  dtrain = xgb.DMatrix(data = train_sparse, label = df_train$Y)
 
-  # Validation set
-  validation_sparse = sparse.model.matrix(object = fm01, data = df_test)
-  dvalidation = xgb.DMatrix(data = validation_sparse, label = df_test$Y)
-
-  param <- list(booster = "gbtree", 
+  # param <- list(eta = 0.1, max_depth = 5)
+ 
+   param <- list(booster = "gbtree", 
                 objective = "reg:squarederror", 
                 eval_metric = "rmse", 
                 # nthread = 4, 
@@ -40,8 +35,7 @@ XGboost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson") {
                 tree_method = "hist",   # tree_methods=  exact, approx and hist, depending on the dataset size, memory and time constraints
                 #eta_decay=0.1,
                 eta=0.3)
- # param <- list(eta = 0.1, max_depth = 5)
-
+ 
   cv <- xgb.cv(data = dtrain, 
                params = param, 
                nrounds = 100, 
@@ -61,43 +55,58 @@ XGboost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson") {
                         nrounds = n_rounds,
                         verbose = FALSE)
   
-  importance <- xgb.importance(model = xgb_model)
-  features_names <- importance$Feature
-  
-  pred_values = predict(object = xgb_model, 
-                            newdata = dvalidation)
-  
-  cor <- suppressWarnings(cor(pred_values, df_test$Y, method = method))
-  MSE <- mean((df_test$Y - pred_values)^2)
-  return(list(cor=cor, features_names=features_names, n_rounds=n_rounds, importance=importance, MSE=MSE))
+  return(xgb_model)
+  #return(list(cor=cor, features_names=features_names, n_rounds=n_rounds, importance=importance, MSE=MSE))
 }
 
-t_ <- XGboost_bootstrap_sample(fm01, Proliferation_6genes, Proliferation_6genes)
+t_ <- XGBoost_sample(fm01, Proliferation_6genes)
 
 # 1000 bootstrap fits
-XGboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=1000){
+XGboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=10){
   # run many bootstraps
   # output: - vector with correlations 
   #         - matrix with features
   #         - vector with SEM
+  n <- nrow(df_train)
   cor_vec <- rep(NA, n_bootstraps)
-  #inds_vec <- integer(length = 0)
   MSE_vec <- rep(NA, n_bootstraps)
   n_rounds_vec <- integer(length = n_bootstraps)
   
+  coef_matrix <- matrix(NA, nrow = n_bootstraps, ncol = ncol(df_train)-1)
+  colnames(coef_matrix) <- colnames(df_train[, -1])
+  
+  # Test set Converted DMatrix object
+  validation_sparse = sparse.model.matrix(object = fm01, data = df_test)
+  d_validation = xgb.DMatrix(data = validation_sparse, label = df_test$Y)
+  
   for (i in c(1:n_bootstraps)) {
-    out <- XGboost_bootstrap_sample(fm, df_train, df_test, method="pearson")
-    cor_vec[i] = as.numeric(out$cor)
-    #inds_vec <- c(inds_vec, as.integer(out$i))
-    MSE_vec[i] <- as.numeric(out$MSE)
-    n_rounds_vec[i] <- out$n_rounds
-    cat(i," ")
+    int <- sample.int(n, size = n, replace = TRUE)
+    train_data = df_train[int,]
+    
+    xgb_model <- XGBoost_sample(fm, train_data)
+    
+    importance <- xgb.importance(model = xgb_model)
+    features_names <- importance$Feature
+    print(class(importance))
+    
+
+    #coef_matrix[i, ] <- coef(fit, s = "lambda.min")[-1]
+
+    pred = predict(object = xgb_model, newdata = d_validation)
+    cor_vec[i] <- suppressWarnings(cor(pred, df_test$Y, method = method))
+    MSE_vec[i] <- mean((df_test$Y - pred)^2)
+    # cor_vec[i]  <- suppressWarnings(cor(pred, df_test[,1], method = method))
+    # MSE_vec[i] <- mean((pred - df_test[,1])^2)        
+    cat(i, "")
+
   }  
-  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec))
+  #return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec))
+  return(list(features_names))
 }
 
 set.seed(123)
-bb_object_t <- XGboost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=30)
+bb_object_t <- 
+  XGboost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=3)
 bb_object <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=1000)
 bb_object <- boost_boot(fm05, dfA03, dfA03, n_bootstraps=1000)
 
