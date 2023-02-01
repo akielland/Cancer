@@ -66,10 +66,7 @@ lasso_cor_boot = function(X, Y, ext.X, ext.Y, n_bootstraps=100){
   #return(list(cor_vec, inds_vec))
 }
 
-# making list object with 
-# 1. correlation  
-# 2. integer values of features selected in each bootstrap model
-# 3. SEM
+
 set.seed(123)
 lb_object <- lasso_cor_boot(X_Z, Y, ext.X_Z, ext.Y = ext.PFS_months, 100)
 

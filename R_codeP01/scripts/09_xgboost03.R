@@ -1,30 +1,35 @@
 #################################################################
-##  XGBoost on Bootstrap samples - using original sample as test set ##
+##  XGBoost on Repeated cross-validation ##
 #################################################################
 
-## Boosting using bootstrap sample to train 1000 models
-## Baselearner:
-## - linear
-## - spline
+## Boosting using 5-fold cross validation to evaluate model
+## Base learners:
 ## - btree
+## - (linear)
+## - (spline)
 ## 
-## Test against original data sample
-## output: proliferation.score correlation; SEM; Coefficient of genes
+## Test against folds
+## output: - vector with correlations 
+##         - matrix with features
+##         - vector with SEM
+##         - (vector with number of rounds used in each model)
 
 library(xgboost)
 library(Matrix)
+library(data.table)
+library(caret)
+library(ggplot2)
 
 # structure of base learners
 fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
 XGBoost_sample <- function(fm, df_train) {
-  # Convert the dataMatrix to a DMatrix object
-  train_sparse = sparse.model.matrix(object = fm01, data = df_train)
+  # Convert dataframe to dataMatrix to DMatrix object
+  train_sparse = sparse.model.matrix(object = fm, data = df_train)
   dtrain = xgb.DMatrix(data = train_sparse, label = df_train$Y)
 
   # param <- list(eta = 0.1, max_depth = 5)
- 
    param <- list(booster = "gbtree", 
                 objective = "reg:squarederror", 
                 eval_metric = "rmse", 
@@ -48,71 +53,136 @@ XGBoost_sample <- function(fm, df_train) {
   
   xgb_model = xgb.train(data = dtrain,
                         # The following is needed if to monitor training and validation error
-                        # watchlist = list(train = dtrain, 
-                        #                  val = dvalidation),
+                        # watchlist = list(train = dtrain, val = dvalidation),
                         params = param,
                         nrounds = n_rounds,
                         verbose = FALSE)
   
   return(xgb_model)
-  #return(list(cor=cor, features_names=features_names, n_rounds=n_rounds, importance=importance, MSE=MSE))
 }
 
-t_ <- XGBoost_sample(fm01, Proliferation_6genes)
+XGBoost_sample(fm01, prolif_6genes)
 
-# 1000 bootstrap fits
-XGboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=10){
-  # run many bootstraps
-  # output: - vector with correlations 
-  #         - matrix with features
-  #         - vector with SEM
-  n <- nrow(df_train)
-  cor_vec <- rep(NA, n_bootstraps)
-  MSE_vec <- rep(NA, n_bootstraps)
-  n_rounds_vec <- integer(length = n_bootstraps)
+# Function: repeated k-fold cross validation
+XGboost_rep_cv = function(fm, df_data, folds=5, repeats=200, method="pearson"){
+  n_models <- repeats * folds
+  print(n_models)
   
-  coef_matrix <- matrix(NA, nrow = n_bootstraps, ncol = ncol(df_train)-1)
-  colnames(coef_matrix) <- colnames(df_train[, -1])
+  cor_vec <- rep(NA, n_models)
+  MSE_vec <- rep(NA, n_models)
+  n_rounds_vec <- integer(length = n_models)
   
-  # Test set Converted DMatrix object
-  validation_sparse = sparse.model.matrix(object = fm01, data = df_test)
-  d_validation = xgb.DMatrix(data = validation_sparse, label = df_test$Y)
+  coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data)-1)
+  colnames(coef_matrix) <- colnames(df_data[, -1])
   
-  for (i in c(1:n_bootstraps)) {
-    int <- sample.int(n, size = n, replace = TRUE)
-    train_data = df_train[int,]
+  coef_matrix_row_index <- 1
+  
+  # Repeat the cross-validation process
+  for (i in 1:repeats) {
+    # Create the folds for evaluating the performance
+    kf <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
+    # Loop through the folds
+    for (j in 1:folds) {
+      # Get the training and testing data
+      train_data <- df_data[kf[[j]],]
+      test_data <- df_data[-kf[[j]],]
+      
+      # Fit the function on the training data and get results
+      xgb_model <- XGBoost_sample(fm, train_data)
     
-    xgb_model <- XGBoost_sample(fm, train_data)
-    
-    # Extract feature importance
-    feature_importance <- data.table(xgb.importance(colnames(df_train), model = xgb_model))
-    print(feature_importance[,1:2])
-    # Sum up the feature importance
-    coef_matrix[i, feature_importance$Feature] <- 1
-    print(coef_matrix)
+      # Extract feature importance
+      feature_importance <- data.table(xgb.importance(colnames(df_data), model = xgb_model))
+      # print(feature_importance[,1:2])
+      # Sum up the feature importance
+      coef_matrix[coef_matrix_row_index, feature_importance$Feature] <- 1
+      # print(coef_matrix)
 
-    #coef_matrix[i, ] <- coef(fit, s = "lambda.min")[-1]
-
-    pred = predict(object = xgb_model, newdata = d_validation)
-    cor_vec[i] <- suppressWarnings(cor(pred, df_test$Y, method = method))
-    MSE_vec[i] <- mean((df_test$Y - pred)^2)
-    # cor_vec[i]  <- suppressWarnings(cor(pred, df_test[,1], method = method))
-    # MSE_vec[i] <- mean((pred - df_test[,1])^2)        
-    cat(i, "")
-
+      # Test set converted to DMatrix object
+      test_sparse = sparse.model.matrix(object = fm, data = test_data)
+      d_test = xgb.DMatrix(data = test_sparse, label = test_data$Y)
+      
+      pred = predict(object = xgb_model, newdata = d_test)
+      
+      cor_vec[coef_matrix_row_index] <- suppressWarnings(cor(pred, test_data$Y, method = method))
+      MSE_vec[coef_matrix_row_index] <- mean((test_data$Y - pred)^2)
+      # cor_vec[i]  <- suppressWarnings(cor(pred, test_data[,1], method = method))
+      # MSE_vec[i] <- mean((pred - test_data[,1])^2)     
+      
+      cat(coef_matrix_row_index, "")
+      coef_matrix_row_index <- coef_matrix_row_index + 1
+    }
   }  
-  #return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec))
-  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec, 
-              coef_matrix=coef_matrix))
+  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, coef_matrix=coef_matrix, n_rounds_vec=n_rounds_vec))
 }
 
-set.seed(123)
-bb_object_t <- XGboost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=10)
+bb_object_t <- XGboost_rep_cv(fm01, prolif_6genes, folds=5, repeats=2)
 bb_object_t
-bb_object <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=1000)
-bb_object <- boost_boot(fm05, dfA03, dfA03, n_bootstraps=1000)
 
-bb_object_t
+
+# Set repeats and folds of the cross-validations
+repeats = 200
+folds = 5
+
+# RUN: xc_obj_6_prolif
+set.seed(123)
+xc_obj_6_prolif <- lasso_rep_cv(prolif_6genes, func=lasso_sample, folds, repeats, method="pearson")
+head(xc_obj_6_prolif$coef_matrix)[,1:6]
+save(xc_obj_6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_prolif.RData")
+mean(xc_obj_6_prolif$cor_vec)
+sd(xc_obj_6_prolif$cor_vec)
+
+# RUN: xc_obj_6_RORprolif
+set.seed(123)
+xc_obj_6_RORprolif <- lasso_rep_cv(RORprolif_6genes, func=lasso_sample, folds, repeats, method="pearson")
+head(xc_obj_6_RORprolif$coef_matrix)[,1:6]
+save(xc_obj_6_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_RORprolif.RData")
+mean(xc_obj_6_RORprolif$cor_vec)
+sd(xc_obj_6_RORprolif$cor_vec)
+
+
+# RUN: xc_obj_771_prolif
+set.seed(123)
+xc_obj_771_prolif <- lasso_rep_cv(prolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
+head(xc_obj_771_prolif$coef_matrix)[,1:8]
+save(xc_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_prolif.RData")
+mean(xc_obj_771_prolif$cor_vec)
+sd(xc_obj_771_prolif$cor_vec)
+
+# RUN: xc_obj_771_RORprolif
+set.seed(123)
+xc_obj_771_RORprolif <- lasso_rep_cv(RORprolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
+head(xc_obj_771_RORprolif$coef_matrix)[,1:8]
+save(xc_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_RORprolif.RData")
+mean(xc_obj_771_RORprolif$cor_vec)
+sd(xc_obj_771_RORprolif$cor_vec)
+
+
+# RUN: xc_obj_nodes_prolif
+set.seed(123)
+xc_obj_nodes_prolif <- lasso_rep_cv(prolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
+head(xc_obj_nodes_prolif$coef_matrix)[,1:8]
+save(xc_obj_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
+mean(xc_obj_nodes_prolif$cor_vec)
+sd(xc_obj_nodes_prolif$cor_vec)
+
+# RUN: xc_obj_nodes_RORprolif
+set.seed(123)
+xc_obj_nodes_RORprolif <- lasso_rep_cv(RORprolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
+head(xc_obj_nodes_RORprolif$coef_matrix)[,1:8]
+save(xc_obj_nodes_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_RORprolif.RData")
+mean(xc_obj_nodes_RORprolif$cor_vec)
+sd(xc_obj_nodes_RORprolif$cor_vec)
+
+###################
+
+
+
 
 histogram(bb_object$cor_vec, breaks = 99,
           xlab = "Proliferation score", 

@@ -54,7 +54,7 @@ ob_ <- lasso_bootstrap_residuals(X, Y, pred_mech, TRUE)
 cbind(ob_[[4]], pred_mech, Y)
 
 # 1000 bootstrap fits
-lasso_boot = function(X, Y, pred_mech, n_bootstraps=1000){
+lasso_boot_residuals = function(X, Y, pred_mech, n_bootstraps=1000){
   # run many bootstraps
   # output: - vector with correlations 
   #         - vector with selected features as integers values wrt to X

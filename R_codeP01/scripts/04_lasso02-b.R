@@ -1,54 +1,15 @@
-## Repeated cross-validation for testing the Lasso model
-##
-## Test against the fold
+###########################################################
+##  Bootstrap Lasso - using original sample as test set ##
+###########################################################
+
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
-## output: selected genes; proliferation.score correlation; SEM
+## output: selected genes; correlation; SEM
 
 ## Post Lasso model is made at the bottom
 
 library(glmnet)
 library(caret)
 library(ggplot2)
-
-###########################################################
-##  Repeated cross validation ##
-###########################################################
-
-# Custom function for repeated k-fold cross validation
-repeated_kfold_cv <- function(df_data, func=lasso_sample, folds=5, repeats=200, method="pearson") {
-  n_models <- repeats * folds
-  print(n_models)
-  cor_vec <- rep(NA, n_models)
-  MSE_vec <- rep(NA, n_models)
-  coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data[,-1]))
-  colnames(coef_matrix) <- colnames(df_data[, -1])
-  coef_matrix_row_index <- 1
-  
-  # Repeat the cross-validation process
-  for (i in 1:repeats) {
-    # Create the folds for evaluating the performance
-    kf <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
-    # Loop through the folds
-    for (j in 1:folds) {
-      # Get the training and testing data
-      train_data <- df_data[kf[[j]],]
-      test_data <- df_data[-kf[[j]],]
-      
-      # Fit the function on the training data and get results
-      fit <- func(train_data)
-      
-      coef_matrix[coef_matrix_row_index, ] <- coef(fit, s = "lambda.min")[-1]
-      
-      pred = predict(fit, newx = as.matrix(test_data)[,-1], type = "response", s = "lambda.min")  
-      cor_vec[coef_matrix_row_index]  <- suppressWarnings(cor(pred, test_data[,1], method=method))
-      MSE_vec[coef_matrix_row_index] <- mean((pred - test_data[,1])^2)
-      
-      cat(coef_matrix_row_index, "")
-      coef_matrix_row_index <- coef_matrix_row_index + 1
-    }
-  }
-  return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
-}
 
 # Lasso base function returning a trained object
 lasso_sample <- function(train_data){
@@ -60,15 +21,83 @@ lasso_sample <- function(train_data){
   return(fit.cv)
 }
 
-# Set repeats and folds of the cross-validations
-repeats = 200
-folds = 5
-# RUN
+# Bootstrap
+lasso_boot <- function(df_train, df_test, func=lasso_sample, method="pearson", n_bootstraps=8) {
+  print(n_bootstraps)
+  n <- nrow(df_train)
+  cor_vec <- rep(NA, n_bootstraps)
+  MSE_vec <- rep(NA, n_bootstraps)
+  coef_matrix <- matrix(NA, nrow = n_bootstraps, ncol = ncol(df_train)-1)
+  colnames(coef_matrix) <- colnames(df_train[, -1])
+  
+  for (i in c(1:n_bootstraps)) {
+    int <- sample.int(n, size = n, replace = TRUE)
+    train_data = df_train[int,]
+    
+    # Fit the function on the training data and get results
+    fit <- func(train_data)
+    
+    # Extract coefficients of feature
+    coef_matrix[i, ] <- coef(fit, s = "lambda.min")[-1]
+    
+    pred = predict(fit, newx = as.matrix(df_test)[,-1], type = "response", s = "lambda.min") 
+    cor_vec[i] <- suppressWarnings(cor(pred, df_test$Y, method = method))
+    MSE_vec[i] <- mean((df_test$Y - pred)^2)
+    # cor_vec[i]  <- suppressWarnings(cor(pred, df_test[,1], method = method))
+    # MSE_vec[i] <- mean((pred - df_test[,1])^2)        
+    cat(i, "")
+  }
+  return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
+}
+
+lasso_boot(prolif_6genes, prolif_6genes, func=lasso_sample, method="pearson", n_bootstraps=3)
+  
+# RUN: lb_obj_6_prolif
 set.seed(123)
-lasso_k_ob  <- repeated_kfold_cv(Proliferation_ALLgenes, lasso_sample, folds, repeats)
-head(lasso_k_ob$coef_matrix)[,1:10]
-save(lasso_k_ob, file="/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData")
+lb_obj_6_prolif  <- lasso_boot(prolif_6genes, prolif_6genes, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_6_prolif$coef_matrix)[,1:6]
+save(lb_obj_6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_6_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_6_prolif.RData")
+
+# RUN: lb_obj_6_RORprolif
+set.seed(123)
+lb_obj_6_RORprolif  <- lasso_boot(RORprolif_6genes, RORprolif_6genes, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_6_RORprolif$coef_matrix)[,1:6]
+save(lb_obj_6_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_6_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_6_prolif.RData")
+
+
+# RUN: lb_obj_771_prolif
+set.seed(123)
+lb_obj_771_prolif  <- lasso_boot(prolif_771genes, prolif_771genes, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_771_prolif$coef_matrix)[,1:8]
+save(lb_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_prolif.RData")
+
+# RUN: lb_obj_771_RORprolif
+set.seed(123)
+lb_obj_771_RORprolif  <- lasso_boot(ROR_prolif_771genes, ROR_prolif_771genes, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_771_RORprolif$coef_matrix)[,1:8]
+save(lb_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_RORprolif.RData")
+
+
+# RUN: lb_obj_nodes_prolif
+set.seed(123)
+lb_obj_nodes_prolif  <- lasso_boot(prolif_nodes, prolif_nodes, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_nodes_prolif$coef_matrix)[,1:8]
+save(lb_obj_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_prolif.RData")
+
+# RUN: lb_obj_nodes_RORprolif
+set.seed(123)
+lb_obj_nodes_RORprolif  <- lasso_boot(ROR_prolif_nodes, ROR_prolif_nodes, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_nodes_RORprolif$coef_matrix)[,1:8]
+save(lb_obj_nodes_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_RORprolif.RData")
+
+
+
 
 ## ANALYSIS
 sum(is.na(lasso_k_ob$cor_vec))/length(lasso_k_ob$cor_vec)    # fraction of NA

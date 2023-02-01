@@ -11,20 +11,46 @@ editor_options:
 <!-- ```{r echo=FALSE}  -->
 <!-- knitr::opts_chunk$set(echo=FALSE)  -->
 <!-- ``` -->
+```{r global-options, include=FALSE}
+knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
+                      echo=FALSE, warning=FALSE, message=FALSE)
+```
 
+```{r}
+# lb_obj_6_prolif.RData
+# lb_obj_771_prolif.RData
+# lb_obj_771_residuals_prolif.RData
+# lb_obj_nodes_prolif.RData
 
+# lb_obj_771_ROR.RData
+#
+# lk_obj_771_prolif.RData
+#
+# bb_obj_6_prolif.RData
+# 
+#
+```
 
 # Data
 One clinical trails on breast cancer (advanced HR+/HER2- and HER2-E breast cancer) using two different drug combination; and a cohorts study (here used as test data set). /
-Both data set have 771 genes. This genes are specifically selected based likely potential role in breast cancer. /
-The gene set is dived into X numbers of "signature genes"; which are thought to represent unities with respect to cancer biology...
+Both data set have mRNA expression of 771 genes at baseline (prior to treatment). This genes are specifically selected based on their potential roles in breast cancer pathology: /
+The gene set is dived into X numbers of "signature genes"; which are thought to represent functional unities with respect to cancer biology...overview of signatures..
+
+Additionally, both data-set contians clinical data as...
+(how to model in...)
+
+## Respones used
+### Proliferation score
+### Risk of relapse score (ROR)
+### ...
+
 
 ## Trail
 Two treatments which differ with respect to drug combination 
 - Target: ribociclib and endocrine therapy (letrozole)
 - Chemotherapy: doxorubicin, cyclophosphamide and paclitaxel. 
 approx. 50 patients in each group.
-Endpoints: proliferation score, ROR score
+Endpoints: proliferation score, ROR score, combined ROR and prolif
 
 ## Cohort
 The primary objective of this study is to compare two cdk4/6 targeted drugs (Palbociclib, n=36; Abemaciclib, n=3 in combination with endocrine therapy (tamoxifen, fulvestrant or aromatase inhibitors,  I think?) 
@@ -39,23 +65,25 @@ Endpoints: progression free survival (months), OS?, and status of the two former
 Preliminary experiments (on trail 1) showed instability in prediction and feature selection between bootstrap samples of Lasso. I believe this is a classical problem of high-dim data?
 
 # Approch
-Test all thinkable models to see if some is surperior
+Test all thinkable models to see if some is superior
 
 # Evaluation of models
 Two levels of evaluation is scheduled:
 
 ## 1. Relative comparison of models
-1000 bootstrap models are fitted and then evaluated on the original sample. This gives a relative comparison of the various models with respect to data similar to the given data set. In addition to Correlation and MSE, frequency of selected features is compared.
+1000 bootstrap models are fitted and then evaluated on the original sample. This gives a relative comparison of the various models with respect to data very similar to the given data set. In addition to Correlation and MSE, frequency of selected features is compared.
 
 ## 2. Expected outcome of future patients
 3 strategies are considered:  
-1. Repeated cross-validations (100 rep) \
-2. Bootstrap models with 0.632 (or 0.632?) adjustment \
-3. Test data set from a second trail (This trail have different responses) \
+1. Repeated cross-validations (200 rep, 5-fold) \
+2. Bootstrap models with 0.632 (or 0.632?) adjustment (Not done) \
+3. Use the cohort as test data-set (Challenge: This trail have different responses) \
+
 
 # Models
 ## Lasso
 ## Post Lasso
+## Residuals
 ## Ridge
 ## Elastic Net
 ## Boosting with stumps as base learner
@@ -65,29 +93,102 @@ Two levels of evaluation is scheduled:
 
 
 # RESULTS
-```{r global-options, include=FALSE}
-knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
-                      echo=FALSE, warning=FALSE, message=FALSE)
-```
-
-
 ```{r}
 source("/Users/anders/Documents/Master/Cancer/R_codeP01/scripts/90_output01.R")
 ```
 
 # Lasso
+
+## Bootstrap
+### 6 genes -> proliferation score
 ```{r}
-path <- "/Users/anders/Documents/MASTER/Cancer/model_instances/lk_AllGenesProlif.RData"
-load(path)
-  
-results_lasso <- report02_out(lasso_k_ob)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_6_prolif.RData")
+l_b_6_p <- report02_out(lb_obj_6_prolif)
 ```
+### 6 genes -> ROR_proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_6_RORprolif.RData")
+l_b_6_ROR_p <- report02_out(lb_obj_6_RORprolif)
+```
+
+### 771 genes -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_prolif.RData")
+l_b_771_p <- report02_out(lb_obj_771_prolif)
+```
+### 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_RORprolif.RData")
+l_b_771_ROR_p <- report02_out(lb_obj_771_RORprolif)
+```
+
+### node values -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_prolif.RData")
+l_b_nodes_p <- report02_out(lb_obj_nodes_prolif)
+```
+### node values -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_RORprolif.RData")
+l_b_nodes_ROR_p <- report02_out(lb_obj_nodes_RORprolif)
+```
+
+
+### Mechnaistic + Residuals -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_prolif.RData")
+l_b_residuals771_p <- report02_out(lb_obj_residuals771_prolif)
+```
+### Mechnaistic + Residuals -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_RORprolif.RData")
+l_b_residuals_ROR_p <- report02_out(lb_obj_residuals_RORprolif)
+```
+
+
+
+## Repeated cross-validation
+### 6 genes -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_prolif.RData")
+l_c_6_p <- report02_out(lc_obj_6_prolif)
+```
+### 6 genes -> ROR_proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_RORprolif.RData")
+l_c_6_ROR_p <- report02_out(lc_obj_6_RORprolif)
+```
+
+### 771 genes -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_prolif.RData")
+l_c_771_p <- report02_out(lc_obj_771_prolif)
+```
+### 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_RORprolif.RData")
+l_c_771_ROR_p <- report02_out(lc_obj_771_RORprolif)
+```
+
+### node values -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_prolif.RData")
+l_c_nodes_p <- report02_out(lc_obj_nodes_prolif)
+```
+### node values -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_RORprolif.RData")
+l_c_nodes_ROR_p <- report02_out(lc_obj_nodes_RORprolif)
+```
+
 
 
 
 # Ridge
 # Elastic Net
 # Boosting with stumps as base learner
+
+
 
 # Post Lasso
 

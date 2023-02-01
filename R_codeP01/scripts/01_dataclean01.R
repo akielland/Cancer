@@ -25,7 +25,6 @@ df02 = full_join(df_nodes, df01, by = c(colnames(df01)[1]))
 ## ALL data with added prediction of the Mechanistic model ##
 #############################################################
 
-
 ############################################################
 ## ALL data with added residuals of the Mechanistic model ##
 ############################################################
@@ -43,6 +42,7 @@ df03 <- read_excel(path) |>
 #############
 
 df_6genes_with_output <- function(output){
+  print(output)
   df_genes <- df01 |> select(UniqueID, CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1, timepoint, TrialArmNeo) |>
     filter(timepoint=="SCR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
@@ -55,62 +55,40 @@ df_6genes_with_output <- function(output){
   
   #rename(df_6genes, c("Y") = c(output))
   colnames(df_6genes)[which(names(df_6genes) == output)] <- "Y"
-  print(output)
+  
   df_6genes <- df_6genes |> select(-c(UniqueID, timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))
-  df_6genes <- na.omit(df_6genes)
+  df_6genes <- na.omit(df_6genes) # remove rows with NA
   return(df_6genes)
 }
 
-Proliferation_6genes <- df_6genes_with_output("ProliferationScore")
+prolif_6genes <- df_6genes_with_output("ProliferationScore")
+RORprolif_6genes <- df_6genes_with_output("ROR_P_Subtype_Proliferation")
 
-# Matrices for lasso and XGboost
-X <- as.matrix(Proliferation_6genes |> 
-                 select(CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1))
+
+# Matrices for lasso and XGboost (not needed anymore/done in functions)
+X <- as.matrix(Proliferation_6genes |> select(CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1))
 Y <- as.matrix(select(Proliferation_6genes, Y))
-
-#################
-## NODES DATA  ##
-#################
-
-df_Nodes_with_output <- function(output){
-  df_features <- df02 |>
-    select(UniqueID, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1, timepoint, TrialArmNeo) |> 
-    filter(timepoint=="SCR") |> 
-    filter(TrialArmNeo=="Letro+Ribo")
-  
-  df_output <- df02 |> select(UniqueID, output, timepoint, TrialArmNeo) |>
-    filter(timepoint=="SUR") |> 
-    filter(TrialArmNeo=="Letro+Ribo")
-  
-  df_Nodes_Y <- full_join(df_output, df_features, by = "UniqueID")
-
-  colnames(df_Nodes_Y)[which(names(df_Nodes_Y) == output)] <- "Y"
-  print(output)
-  
-  df_Nodes_Y <- df_Nodes_Y |> select(-c(UniqueID, timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y)) # remove unnecessary columns
-  df_Nodes_Y <- na.omit(df_Nodes_Y) # remove row containing NA
-  return(df_Nodes_Y)
-}
-
-Nodes_Proliferation <- df_Nodes_with_output("ProliferationScore")
-
-# Matrices for lasso
-X <- as.matrix(Nodes_Proliferation |> 
-                 select(cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1))
-Y <- as.matrix(select(Nodes_Proliferation, Y))
-
 
 ###############
 ## 771 GENES ##
 ###############
 # This code snip is more generic and can be used instead off others i think
 
-# select all gene names from original data table structure
-genes <- colnames(df01 |> select(41:811))
-genes <- colnames(df01 |> select(41:46)) # just for testing with fewer features
+# select ALL gene names from original data table structure
+all_genes <- colnames(df01 |> select(41:811))
+
+# # node genes:
+# node_genes <- colnames(df01 |> select(UniqueID, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, 
+#                                  cMyc, cyclinEp21, Rb1, ppRb1, timepoint, TrialArmNeo))
+
+# just for testing with fewer features
+test_genes <- colnames(df01 |> select(41:46))
+
 length(genes)
 
 df_genes_with_output <- function(df, predictors, output){
+  print(output)
+  print(length(genes))
   features <- c("UniqueID", "timepoint", "TrialArmNeo", predictors)
   
   df_genes <- df |> select(all_of(features)) |>
@@ -131,8 +109,11 @@ df_genes_with_output <- function(df, predictors, output){
 }
 
 
-Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ProliferationScore")
-Proliferation_ALLgenes <- df_genes_with_output(df01, genes, "ROR_P_Subtype_Proliferation")
+prolif_771genes <- df_genes_with_output(df01, all_genes, "ProliferationScore")
+RORprolif_771genes <- df_genes_with_output(df01, all_genes, "ROR_P_Subtype_Proliferation")
+
+
+
 
 head(Proliferation_ALLgenes[,1:5])
 lastcol <- ncol(Proliferation_ALLgenes)
@@ -155,6 +136,44 @@ Y <- as.matrix(select(Proliferation_ALLgenes, Y))
 
 pred <- scale(pred)
 X_Z <- scale(X)
+
+
+#################
+## NODES DATA  ##
+#################
+
+# Dataframe with values of the nodes by the mechanistic model
+
+df_Nodes_with_output <- function(output){
+  df_features <- df02 |>
+    select(UniqueID, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1, timepoint, TrialArmNeo) |> 
+    filter(timepoint=="SCR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_output <- df02 |> select(UniqueID, output, timepoint, TrialArmNeo) |>
+    filter(timepoint=="SUR") |> 
+    filter(TrialArmNeo=="Letro+Ribo")
+  
+  df_Nodes_Y <- full_join(df_output, df_features, by = "UniqueID")
+  
+  colnames(df_Nodes_Y)[which(names(df_Nodes_Y) == output)] <- "Y"
+  print(output)
+  
+  df_Nodes_Y <- df_Nodes_Y |> select(-c(UniqueID, timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y)) # remove unnecessary columns
+  df_Nodes_Y <- na.omit(df_Nodes_Y) # remove rows containing NA
+  return(df_Nodes_Y)
+}
+
+prolif_nodes <- df_Nodes_with_output("ProliferationScore")
+RORprolif_nodes <- df_Nodes_with_output("ROR_P_Subtype_Proliferation")
+
+
+
+
+# Matrices for lasso
+X <- as.matrix(Nodes_Proliferation |> 
+                 select(cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1))
+Y <- as.matrix(select(Nodes_Proliferation, Y))
 
 
 #################################

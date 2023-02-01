@@ -5,7 +5,7 @@
 library(ggplot2)
 
 report02_out <- function(object){
-  cor_vec <- object$correlations
+  cor_vec <- object$cor_vec
   n_models <- length(cor_vec)
   cat("number of models fitted:", n_models, "\n")
   fr <- sum(is.na(cor_vec))/n_models
@@ -36,8 +36,8 @@ report02_out <- function(object){
 
   
   ## MSE
-  MSE_vec <- object$MSE_vec
   cat("MSE RESULTS", "\n")
+  MSE_vec <- object$MSE_vec
   MSE_mean <- mean(na.omit(MSE_vec))
   cat("Mean:", MSE_mean, "\n") 
   MSE_median <- median(MSE_vec, na.rm=TRUE)
@@ -79,7 +79,7 @@ report02_out <- function(object){
   top_features_with_index = which(colSums(coef_matrix != 0) >= perc_best * n_models)
   top_feature_names = colnames(coef_matrix)[top_features_with_index]
   cat("\n")
-  cat("Genes selected 50% or more times:", "\n")
+  cat("Features selected 50% or more times:", "\n")
   cat(top_feature_names, "\n")
   
   num_features_to_keep <- 20 
@@ -88,7 +88,7 @@ report02_out <- function(object){
   # sort the features based on their frequency
   sorted_features <- names(sort(counts, decreasing = TRUE))
   cat("Top 20 featrues:", "\n")
-  cat(sorted_features[1:num_features_to_keep])
+  print(sorted_features[1:num_features_to_keep])
   out <- list(cor_mean=cor_mean,
               cor_median=cor_median,
               cor_var=cor_var,

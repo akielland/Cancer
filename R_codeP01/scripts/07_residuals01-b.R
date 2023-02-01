@@ -1,57 +1,15 @@
 ###########################################################
-## Repeated cross-validation for testing the Lasso model ##
+## Residual + Mech model by bootstrap samples - using original sample as test set ##
 ###########################################################
-##
-## Test against the fold
+
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
-## output: selected genes; proliferation.score correlation; SEM
+## output: selected genes; correlation; SEM
 
 ## Post Lasso model is made at the bottom
 
 library(glmnet)
 library(caret)
 library(ggplot2)
-
-###########################################################
-##  Repeated cross validation ##
-###########################################################
-
-# Function: repeated k-fold cross validation
-lasso_rep_cv <- function(df_data, func=lasso_sample, folds=5, repeats=200, method="pearson") {
-  n_models <- repeats * folds
-  print(n_models)
-  cor_vec <- rep(NA, n_models)
-  MSE_vec <- rep(NA, n_models)
-  coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data[,-1]))
-  colnames(coef_matrix) <- colnames(df_data[, -1])
-  
-  coef_matrix_row_index <- 1
-  
-  # Repeat the cross-validation process
-  for (i in 1:repeats) {
-    # Create the folds for evaluating the performance
-    kf <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
-    # Loop through the folds
-    for (j in 1:folds) {
-      # Get the training and testing data
-      train_data <- df_data[kf[[j]],]
-      test_data <- df_data[-kf[[j]],]
-      
-      # Fit the function on the training data and get results
-      fit <- func(train_data)
-      
-      coef_matrix[coef_matrix_row_index, ] <- coef(fit, s = "lambda.min")[-1]
-      
-      pred = predict(fit, newx = as.matrix(test_data)[,-1], type = "response", s = "lambda.min")  
-      cor_vec[coef_matrix_row_index]  <- suppressWarnings(cor(pred, test_data[,1], method=method))
-      MSE_vec[coef_matrix_row_index] <- mean((pred - test_data[,1])^2)
-      
-      cat(coef_matrix_row_index, "")
-      coef_matrix_row_index <- coef_matrix_row_index + 1
-    }
-  }
-  return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
-}
 
 # Lasso base function returning a trained object
 lasso_sample <- function(train_data){
@@ -63,54 +21,106 @@ lasso_sample <- function(train_data){
   return(fit.cv)
 }
 
-# Set repeats and folds of the cross-validations
-repeats = 200
-folds = 5
+# Bootstrap
+lasso_res_boot <- function(df_train, df_test, pred_mech, additive=TRUE, func=lasso_sample, method="pearson", n_bootstraps=8) {
+  print(n_bootstraps)
+  n <- nrow(df_train)
+  cor_vec <- rep(NA, n_bootstraps)
+  MSE_vec <- rep(NA, n_bootstraps)
+  coef_matrix <- matrix(NA, nrow = n_bootstraps, ncol = ncol(df_train)-1)
+  colnames(coef_matrix) <- colnames(df_train[, -1])
+  
+  # calculating the residuals
+  if (additive==TRUE){res <- df_train$Y - pred_mech}
+  else{res <- df_train$Y / pred_mech}
+  
+  # update the training data with residuals instead of Y
+  df_train$Y <- res
+  
+  for (i in c(1:n_bootstraps)) {
+    int <- sample.int(n, size = n, replace = TRUE)
+    train_data = df_train[int,]
+    
+    # Fit the function on the training data and get results
+    fit <- func(train_data)
+    
+    # Extract coefficients of feature
+    coef_matrix[i, ] <- coef(fit, s = "lambda.min")[-1]
 
-# RUN: lc_obj_6_prolif
+    pred_res <- predict(fit, newx = as.matrix(df_test)[,-1], type = "response", s = "lambda.min") 
+    #pred <- pred_mech + pred_res
+    pred <- pred_mech * pred_res
+    
+    if (additive==TRUE){pred <- pred_mech + pred_res}
+    else{pred <- pred_mech * pred_res}
+    
+    cor_vec[i] <- suppressWarnings(cor(pred, df_test$Y, method = method))
+    MSE_vec[i] <- mean((df_test$Y - pred)^2)
+    # cor_vec[i]  <- suppressWarnings(cor(pred, df_test[,1], method = method))
+    # MSE_vec[i] <- mean((pred - df_test[,1])^2)        
+    cat(i, "")
+  }
+  return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
+}
 set.seed(123)
-lc_obj_6_prolif <- lasso_rep_cv(prolif_6genes, func=lasso_sample, folds, repeats, method="pearson")
-head(lc_obj_6_prolif$coef_matrix)[,1:6]
-save(lc_obj_6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_prolif.RData")
+t_ <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=F, func=lasso_sample, method="pearson", n_bootstraps=10)
+mean(t_$cor_vec)
+sd(t_$cor_vec)
 
-# RUN: lc_obj_6_RORprolif
+
+# RUN: lb_obj_residuals6_prolif
 set.seed(123)
-lc_obj_6_RORprolif <- lasso_rep_cv(RORprolif_6genes, func=lasso_sample, folds, repeats, method="pearson")
-head(lc_obj_6_RORprolif$coef_matrix)[,1:6]
-save(lc_obj_6_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_prolif.RData")
+lb_obj_residuals6_prolif  <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals6_prolif$coef_matrix)[,1:6]
+save(lb_obj_residuals6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_prolif.RData")
+mean(lb_obj_residuals6_prolif$cor_vec)
+sd(lb_obj_residuals6_prolif$cor_vec)
 
-
-# RUN: lc_obj_771_prolif
+# RUN: lb_obj_residuals6_RORprolif
 set.seed(123)
-lc_obj_771_prolif <- lasso_rep_cv(prolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
-head(lc_obj_771_prolif$coef_matrix)[,1:6]
-save(lc_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_prolif.RData")
+lb_obj_residuals6_RORprolif  <- lasso_res_boot(RORprolif_6genes, RORprolif_6genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals6_RORprolif$coef_matrix)[,1:6]
+save(lb_obj_residuals6_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_RORprolif.RData")
+mean(lb_obj_residuals6_RORprolif$cor_vec)
+sd(lb_obj_residuals6_RORprolif$cor_vec)
 
-# RUN: lc_obj_771_RORprolif
+# RUN: lb_obj_residuals771_prolif
 set.seed(123)
-lc_obj_771_RORprolif <- lasso_rep_cv(RORprolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
-head(lc_obj_771_RORprolif$coef_matrix)[,1:6]
-save(lc_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_prolif.RData")
+lb_obj_residuals771_prolif  <- lasso_res_boot(prolif_771genes, prolif_771genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals771_prolif$coef_matrix)[,1:8]
+save(lb_obj_residuals771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_prolif.RData")
+mean(lb_obj_residuals771_prolif$cor_vec)
+sd(lb_obj_residuals771_prolif$cor_vec)
 
-
-# RUN: lc_obj_nodes_prolif
+# RUN: lb_obj_residuals771_RORprolif
 set.seed(123)
-lc_obj_nodes_prolif <- lasso_rep_cv(prolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
-head(lc_obj_nodes_prolif$coef_matrix)[,1:6]
-save(lc_obj_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_prolif.RData")
+lb_obj_residuals771_RORprolif  <- lasso_res_boot(ROR_prolif_771genes, ROR_prolif_771genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals771_RORprolif$coef_matrix)[,1:8]
+save(lb_obj_residuals771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_RORprolif.RData")
+mean(lb_obj_residuals771_RORprolif$cor_vec)
+sd(lb_obj_residuals771_RORprolif$cor_vec)
 
-# RUN: lc_obj_nodes_RORprolif
+# RUN: lb_obj_nodes_residuals_prolif
 set.seed(123)
-lc_obj_nodes_RORprolif <- lasso_rep_cv(RORprolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
-head(lc_obj_nodes_RORprolif$coef_matrix)[,1:6]
-save(lc_obj_nodes_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_prolif.RData")
+lb_obj_nodes_residuals_prolif  <- lasso_res_boot(prolif_nodes, prolif_nodes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_nodes_residuals_prolif$coef_matrix)[,1:8]
+save(lb_obj_nodes_residuals_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_residuals_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_residuals_prolif.RData")
+mean(lb_obj_nodes_residuals_prolif$cor_vec)
+sd(lb_obj_nodes_residuals_prolif$cor_vec)
 
+# RUN: lb_obj_nodes_residuals_RORprolif
+set.seed(123)
+lb_obj_nodes_residuals_RORprolif  <- lasso_res_boot(ROR_prolif_nodes, ROR_prolif_nodes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_nodes_residuals_RORprolif$coef_matrix)[,1:8]
+save(lb_obj_nodes_residuals_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_residuals_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_residuals_RORprolif.RData")
+mean(lb_obj_nodes_residuals_RORprolif$cor_vec)
+sd(lb_obj_nodes_residuals_RORprolif$cor_vec)
 
 
 
