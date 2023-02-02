@@ -1,6 +1,99 @@
 library(caret)
 library(glmnet)
 
+data("mtcars")
+
+# Split data into training and testing sets
+set.seed(123)
+train_index <- createDataPartition(mtcars$mpg, p = 0.7, list = FALSE)
+train_data <- mtcars[train_index, ]
+test_data <- mtcars[-train_index, ]
+
+# Perform PCA on the training data
+train_data_numeric <- train_data[, c("disp", "hp", "drat", "wt", "qsec")]
+pca_numeric <- prcomp(train_data_numeric, center = TRUE, scale. = TRUE)
+train_data_pca_numeric <- data.frame(pca_numeric$x[,1:2])
+colnames(train_data_pca_numeric) <- c("PC1", "PC2")
+
+# Perform PCA on the categorical data
+train_data_categorical <- train_data[, c("cyl", "gear", "am", "carb")]
+train_data_categorical <- sapply(train_data_categorical, as.numeric)
+train_data_categorical <- data.frame(train_data_categorical)
+pca_categorical <- prcomp(train_data_categorical, center = TRUE, scale. = TRUE)
+train_data_pca_categorical <- data.frame(pca_categorical$x[,1:2])
+colnames(train_data_pca_categorical) <- c("PC1_cat", "PC2_cat")
+
+# Combine the PCA components from the numeric and categorical data
+train_data_pca_combined <- cbind(train_data_pca_numeric, train_data_pca_categorical)
+
+# Train and evaluate a linear regression model using the PCA components
+set.seed(456)
+model_linear <- train(mpg ~ ., data = train_data_pca_combined, method = "lm", trControl = trainControl(method = "cv", number = 10), tuneLength = 5)
+
+# Train and evaluate a boosting model using the PCA components
+set.seed(456)
+model_boosting <- train(mpg ~ ., data = train_data_pca_combined, method = "gbm", trControl = trainControl(method = "cv", number = 10), tuneLength = 5)
+
+# Train and evaluate a lasso model using the PCA components
+set.seed(456)
+model_lasso <- train(mpg ~ ., data = train_data_pca_combined, method = "glmnet", trControl = trainControl(method = "cv", number = 10), tuneLength = 5)
+
+# Compare the models
+model_comparison <- resamples(list(linear = model_linear, boosting = model_boosting, lasso = model_lasso))
+summary(model_comparison)
+
+
+
+
+library(caret)
+library(glmnet)
+
+data("mtcars")
+
+# Split data into training and testing sets
+set.seed(123)
+train_index <- createDataPartition(mtcars$mpg, p = 0.7, list = FALSE)
+train_data <- mtcars[train_index, ]
+test_data <- mtcars[-train_index, ]
+
+# Perform PCA on the training data
+train_data_numeric <- train_data[, c("disp", "hp", "drat", "wt", "qsec")]
+pca_numeric <- prcomp(train_data_numeric, center = TRUE, scale. = TRUE)
+train_data_pca_numeric <- data.frame(pca_numeric$x[,1:2])
+colnames(train_data_pca_numeric) <- c("PC1", "PC2")
+
+# Perform PCA on the categorical data
+train_data_categorical <- train_data[, c("cyl", "gear", "am", "carb")]
+train_data_categorical <- sapply(train_data_categorical, as.numeric)
+train_data_categorical <- data.frame(train_data_categorical)
+pca_categorical <- prcomp(train_data_categorical, center = TRUE, scale. = TRUE)
+train_data_pca_categorical <- data.frame(pca_categorical$x[,1:2])
+colnames(train_data_pca_categorical) <- c("PC1_cat", "PC2_cat")
+
+# Combine the PCA components from the numeric and categorical data
+train_data_pca_combined <- cbind(train_data_pca_numeric, train_data_pca_categorical)
+
+# Train and evaluate a linear regression model using the PCA components
+set.seed(456)
+model_linear <- train(mpg ~ ., data = train_data_pca_combined, method = "lm", trControl = trainControl(method = "cv", number = 10), tuneLength = 5)
+
+# Train and evaluate a boosting model using the PCA components
+set.seed(456)
+model_boosting <- train(mpg ~ ., data = train_data_pca_combined, method = "gbm", trControl = trainControl(method = "cv", number = 10), tuneLength = 5)
+
+# Train and evaluate a lasso model using the PCA components
+set.seed(456)
+model_lasso <- train(mpg ~ ., data = train_data_pca_combined, method = "glmnet", trControl = trainControl(method = "cv", number = 10), tuneLength = 5)
+
+# Compare the models
+model_comparison <- resamples(list(linear = model_linear, boosting = model_boosting, lasso = model_lasso))
+summary(model_comparison)
+
+
+
+library(caret)
+library(glmnet)
+
 # Load the mtcars dataset
 data(mtcars)
 
