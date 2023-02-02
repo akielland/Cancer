@@ -1,12 +1,11 @@
+############################################################################
 ## Various testing of lasso on 6 genes and nodes (depending on input dataframe)
 # 1. simple lasso with glmnet
 # 2. cross-validation to select features
 # 3. LOO-cross validation to tests model
 # 4. LOO-cross + 5-fold cross validation to test model
 ##############################################################################
-
 library(glmnet)
-
 
 # standard lasso
 lasso01 <- glmnet(X, Y)
@@ -25,7 +24,6 @@ show(variables)
 
 # Using LOO cross-validation for testing 
 # going through all observations with LOO as test set,
-
 lasso_loo <- function(X, Y, lambda.min=TRUE){
   pred_values <- NULL
   for(i in 1:nrow(X)){

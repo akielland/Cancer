@@ -48,8 +48,6 @@ lasso_res_boot <- function(df_train, df_test, pred_mech, additive=TRUE, func=las
     coef_matrix[i, ] <- coef(fit, s = "lambda.min")[-1]
 
     pred_res <- predict(fit, newx = as.matrix(df_test)[,-1], type = "response", s = "lambda.min") 
-    #pred <- pred_mech + pred_res
-    pred <- pred_mech * pred_res
     
     if (additive==TRUE){pred <- pred_mech + pred_res}
     else{pred <- pred_mech * pred_res}
@@ -62,11 +60,14 @@ lasso_res_boot <- function(df_train, df_test, pred_mech, additive=TRUE, func=las
   }
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
-set.seed(123)
+
 t_ <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=F, func=lasso_sample, method="pearson", n_bootstraps=10)
 mean(t_$cor_vec)
 sd(t_$cor_vec)
 
+# The predictions of the mechanistic model is scales by a linear model to be more similar to the proliferation scores
+# But the relationship between mechnistic prediction and proliferation score is not fully linear
+pred_mech <- df_771genes_mech_pred.scaled_prolif$model_prediction
 
 # RUN: lb_obj_residuals6_prolif
 set.seed(123)

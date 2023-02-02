@@ -1,8 +1,9 @@
-## Linear regression with the 6 genes used in he mechanistic model is tested
+###############################################################################
+## Linear regression with the 6 genes used in he mechanistic model is tested ##
 ## Interaction is tested for the gene products which are known to interact
 
 # Bootstrap and Repeated Cross-validation is used to evaluate performance
-## Output: mean MSE; 95% confidence interval; histogram/plot
+## Output: MSE; 95% confidence interval; histogram/plot; correlations
 
 ##########################################################################
 
@@ -26,20 +27,22 @@ fm03 <- Y ~ CDKN1A + ESR1 + MYC + ESR1:MYC + CDKN1A:MYC
 fm04 <- Y ~ cyclinD1 + cyclinD1Palbo + p21 + cyclinD1p21 + cMyc + cyclinEp21 + Rb1 + ppRb1
 
 
-# Function to fit linear regression model and calculate MSE on all the data
+# Function to fit linear regression model and calculate MSE or correlation on all the data
 linear_regression_mse <- function(data, indices, formula) {
   d <- data[indices,]  # allows boot to select sample
   fit <- lm(formula, data = d)
   y_predict <- predict(fit, newdata = data)
   mse <- mean((data$Y - y_predict)^2)
-  return(mse)
+  cor <- cor(data$Y, y_predict)
+  #return(mse)
+  return(cor)
 }
 
 # Make the results reproducible
-set.seed(1234)
+set.seed(123)
 # Perform bootstrap with 1000 iterations
 b <- boot(data=data_in, statistic=linear_regression_mse, R = 1000, formula=fm01)
-b <- boot(data=data_in, statistic=linear_regression_mse, R = 1000, formula=fm02)
+b <- boot(data=prolif_6genes, statistic=linear_regression_mse, R = 1000, formula=fm02)
 b <- boot(data=data_in, statistic=linear_regression_mse, R = 1000, formula=fm03)
 
 b <- boot(data=Nodes_Proliferation, statistic=linear_regression_mse, R = 1000, formula=fm04)

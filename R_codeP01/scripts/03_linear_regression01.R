@@ -1,5 +1,10 @@
-## Here bootstrap is the prime focus
-## Predictors: 6 genes, node values, 
+###################################
+## Ordinary linear model
+## AIC
+## Bootstrap
+###################################
+##
+## Predictors: genes (various structures), node values
 ## Output: correlations
 
 ## FORMULAS ##
@@ -62,6 +67,7 @@ abline(lm(df02_LR$sur_ProliferationScore ~ pred03))
 ###############################################################
 # bootstrap sample for train and original sample for testing ##
 ###############################################################
+
 regression_bootstrap <- function(df, formula){
   N = nrow(df)
   

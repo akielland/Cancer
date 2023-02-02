@@ -1,4 +1,16 @@
-# importing and creating various dataframes and matrices
+############################################################
+## importing and creating various dataframes and matrices ##
+############################################################
+
+# REMEMBER: Standardizing features can be relevant
+# it is extremely important that all PREDICTOR variables are on the same scale. 
+# These regularization methods are sensitive to the size of coefficients by design, 
+# so coefficients on different scales are enormously problematic. 
+# Based on how these data were simulated, we know that our predictors are already on the same scale, 
+# but as good practice, we will center and scale them anyways.
+# Use scale()
+pred <- scale(pred)
+X_Z <- scale(X)
 
 library(tidyverse)
 library(readxl)
@@ -6,14 +18,12 @@ library(readxl)
 ##############################################
 ## ALL DATA as they came original (I think) ##
 ##############################################
-
 path <- "/Users/anders/Documents/MASTER/data/CORALLEEN_02.csv"
 df01 <- read.table(path, header = TRUE, sep = ",", dec = ".")
 
 ##########################################################
 ## ALL DATA with added NODE DATA from MECHANISTIC MODEL ##
 ##########################################################
-
 # Adding node values to all data
 path <- "/Users/anders/Documents/MASTER/data/model_predictors.tsv"
 df_nodes <- read.delim(path)
@@ -24,6 +34,10 @@ df02 = full_join(df_nodes, df01, by = c(colnames(df01)[1]))
 #############################################################
 ## ALL data with added prediction of the Mechanistic model ##
 #############################################################
+path <- "/Users/anders/Documents/Master/data/COR_and_validation_data_with_model_prediction/CORALLEEN_data_with_model_prediction.xlsx"
+# df_03 <- read_excel(path, range = cell_cols("A:V"))
+df03 <- read_excel(path) |> 
+  rename(TrialArmNeo = "Trial Arm Neo")
 
 ############################################################
 ## ALL data with added residuals of the Mechanistic model ##
@@ -32,8 +46,8 @@ df02 = full_join(df_nodes, df01, by = c(colnames(df01)[1]))
 # prediction of proliferation.score
 # residuals = ??
 path <- "/Users/anders/Documents/Master/data/COR_and_validation_data_with_model_prediction/CORALLEEN_data_with_model_prediction.xlsx"
-# df_03 <- read_excel(path, range = cell_cols("A:V")) |> mutate(residuals = Proliferation.Score - model_prediction)
-df03 <- read_excel(path) |>
+# df_03r <- read_excel(path, range = cell_cols("A:V")) |> mutate(residuals = Proliferation.Score - model_prediction)
+df03r <- read_excel(path) |>
   mutate(residuals = Proliferation.Score - model_prediction) |> 
   rename(TrialArmNeo = "Trial Arm Neo")
 
@@ -77,10 +91,6 @@ Y <- as.matrix(select(Proliferation_6genes, Y))
 # select ALL gene names from original data table structure
 all_genes <- colnames(df01 |> select(41:811))
 
-# # node genes:
-# node_genes <- colnames(df01 |> select(UniqueID, cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, 
-#                                  cMyc, cyclinEp21, Rb1, ppRb1, timepoint, TrialArmNeo))
-
 # just for testing with fewer features
 test_genes <- colnames(df01 |> select(41:46))
 
@@ -108,40 +118,25 @@ df_genes_with_output <- function(df, predictors, output){
   return(df_out)
 }
 
-
 prolif_771genes <- df_genes_with_output(df01, all_genes, "ProliferationScore")
 RORprolif_771genes <- df_genes_with_output(df01, all_genes, "ROR_P_Subtype_Proliferation")
 
-
-
-
-head(Proliferation_ALLgenes[,1:5])
-lastcol <- ncol(Proliferation_ALLgenes)
-head(Proliferation_ALLgenes[, (lastcol-5): lastcol])
+head(prolif_771genes[,1:5])
+lastcol <- ncol(prolif_771genes)
+head(prolif_771genes[, (lastcol-5): lastcol])
 
 # dataframe for caret
 dfA03 <- Proliferation_ALLgenes |> 
   select(- c(timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))
 
-# Matrices for glmnet
+# Matrices for glmnet (not in use anymore)
 X <- as.matrix(Proliferation_ALLgenes |> select(all_of(genes)))
 Y <- as.matrix(select(Proliferation_ALLgenes, Y))
-
-# Standardizing features
-# it is extremely important that all PREDICTOR variables are on the same scale. 
-# These regularization methods are sensitive to the size of coefficients by design, 
-# so coefficients on different scales are enormously problematic. 
-# Based on how these data were simulated, we know that our predictors are already on the same scale, 
-# but as good practice, we will center and scale them anyways.
-
-pred <- scale(pred)
-X_Z <- scale(X)
 
 
 #################
 ## NODES DATA  ##
 #################
-
 # Dataframe with values of the nodes by the mechanistic model
 
 df_Nodes_with_output <- function(output){
@@ -167,23 +162,17 @@ df_Nodes_with_output <- function(output){
 prolif_nodes <- df_Nodes_with_output("ProliferationScore")
 RORprolif_nodes <- df_Nodes_with_output("ROR_P_Subtype_Proliferation")
 
-
-
-
-# Matrices for lasso
+# Matrices for lasso (not used for newer code)
 X <- as.matrix(Nodes_Proliferation |> 
                  select(cyclinD1, cyclinD1Palbo, p21, cyclinD1p21, cMyc, cyclinEp21, Rb1, ppRb1))
 Y <- as.matrix(select(Nodes_Proliferation, Y))
 
-
 #################################
 ## 771 GENES + MECH prediction ##
 #################################
-
 # select all gene names from original data table structure
 genes <- colnames(df03 |> select(41:811))
 length(genes)
-
 
 df_genes_with_mech.pred_and_output <- function(df, predictors, output){
   features <- c("UniqueID", "timepoint", "TrialArmNeo", predictors)
@@ -192,12 +181,15 @@ df_genes_with_mech.pred_and_output <- function(df, predictors, output){
     filter(timepoint=="SCR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_SUR <- df |> select(c(UniqueID, timepoint, TrialArmNeo, model_prediction, output)) |>
+  df_SUR <- df |> select(c(UniqueID, timepoint, TrialArmNeo, output, model_prediction)) |>
     filter(timepoint=="SUR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_out <- full_join(df_genes, df_SUR, by = "UniqueID") |> 
+  df_out <- full_join(df_SUR, df_genes, by = "UniqueID") |> 
     select(-UniqueID)
+  
+  df_out <- df_out |> 
+    select(- c(timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))  # remove unnecessary columns
   
   colnames(df_out)[which(names(df_out) == output)] <- "Y"
   print(output)
@@ -205,38 +197,39 @@ df_genes_with_mech.pred_and_output <- function(df, predictors, output){
   return(df_out)
 }
 
-df.all_genes.pred_mech <- df_genes_with_mech.pred_and_output(df03, genes, "Proliferation.Score") 
+df_771genes_mech_pred_prolif <- df_genes_with_mech.pred_and_output(df03, genes, "Proliferation.Score") 
 
 ## scale mech model prediction to scale of proliferation score by a linear model
 # fit model
-fit_ <- lm(df.all_genes.pred_mech$Y ~ df.all_genes.pred_mech$model_prediction)
+fit_ <- lm(df_771genes_mech_pred_prolif$Y ~ df_771genes_mech_pred_prolif$model_prediction)
 summary(fit_)
-plot(df.all_genes.pred_mech$model_prediction, Y)
+plot(df_771genes_mech_pred_prolif$model_prediction, df_771genes_mech_pred_prolif$Y)
 abline(fit_ , col = "blue")
 
 # scale value of mechanistic model by the linear model
-mech_pred_scaled <- predict(fit_, newdata =  as.data.frame(df.all_genes.pred_mech$model_prediction))
-cor(df.all_genes.pred_mech$model_prediction, mech_pred_scaled)
-hist(df.all_genes.pre_mech.scaled$model_prediction)
-cor(Y, df.all_genes.pre_mech.scaled$model_prediction)
-plot(mech_pred_scaled, Y)
+mech_pred_scaled <- predict(fit_, newdata =  as.data.frame(df_771genes_mech_pred_prolif$model_prediction))
+cor(df_771genes_mech_pred_prolif$model_prediction, mech_pred_scaled)
+hist(df_771genes_mech_pred_prolif$model_prediction)
+cor(df_771genes_mech_pred_prolif$Y, df_771genes_mech_pred_prolif$model_prediction, method="pearson")
+cor(df_771genes_mech_pred_prolif$Y, df_771genes_mech_pred_prolif$model_prediction, method="spearman")
+plot(mech_pred_scaled, df_771genes_mech_pred_prolif$Y)
 
-# substitute in the data frame (make new dataframe with scaled values of pred)
-df.all_genes.pred_mech.scaled <- df.all_genes.pred_mech |> 
+# substitute in the data frame (make new data frame with scaled values of prediction)
+df_771genes_mech_pred.scaled_prolif <- df_771genes_mech_pred_prolif |> 
   mutate(model_prediction = mech_pred_scaled)
 
 # check if data looks the same
-hist(df.all_genes.pred_mech.scaled$model_prediction)
+hist(df_771genes_mech_pred.scaled_prolif$model_prediction)
 
 
-# Matrices for lasso
-X <- as.matrix(df.all_genes.pred_mech.scaled |> select(genes))
-pred_mech <- as.matrix(select(df.all_genes.pred_mech.scaled, model_prediction))
-Y <- as.matrix(select(df.all_genes.pred_mech.scaled, Y))
+# Matrices for lasso (not necessary for newer code)
+X <- as.matrix(df_771genes_mech_pred.scaled_prolif |> select(genes))
+pred_mech <- as.matrix(select(df_771genes_mech_pred.scaled_prolif, model_prediction))
+Y <- as.matrix(select(df_771genes_mech_pred.scaled_prolif, Y))
 
 
 #####################
-## Previous code:
+## OLD code:
 #####################
 
 # df01: 6 genes; timepoint SCR and SUR
