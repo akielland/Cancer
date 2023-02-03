@@ -1,36 +1,50 @@
+# Load required libraries
+library(prcomp)
+library(ggplot2)
 library(caret)
-set.seed(123)
-mtcars_pca_combined <- cbind(mtcars_pca_numeric, mtcars_pca_categorical)
-mtcars_pca_combined$mpg <- as.numeric(mtcars_pca_combined$mpg)
 
-# Splitting the data into training and test sets
-splitIndex <- createDataPartition(mtcars_pca_combined$mpg, p = 0.7, list = FALSE)
-train_data_pca_combined <- mtcars_pca_combined[ splitIndex,]
-test_data_pca_combined <- mtcars_pca_combined[-splitIndex,]
+features <- prolif_771genes |> select(-Y)
 
-# Define the 3 models
-model1 <- lm(mpg ~ ., data = train_data_pca_combined)
-model2 <- train(mpg ~ ., data = train_data_pca_combined, method = "gbm", verbose = FALSE)
-model3 <- train(mpg ~ ., data = train_data_pca_combined, method = "glmnet", tuneLength = 5, verbose = FALSE)
+pca_results <- function(fm, data){
+  X_ <- model.matrix(fm, data = data)[,-1]  
+  pca_results <- prcomp(X_, scale = TRUE) # create PCA object
+  # Get the number of components that explain at least X % of the variance
+  n_components <- sum(pca_results$sdev^2 / sum(pca_results$sdev^2) >= 0.1)
+  # Extract the first n_components principal components
+  df_first_pca <- data.frame(pca_results$x[, 1:n_components])
+  return(df_first_pca)
+}
 
-# 10-fold cross-validation
-control <- trainControl(method = "cv", number = 10)
-model1_cv <- train(mpg ~ ., data = train_data_pca_combined, method = "lm", trControl = control)
-model2_cv <- train(mpg ~ ., data = train_data_pca_combined, method = "gbm", trControl = control, verbose = FALSE)
-model3_cv <- train(mpg ~ ., data = train_data_pca_combined, method = "glmnet", trControl = control, tuneLength = 5, verbose = FALSE)
 
-# Evaluate the models on the test set
-model1_test_pred <- predict(model1, newdata = test_data_pca_combined)
-model2_test_pred <- predict(model2, newdata = test_data_pca_combined)
-model3_test_pred <- predict(model3, newdata = test_data_pca_combined)
+immune_inf <- pca_results(fm_immune_inf, data=prolif_771genes)
 
-# Calculate the mean squared error (MSE) of each model on the test set
-model1_test_mse <- mean((model1_test_pred - test_data_pca_combined$mpg)^2)
-model2_test_mse <- mean((model2_test_pred - test_data_pca_combined$mpg)^2)
-model3_test_mse <- mean((model3_test_pred - test_data_pca_combined$mpg)^2)
+summary(immune_inf)
 
-# Compare the MSE of each model
-cat("Linear Regression MSE:", model1_test_mse, "\n")
-cat("Gradient Boosting MSE:", model2_test_mse, "\n")
-cat("Lasso Regression MSE:", model3_test)
-    
+
+
+
+
+
+
+
+
+
+# Perform PCA on the data
+pca_results <- prcomp(X_, scale = TRUE)
+
+# Get the number of components that explain at least 50% of the variance
+n_components <- sum(pca_results$sdev^2 / sum(pca_results$sdev^2) >= 0.1)
+
+# Extract the first n_components principal components and use them as predictors in a linear regression model
+prolif_771genes_pca <- data.frame(pca_results$x[, 1:n_components], Y = prolif_771genes$Y)
+
+model_fit <- lm(Y ~ ., data = prolif_771genes_pca)
+
+# Print summary of the model
+summary(model_fit)
+
+# Plot the regression results
+ggplot(prolif_771genes_pca, aes(x = PC2, y = Y)) + 
+  geom_point() + 
+  geom_smooth(method = "lm", se = FALSE) +
+  ggtitle("PCA-Regression Results")

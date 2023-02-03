@@ -1,311 +1,66 @@
-#################################################################
-##  XGBoost on Repeated cross-validation ##
-#################################################################
+###############################################################
+## Ensemble: create data structures from the signature genes ##
+###############################################################
 
-## Boosting using 5-fold cross validation to evaluate model
-## Base learners:
-## - btree
-## - (linear)
-## - (spline)
-## 
-## Test against folds
-## output: - vector with correlations 
-##         - matrix with features
-##         - vector with SEM
-##         - (vector with number of rounds used in each model)
-
-library(xgboost)
-library(Matrix)
-library(data.table)
-library(caret)
-library(ggplot2)
-
-# structure of base learners
+# old structures of base learners
 fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
-XGBoost_sample <- function(fm, df_train) {
-  # Convert dataframe to dataMatrix to DMatrix object
-  train_sparse = sparse.model.matrix(object = fm, data = df_train)
-  dtrain = xgb.DMatrix(data = train_sparse, label = df_train$Y)
-  
-  # param <- list(eta = 0.1, max_depth = 5)
-  param <- list(booster = "gbtree", 
-                objective = "reg:squarederror", 
-                eval_metric = "rmse", 
-                # nthread = 4, 
-                max_depth = 1, 
-                min_child_weight = 1,
-                tree_method = "hist",   # tree_methods=  exact, approx and hist, depending on the dataset size, memory and time constraints
-                #eta_decay=0.1,
-                eta=0.3)
-  
-  cv <- xgb.cv(data = dtrain, 
-               params = param, 
-               nrounds = 100, 
-               nfold = 5, 
-               #showsd = T, stratified = T,
-               print_every_n = 10,
-               early_stopping_rounds = 5,
-               verbose = FALSE)
-  
-  n_rounds <- cv$best_iteration
-  
-  xgb_model = xgb.train(data = dtrain,
-                        # The following is needed if to monitor training and validation error
-                        # watchlist = list(train = dtrain, val = dvalidation),
-                        params = param,
-                        nrounds = n_rounds,
-                        verbose = FALSE)
-  
-  return(xgb_model)
+## formulas from signatuer genes
+
+signature <- function(words){
+  split_words <- strsplit(words, "\t")    # if also space between words use;  "\t| ". 
+  # The do.call function is used to combine the split words into a single character matrix
+  # Convert each split word into a character vector and combine into a single character matrix
+  character_matrix <- do.call(rbind, split_words)
+  # create the formula
+  fm_signature <- as.formula(paste("Y", paste(character_matrix, collapse="+"), sep=" ~ ")) 
+  return(fm_signature)
 }
 
-XGBoost_sample(fm01, prolif_6genes)
+## Immune Infiltration
+words <- c("CD8A	HLA.DRB1	PSMB10	CCL5	APOE	CD27	CD274	CD276	CHIT1	CLEC5A	CMKLR1	COLEC12	CXCL5	CXCL9	CXCR6	CYBB	GZMA	GZMB	GZMH	GZMM	HLA.E	IDO1	LAG3	MARCO	MSR1	NKG7	PDCD1	PDCD1LG2	SIGIRR	SPN	STAT1	TIGIT	ZNF205")
+fm_immune_inf <- signature(words)
+fm_immune_inf
 
-# Function: repeated k-fold cross validation
-XGboost_rep_cv = function(fm, df_data, folds=5, repeats=200, method="pearson"){
-  n_models <- repeats * folds
-  print(n_models)
-  
-  cor_vec <- rep(NA, n_models)
-  MSE_vec <- rep(NA, n_models)
-  n_rounds_vec <- integer(length = n_models)
-  
-  coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data)-1)
-  colnames(coef_matrix) <- colnames(df_data[, -1])
-  
-  coef_matrix_row_index <- 1
-  
-  # Repeat the cross-validation process
-  for (i in 1:repeats) {
-    # Create the folds for evaluating the performance
-    kf <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
-    # Loop through the folds
-    for (j in 1:folds) {
-      # Get the training and testing data
-      train_data <- df_data[kf[[j]],]
-      test_data <- df_data[-kf[[j]],]
-      
-      # Fit the function on the training data and get results
-      xgb_model <- XGBoost_sample(fm, train_data)
-      
-      # Extract feature importance
-      feature_importance <- data.table(xgb.importance(colnames(df_data), model = xgb_model))
-      # print(feature_importance[,1:2])
-      # Sum up the feature importance
-      coef_matrix[coef_matrix_row_index, feature_importance$Feature] <- 1
-      # print(coef_matrix)
-      
-      # Test set converted to DMatrix object
-      test_sparse = sparse.model.matrix(object = fm, data = test_data)
-      d_test = xgb.DMatrix(data = test_sparse, label = test_data$Y)
-      
-      pred = predict(object = xgb_model, newdata = d_test)
-      
-      cor_vec[coef_matrix_row_index] <- suppressWarnings(cor(pred, test_data$Y, method = method))
-      MSE_vec[coef_matrix_row_index] <- mean((test_data$Y - pred)^2)
-      # cor_vec[i]  <- suppressWarnings(cor(pred, test_data[,1], method = method))
-      # MSE_vec[i] <- mean((pred - test_data[,1])^2)     
-      
-      cat(coef_matrix_row_index, "")
-      coef_matrix_row_index <- coef_matrix_row_index + 1
-    }
-  }  
-  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, coef_matrix=coef_matrix, n_rounds_vec=n_rounds_vec))
-}
+## Proliferation
+words <- c("ITGB3	MMP9	CCNE1	EDN1	HIF1A	KDR	TYMP	ANLN	APOD	BMP7	CD24	CDKN2A	CXCL12	CXCL13	FGFR3	IBSP	MAPK1	MAPK3	THBS4	ACVR1C	ACVRL1	AGT	AREG	ASPN	ATM	AURKA	AURKB	BAD	BMP4	BMP5	BMPR1A	BMPR1B	BMPR2	CBLC	CCNA1	CCNA2	CCNB1	CCND1	CCND2	CCNE2	CCR2	CDC14A	CDC14B	CDC20	CDC25A	CDC25B	CDC6	CDC7	CDK4	CDK6	CDKN1A	CDKN1B	CDKN1C	CDKN2B	CDKN2C	CDKN2D	CENPF	CEP55	CETN2	CHAD	CHEK2	CREBBP	E2F1	E2F5	EGF	EGFR	EGLN2	ENO1	EP300	ERBB2	EREG	EXO1	F3	FGF2	FGF9	FGFR2	FGFR4	FHL1	GADD45A	GADD45B	GADD45G	GATA4	GDF15	GDF5	GREM1	GSK3B	HDAC1	HDAC2	HGF	ID1	IGF1	IL1B	IL6	INHBA	JAG1	KIF2C	LIFR	MCM2	MDM2	MELK	MET	MKI67	MTOR	MYC	NDP	NPR1	OGN	PCNA	PDGFRB	PIK3CA	PIK3R2	PKMYT1	PPP2R1A	PRKCB	PRKDC	PTEN	PTGS2	RB1	RBX1	RPS6KB2	RRM2	SFN	SFRP2	SKP1	SKP2	SMAD1	SMAD3	SMAD4	SMAD5	SMC1B	SMURF2	SOX17	TFDP1	TGFB1	TGFB2	TGFB3	TGFBR2	TNN	TP53	UBE2C	VEGFA	VEGFD	WEE1	ZFYVE9")
+fm_prolif <- signature(words)
+fm_prolif
 
-bb_object_t <- XGboost_rep_cv(fm01, prolif_6genes, folds=5, repeats=2)
-bb_object_t
+## Angiogenesis	
+words <- c("ANGPT1	CD44	CDH5	ITGB3	MMP9	TEK	VCAN	BCL6B	CCNE1	CLEC14A	CXorf36	EDN1	EMCN	EPAS1	FAM124B	FGF18	FSTL3	HIF1A	IKZF3	ITGAV	
+           KDR	MMRN2	MYCT1	PALMD	PDGFB	RNASE2	ROBO4	SERPINB5	SERPINH1	SHE	STC1	TIE1	TNFAIP6	TYMP")
+fm_angiogenesis <- signature(words)
+fm_angiogenesis
 
+## Antigen Presentation	
+words <- c("THBS1	CD1E	CD8A	HLA-A	HLA-B	HLA-C	HLA-DMA	HLA-DMB	HLA-DOB	HLA-DPA1	HLA-DPB1	HLA-DQA1	HLA-DQB1	HLA-DRA	HLA-DRB1	PSMB10	PSMB7	PSMB9	TAP1	TAP2	TAPBP")
+fm_antigen_present <- signature(words)
+fm_antigen_present
 
-# Set repeats and folds of the cross-validations
-repeats = 200
-folds = 5
-
-# RUN: xc_obj_6_prolif
-set.seed(123)
-xc_obj_6_prolif <- lasso_rep_cv(prolif_6genes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_6_prolif$coef_matrix)[,1:6]
-save(xc_obj_6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_prolif.RData")
-mean(xc_obj_6_prolif$cor_vec)
-sd(xc_obj_6_prolif$cor_vec)
-
-# RUN: xc_obj_6_RORprolif
-set.seed(123)
-xc_obj_6_RORprolif <- lasso_rep_cv(RORprolif_6genes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_6_RORprolif$coef_matrix)[,1:6]
-save(xc_obj_6_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_RORprolif.RData")
-mean(xc_obj_6_RORprolif$cor_vec)
-sd(xc_obj_6_RORprolif$cor_vec)
-
-
-# RUN: xc_obj_771_prolif
-set.seed(123)
-xc_obj_771_prolif <- lasso_rep_cv(prolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_771_prolif$coef_matrix)[,1:8]
-save(xc_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_prolif.RData")
-mean(xc_obj_771_prolif$cor_vec)
-sd(xc_obj_771_prolif$cor_vec)
-
-# RUN: xc_obj_771_RORprolif
-set.seed(123)
-xc_obj_771_RORprolif <- lasso_rep_cv(RORprolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_771_RORprolif$coef_matrix)[,1:8]
-save(xc_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_RORprolif.RData")
-mean(xc_obj_771_RORprolif$cor_vec)
-sd(xc_obj_771_RORprolif$cor_vec)
-
-
-# RUN: xc_obj_nodes_prolif
-set.seed(123)
-xc_obj_nodes_prolif <- lasso_rep_cv(prolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_nodes_prolif$coef_matrix)[,1:8]
-save(xc_obj_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
-mean(xc_obj_nodes_prolif$cor_vec)
-sd(xc_obj_nodes_prolif$cor_vec)
-
-# RUN: xc_obj_nodes_RORprolif
-set.seed(123)
-xc_obj_nodes_RORprolif <- lasso_rep_cv(RORprolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_nodes_RORprolif$coef_matrix)[,1:8]
-save(xc_obj_nodes_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_RORprolif.RData")
-mean(xc_obj_nodes_RORprolif$cor_vec)
-sd(xc_obj_nodes_RORprolif$cor_vec)
-
-###################
+## ER Signaling	
+words <- c("ADCY9	ADD1	ANXA9	BORCS7	CDCA8	DDX39A	DNAJC12	EIF3B	ELOVL2	ESR1	HEMK1	IFT140	ITPR1	MAPT	NAT1	PFDN2	PGR	PTGER3	SCUBE2	SERBP1	SHMT2	SYTL4	TBC1D9	TCEAL1	TFF1	TLE3	WDR77")
+fm_ER_signaling <- signature(words)
+fm_ER_signaling
 
 
 
 
-histogram(bb_object$cor_vec, breaks = 99,
-          xlab = "Proliferation score", 
-          main = "Boosting (trail 1, arm Letro+Ribo)")
-
-# Various objects
-save(bb_object, file="bb_object_6genes.RData")
-save(bb_object, file="bb_object_nodes01.RData")
-save(bb_object, file="bb_object_AllGenes01.RData")
-save(bb_object, file="bb_object_ALLGenes_ROR.RData")
-
-# stored object can be loaded to save time
-load("bb_object_6Genes.RData")
-load("bb_object_nodes01.RData")
-load("bb_object_AllGenes01.RData")
-load("bb_object_ALLGenes_ROR.RData")
 
 
 
 
-# Convert the dataframe to a DMatrix object - This dosen't seems to work
-dtrain <- xgb.DMatrix(data = as.matrix(Proliferation_6genes[, -1]), label = Proliferation_6genes$Y)
-dtrain <- xgb.DMatrix(data = data.matrix(Proliferation_6genes[,-1]), label = Proliferation_6genes$Y)
-
-model_formula = fm01
-# Train set: 
-train_sparse = sparse.model.matrix(object = model_formula, data = Proliferation_6genes)
-dtrain = xgb.DMatrix(data = train_sparse, label = Proliferation_6genes$Y)
-class(train_sparse)
-# Validation set
-validation_sparse = sparse.model.matrix(object = model_formula, data = Proliferation_6genes)
-dvalidation = xgb.DMatrix(data = validation_sparse, label = Proliferation_6genes$Y)
-# Test set
-test_sparse = sparse.model.matrix(object = model_formula, data = test_df)
-dtest = xgb.DMatrix(data = test_sparse, label = test_df$y)
-
-# Hyper parameters:
-# eta: the learning rate. Comparable to step size in gradient descent algorithms
-# max_depth: the max depth of each tree. To get stumps: set tree_depth = 1
-xgb_params = list(eta = 0.1, max_depth = 1)
-params <- list(objective = "binary:logistic",
-               eta = 0.3,
-               max_depth = 2)
-# THIS IS WHAT YOU NEED TO UNDERSTAND:
-# If we take small steps (low eta), we require many trees (nrounds) to get a good result.
-# If we make deep trees then each tree is better => probably need fewer trees to get a good result
-
-# How many sequential trees should we train? Number of iterations
-N_ROUNDS = 1000
-
-start_time = Sys.time()
-xgb_model = xgb.train(data = dtrain,
-                      # The following is needed if to monitor training and validation error
-                      watchlist = list(train = dtrain, 
-                                       val = dvalidation),
-                      params = xgb_params,
-                      nrounds = N_ROUNDS,
-                      verbose = FALSE)
-end_time = Sys.time()
-cat("It took ", difftime(end_time, start_time, units = "secs"), " to train the model. \n")
-
-# Extract and plot train and validation error: 
-training_error = data.frame(iteration = xgb_model$evaluation_log$iter,
-                            rmse = xgb_model$evaluation_log$train_rmse, 
-                            type = "train_rmse")
-validation_error = data.frame(iteration = xgb_model$evaluation_log$iter,
-                              rmse = xgb_model$evaluation_log$val_rmse, 
-                              type = "val_rmse")
-
-both_errors = rbind(training_error, validation_error)
-
-ggplot(both_errors, aes(x = iteration, y = rmse, col = type)) + 
-  geom_line()
 
 
-boost_m01 = glmboost(fm01, data = Proliferation_6genes)
-coef(boost_m01, which = "")
-par(mfrow=c(1,2))
-plot(boost_m01, off2int=TRUE)
-plot(boost_m01)
-
-pred_boost01 = predict(boost_m01, Proliferation_6genes)
-
-cor(pred_boost01, Proliferation_6genes$Y)
-plot(pred_boost01, Proliferation_6genes$Y)
-abline(lm(Proliferation_6genes$Y ~ pred_boost01))
 
 
-# smooth - P-spline as base learner
-spline01 <- gamboost(fm01, data = Proliferation_6genes,
-                     baselearner = "bbs", # dfbase=4
-                     control = boost_control(mstop = 40))
 
-coef(spline01, which = "")
-par(mfrow=c(2,3))
-plot(spline01, off2int=TRUE)
+split_words <- strsplit(words, "\t")    # if also space between words use;  "\t| ". 
+# The do.call function is used to combine the split words into a single character matrix
+# Convert each split word into a character vector and combine into a single character matrix
+character_matrix <- do.call(rbind, split_words)
 
-cols_chosen = unique(spline01$xselect())
-colnames(Proliferation_6genes)[cols_chosen]
+fm_immune_inf <- as.formula(paste("Y", paste(character_matrix, collapse="+"), sep=" ~ "))
+fm_immune_inf
 
-
-pred_spline01 = predict(spline01, Proliferation_6genes)
-
-cor(pred_spline01, Proliferation_6genes$Y)
-par(mfrow=c(1,1))
-plot(pred_spline01, Proliferation_6genes$Y)
-abline(lm(Proliferation_6genes$Y ~ pred_spline01))
-
-# boosting with stumps
-stump01 = gamboost(fm01, data = Proliferation_6genes, 
-                   family=Gaussian(), 
-                   baselearner='btree',
-                   boost_control(mstop = 100))
-
-cols_chosen = unique(stump01$xselect())
-colnames(Proliferation_6genes)[cols_chosen+2]
-
-par(mfrow=c(2,3))
-plot(stump01)
-
-
-pred_boost01 = predict(boost_m01, Proliferation_6genes)
-
-cor(pred_boost01, Proliferation_6genes$Y)
-plot(pred_boost01, Proliferation_6genes$Y)
-abline(lm(Proliferation_6genes$Y ~ pred_boost01))

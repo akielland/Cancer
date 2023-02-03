@@ -11,9 +11,7 @@ library(data.table)
 library(caret)
 library(ggplot2)
 
-# structure of base learners
-fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
-fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
+
 
 XGBoost_sample <- function(fm, df_train) {
   # Convert dataframe to dataMatrix to DMatrix object
@@ -51,3 +49,6 @@ XGBoost_sample <- function(fm, df_train) {
   
   return(xgb_model)
 }
+
+
+
