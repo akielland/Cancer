@@ -9,20 +9,9 @@
 ## output: perdition Y
 
 library(xgboost)
-library(glmnet)
 library(Matrix)
 library(data.table)
 
-
-lasso_block <- function(train_data, test_data){
-  X_ <- as.matrix(train_data |> select(-1))
-  Y_ <- as.matrix(train_data |>  select(1))
-  # NB: NEED TO LOOK INTO the SETTINGS of Lasso
-  # fit.cv <- cv.glmnet(X_, Y_, family = "gaussian", alpha = 1, standardize = TRUE, nlambda = 100, nfolds = 5)
-  fit.cv <- cv.glmnet(X_, Y_, nfolds = 5)
-  pred = predict(fit.cv, newx = as.matrix(train_data)[,-1], type = "response", s = "lambda.min")
-  return(pred)
-}
 
 
 XGBoost_sample <- function(fm, df_train, test_data) {
