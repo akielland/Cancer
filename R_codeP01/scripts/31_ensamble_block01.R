@@ -8,10 +8,6 @@
 library(xgboost)
 library(Matrix)
 library(data.table)
-library(caret)
-library(ggplot2)
-
-
 
 XGBoost_sample <- function(fm, df_train) {
   # Convert dataframe to dataMatrix to DMatrix object
