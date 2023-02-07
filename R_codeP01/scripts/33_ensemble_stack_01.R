@@ -14,16 +14,78 @@ library(ggplot2)
 ##  Repeated cross validation ##
 ###########################################################
 
+
+
+
+t <- lasso_rep_cv(prolif_771genes, folds=2, repeats=2, method="pearson")
+
+# Function: repeated k-fold cross validation
+lasso_rep_cv <- function(df_data, folds=5, repeats=1, method="pearson") {
+  n_models <- repeats * folds
+  print(n_models)
+  cor_vec <- rep(NA, n_models)
+  MSE_vec <- rep(NA, n_models)
+  coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data[,-1]))
+  #colnames(coef_matrix) <- colnames(df_data[, -1])
+  
+  count <- 1
+  # Repeat the cross-validation process
+  for (i in 1:repeats) {
+    # Create the folds for evaluating the performance
+    kf_1 <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
+    # Loop through the folds
+    for (j in 1:folds) {
+      # Get the training and testing data
+      train_data <- df_data[kf_1[[j]],]
+      test_data <- df_data[-kf_1[[j]],]
+
+      # Split into training and prediction set
+      ind <- sample.int(2, nrow(train_data), replace=TRUE, prob=c(0.8, 0.2))
+      train0 <- train_data[ind==1,]
+      pred0 <- train_data[ind==2,]
+      
+      # Partition feature space for lasso
+      X_prolif <- as.matrix(train0[c(char_prolif)])
+      X_immune_inf <- as.matrix(train0[c(char_immune_inf)])
+      X_ER_singaling <- as.matrix(train0[c(char_ER_signaling)])
+    
+      fit_prolif <- cv.glmnet(X_prolif, train0$Y, nfolds=5)
+      fit_immune_inf <- cv.glmnet(X_immune_inf, train0$Y, nfolds=5)
+      fit_ER_singaling <- cv.glmnet(X_ER_singaling, train0$Y, nfolds=5)
+      
+      pred_prolif = predict(fit_prolif, newx = as.matrix(pred0[c(char_prolif)]), type = "response", s = "lambda.min")
+      pred_immune = predict(fit_immune_inf, newx = as.matrix(pred0[c(char_immune_inf)]), type = "response", s = "lambda.min")
+      pred_ER_signal = predict(fit_ER_singaling, newx = as.matrix(pred0[c(char_ER_signaling)]), type = "response", s = "lambda.min")
+     
+       # stack predictions
+      preds <- cbind(pred_prolif, pred_immune, pred_ER_signal)
+      colnames(preds) <- c("pred_prolif", "pred_immune", "pred_ER_signal")
+      Y_preds <- cbind("Y"=pred0$Y, preds)
+      meta_model <- lm(Y ~ pred_prolif+pred_immune+pred_ER_signal, data = as.data.frame(Y_preds))
+      
+      pred <- predict(meta_model, newx=test_data[-1])
+
+   # coef_matrix[coef_matrix_row_index, ] <- coef(fit, s = "lambda.min")[-1]
+
+      cor_vec[count]  <- suppressWarnings(cor(pred, test_data[,1], method=method))
+    # MSE_vec[coef_matrix_row_index] <- mean((pred - test_data[,1])^2)
+    # 
+      cat(count, "")
+      count <- count + 1
+    }
+  }
+  return(cor_vec)
+  #return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
+}
+
+
 library(caret)
 library(glmnet)
 
 # Load the data
 data(iris)
 
-# Number of repetitions of k-fold cross-validation
 reps <- 10
-
-# Number of folds in k-fold cross-validation
 folds <- 5
 
 # Create a vector to store the MSE values
@@ -44,6 +106,8 @@ for (i in 1:reps) {
     # Extract the training and testing data for this fold
     train <- iris[cv_indices[[j]], ]
     test <- iris[-cv_indices[[j]], ]
+    
+
     
     # Fit models using different algorithms
     models <- list(lm = train(Species ~ ., data=train, method="lm"),
@@ -72,57 +136,3 @@ for (i in 1:reps) {
 
 # Calculate the average MSE over the repetitions
 mean(mse_values)
-
-
-
-t <- lasso_rep_cv(prolif_771genes, folds=2, repeats=1, method="pearson")
-
-# Function: repeated k-fold cross validation
-lasso_rep_cv <- function(df_data, folds=5, repeats=1, method="pearson") {
-  n_models <- repeats * folds
-  print(n_models)
-  cor_vec <- rep(NA, n_models)
-  MSE_vec <- rep(NA, n_models)
-  coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data[,-1]))
-  #colnames(coef_matrix) <- colnames(df_data[, -1])
-  
-  count <- 1
-  # Repeat the cross-validation process
-  for (i in 1:repeats) {
-    # Create the folds for evaluating the performance
-    kf <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
-    # Loop through the folds
-    for (j in 1:folds) {
-      # Get the training and testing data
-      train_data <- df_data[kf[[j]],]
-      test_data <- df_data[-kf[[j]],]
-
-      # PCA's:
-      immune_inf <- pca_results(char_immune_inf, data=train_data, percentage=0.9)
-      prolif <- pca_results(char_prolif, data=train_data, percentage=0.9)
-      ER_singaling <- pca_results(char_ER_signaling, data=train_data, percentage=0.9)
-      
-      train_PCA <- data.frame(Y=train_data[1], immune_inf, prolif, ER_singaling)
-      
-      # Fit the function on the training data and get results
-      # model_fit <- lm(Y ~ ., data = train_PCA)
-      # 
-      # fit <- func(train_data)      
-      # fit <- lm(fm, data = train_data)
-      # fit <- XGBoost_sample(fm, train_data)
-      # 
-      pred <- lasso_block(train_PCA, test_data)
-      # pred = predict(fit, newx = as.matrix(test_data)[,-1], type = "response", s = "lambda.min")  
-    
-     # coef_matrix[coef_matrix_row_index, ] <- coef(fit, s = "lambda.min")[-1]
-
-      cor_vec[count]  <- suppressWarnings(cor(pred, test_data[,1], method=method))
-      # MSE_vec[coef_matrix_row_index] <- mean((pred - test_data[,1])^2)
-      # 
-      # cat(coef_matrix_row_index, "")
-      # coef_matrix_row_index <- coef_matrix_row_index + 1
-    }
-  }
-  return(cor_vec)
-  #return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
-}

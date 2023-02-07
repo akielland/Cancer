@@ -12,6 +12,8 @@ signature_char <- function(words){
   return(character_matrix)
 }
 
+
+
 ## Immune Infiltration
 words <- c("CD8A	HLA.DRB1	PSMB10	CCL5	APOE	CD27	CD274	CD276	CHIT1	CLEC5A	CMKLR1	COLEC12	CXCL5	CXCL9	CXCR6	CYBB	GZMA	GZMB	GZMH	GZMM	HLA.E	IDO1	LAG3	MARCO	MSR1	NKG7	PDCD1	PDCD1LG2	SIGIRR	SPN	STAT1	TIGIT	ZNF205")
 char_immune_inf <- signature_char(words)
@@ -32,3 +34,4 @@ char_antigen_present <- signature_char(words)
 words <- c("ADCY9	ADD1	ANXA9	BORCS7	CDCA8	DDX39A	DNAJC12	EIF3B	ELOVL2	ESR1	HEMK1	IFT140	ITPR1	MAPT	NAT1	PFDN2	PGR	PTGER3	SCUBE2	SERBP1	SHMT2	SYTL4	TBC1D9	TCEAL1	TFF1	TLE3	WDR77")
 char_ER_signaling <- signature_char(words)
 
+split_words <- strsplit(words, "\t")
