@@ -14,6 +14,64 @@ library(ggplot2)
 ##  Repeated cross validation ##
 ###########################################################
 
+library(caret)
+library(glmnet)
+
+# Load the data
+data(iris)
+
+# Number of repetitions of k-fold cross-validation
+reps <- 10
+
+# Number of folds in k-fold cross-validation
+folds <- 5
+
+# Create a vector to store the MSE values
+mse_values <- rep(NA, reps)
+
+# Repeat k-fold cross-validation
+for (i in 1:reps) {
+  # Split the data into training and testing sets using k-fold cross-validation
+  set.seed(i)
+  cv_folds <- createFolds(iris$Species, k = folds, returnTrain = TRUE)
+  cv_indices <- lapply(cv_folds, function(x) which(x))
+  
+  # Initialize a list to store the fitted models for each fold
+  cv_models <- list()
+  
+  # Loop over each fold
+  for (j in 1:folds) {
+    # Extract the training and testing data for this fold
+    train <- iris[cv_indices[[j]], ]
+    test <- iris[-cv_indices[[j]], ]
+    
+    # Fit models using different algorithms
+    models <- list(lm = train(Species ~ ., data=train, method="lm"),
+                   rf = train(Species ~ ., data=train, method="rf"),
+                   svm = train(Species ~ ., data=train, method="svmRadial"))
+    
+    # Make predictions using the fitted models
+    preds <- lapply(models, function(x) predict(x, newdata=test))
+    
+    # Stack the predictions
+    preds <- do.call(cbind, preds)
+    
+    # Fit a meta-model to the stacked predictions
+    meta_model <- train(Species ~ ., data=data.frame(preds), method="glmnet")
+    
+    # Make final predictions using the meta-model
+    final_preds <- predict(meta_model, newx=preds)
+    
+    # Store the fitted meta-model for this fold
+    cv_models[[j]] <- meta_model
+    
+    # Calculate the MSE on the hold-out set
+    mse_values[i] <- mse_values[i] + mean((final_preds - test$Species)^2) / folds
+  }
+}
+
+# Calculate the average MSE over the repetitions
+mean(mse_values)
 
 
 
