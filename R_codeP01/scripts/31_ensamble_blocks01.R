@@ -1,5 +1,5 @@
 #################################################################
-##  Bloks for ensamble models ##
+##  Blocks for ensemble models ##
 #################################################################
 ## input: - train data
 ##        - formula defining the signatures
@@ -56,7 +56,13 @@ XGBoost_block <- function(fm, df_train) {
                         nrounds = n_rounds,
                         verbose = FALSE)
   
-  return(xgb_model)
+  # Test set converted to DMatrix object
+  test_sparse = sparse.model.matrix(object = fm, data = test_data)
+  d_test = xgb.DMatrix(data = test_sparse, label = test_data$Y)
+  
+  pred = predict(object = xgb_model, newdata = d_test)
+  
+  return(pred)
 }
 
 
