@@ -32,17 +32,25 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
 ```
 
 # Data
-One clinical trails on breast cancer (advanced HR+/HER2- and HER2-E breast cancer) using two different drug combination; and a cohorts study (here used as test data set). /
-Both data set have mRNA expression of 771 genes at baseline (prior to treatment). This genes are specifically selected based on their potential roles in breast cancer pathology: /
-The gene set is dived into X numbers of "signature genes"; which are thought to represent functional unities with respect to cancer biology...overview of signatures..
+One clinical trails on breast cancer (advanced HR+/HER2- and HER2-E breast cancer) using two different drug combination; and a cohorts study (here used as test data set).  
+Both data set have mRNA expression of 771 genes at baseline (prior to treatment). This genes are specifically selected based on their potential roles in breast cancer pathology:  
+The gene set is dived into 25 sets of "signature genes"; which are thought to represent functional unities with respect to cancer biology. Often signaling pathways. Furthermore, 8 immune cells are represented with specific genes. These sets are substantially smaller then the signature genes; which I presume leads to some issue in modeling (as for clinicla data - see next sentence).
 
-Additionally, both data-set contians clinical data as...
-(how to model in...)
+Additionally, both data-set contains clinical data; which up to now is not used in any models. If included they maybe should have a higher weight or be implemented differently from a sole gene. Maybe in a stacked ensemble model as signature.
 
 ## Respones used
 ### Proliferation score
+A score based on expression level of some of the genes. Range: -1.1366 to 0.8511
 ### Risk of relapse score (ROR)
-### ...
+A score based on expression level of some of the genes. Range: -8.035678 to 75.13174
+### Risk of relapse score with proliferaton score (ROR-Prolif)
+A combined score based on expression level of more genes. Range: 1 to 97 (1-100). 
+
+The two scores involving ROR also have categorical variants containing: \ 
+low, medium, high
+
+### Progression free survival (PFS)
+This is the outcome used in the clinical cohort. Here i have used correlation with the scores described above. Spearman can maybe be used. Another approach is to use the above scores to divide the patient in to two groups and see if the two groups show clearly separable PFS over time (basically lock at the graphs). The differentiation into two groups is done base on best values from a ROC curve. 
 
 
 ## Trail
@@ -65,19 +73,19 @@ Endpoints: progression free survival (months), OS?, and status of the two former
 Preliminary experiments (on trail 1) showed instability in prediction and feature selection between bootstrap samples of Lasso. I believe this is a classical problem of high-dim data?
 
 # Approch
-Test all thinkable models to see if some is superior
+Test all thinkable models in a search for superior models
 
 # Evaluation of models
-Two levels of evaluation is scheduled:
+Two levels of evaluation is considered:
 
-## 1. Relative comparison of models
+## 1. Relative comparison of the different models
 1000 bootstrap models are fitted and then evaluated on the original sample. This gives a relative comparison of the various models with respect to data very similar to the given data set. In addition to Correlation and MSE, frequency of selected features is compared.
 
 ## 2. Expected outcome of future patients
 3 strategies are considered:  
-1. Repeated cross-validations (200 rep, 5-fold) \
-2. Bootstrap models with 0.632 (or 0.632?) adjustment (Not done) \
-3. Use the cohort as test data-set (Challenge: This trail have different responses) \
+1. Repeated cross-validations (200 rep, 5-fold) \ 
+2. Bootstrap models with 0.632 (or 0.632?) adjustment (Not done) \ 
+3. Use the cohort as test data-set (Challenge: This trail have different responses) \ 
 
 
 # Models
@@ -89,7 +97,7 @@ Two levels of evaluation is scheduled:
 ## Boosting with stumps as base learner
 ### - mboost
 ### - xgboost
-## Feature selecting ensemble model
+## Stacking using different features in the base models 
 
 
 # RESULTS
