@@ -15,10 +15,6 @@ library(ggplot2)
 ###########################################################
 
 
-
-
-t <- lasso_rep_cv(prolif_771genes, folds=2, repeats=2, method="pearson")
-
 # Function: repeated k-fold cross validation
 lasso_rep_cv <- function(df_data, folds=5, repeats=1, method="pearson") {
   n_models <- repeats * folds
@@ -60,29 +56,34 @@ lasso_rep_cv <- function(df_data, folds=5, repeats=1, method="pearson") {
        # stack predictions
       pred_y_L0 <- cbind(train_data$Y, pred_prolif, pred_immune, pred_ER_signal)
       colnames(pred_y_L0) <- c("Y", "pred_prolif", "pred_immune", "pred_ER_signal")
-      # fit meta-model
-      fm <- as.formula(Y ~ pred_prolif+pred_immune+pred_ER_signal)
-      meta_model <- lm(fm, data = as.data.frame(pred_y_L0))
       
+      # fit linear meta-model
+      fm <- Y ~ pred_prolif + pred_immune + pred_ER_signal
+      # meta_model01 <- lm(fm, data = as.data.frame(pred_y_L0))
+      # print(summary(meta_model01))
+      # fit lasso meta-model
+      meta_model02 <- cv.glmnet(pred_y_L0[, 2:4], train_data$Y, nfolds=5)
+      
+      ####################################################################
+      ## test part
+      ####################################################################
       # prediction from level 0 using test data
       test_pred_prolif = predict(fit_prolif, newx = as.matrix(test_data[c(char_prolif)]), type = "response", s = "lambda.min")
       test_pred_immune = predict(fit_immune_inf, newx = as.matrix(test_data[c(char_immune_inf)]), type = "response", s = "lambda.min")
       test_pred_ER_signal = predict(fit_ER_singaling, newx = as.matrix(test_data[c(char_ER_signaling)]), type = "response", s = "lambda.min")
       
       # stack predictions
-      pred_y_L1 <- cbind(test_data$Y, test_pred_prolif, test_pred_immune, test_pred_ER_signal)
-      colnames(pred_y_L1) <- c("Y", "pred_prolif", "pred_immune", "pred_ER_signal")
+      pred_y_L1 <- cbind(test_pred_prolif, test_pred_immune, test_pred_ER_signal)
+      colnames(pred_y_L1) <- c("pred_prolif", "pred_immune", "pred_ER_signal")
       
-      print(dim(pred_y_L1))
-      print(class(pred_y_L1))
-      print(dim(test_data))
-      test_pred <- predict(meta_model, newx=test_data[-1])
-
+      # predict meta_model with test-data
+      # test_pred <- predict(meta_model01, as.data.frame(pred_y_L1))
+      test_pred <- predict(meta_model02, newx = pred_y_L1, type = "response", s = "lambda.min")
+     
     # coef_matrix[coef_matrix_row_index, ] <- coef(fit, s = "lambda.min")[-1]
-
       cor_vec[count]  <- suppressWarnings(cor(test_pred, test_data[,1], method=method))
     # MSE_vec[coef_matrix_row_index] <- mean((pred - test_data[,1])^2)
-    # 
+    
       cat(count, "")
       count <- count + 1
     }
@@ -91,12 +92,9 @@ lasso_rep_cv <- function(df_data, folds=5, repeats=1, method="pearson") {
   #return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
+t <- lasso_rep_cv(prolif_771genes, folds=5, repeats=100, method="pearson")
 
-library(caret)
-library(glmnet)
 
-# Load the data
-data(iris)
 
 reps <- 10
 folds <- 5

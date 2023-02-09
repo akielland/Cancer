@@ -61,7 +61,7 @@ lasso_res_boot <- function(df_train, df_test, pred_mech, additive=TRUE, func=las
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-t_ <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=F, func=lasso_sample, method="pearson", n_bootstraps=10)
+t_ <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=T, func=lasso_sample, method="pearson", n_bootstraps=10)
 mean(t_$cor_vec)
 sd(t_$cor_vec)
 
@@ -71,7 +71,7 @@ pred_mech <- df_771genes_mech_pred.scaled_prolif$model_prediction
 
 # RUN: lb_obj_residuals6_prolif
 set.seed(123)
-lb_obj_residuals6_prolif  <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+lb_obj_residuals6_prolif  <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
 head(lb_obj_residuals6_prolif$coef_matrix)[,1:6]
 save(lb_obj_residuals6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_prolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_prolif.RData")

@@ -21,7 +21,7 @@ report02_out <- function(object){
   cor_var <- var(cor_vec, na.rm=TRUE)
   cat("Variance:", cor_var, "\n")
   cor_sd <- sd(na.omit(cor_vec)) 
-  cat("st.dev.:", cor_sd)
+  cat("st.dev.:", cor_sd, "\n")
   
   # Histogram correlations
   correlations_finite <- cor_vec[is.finite(cor_vec)]
