@@ -52,6 +52,8 @@ lasso_res_boot <- function(df_train, df_test, pred_mech, additive=TRUE, func=las
     if (additive==TRUE){pred <- pred_mech + pred_res}
     else{pred <- pred_mech * pred_res}
     
+    pred <- as.matrix(pred)
+    
     cor_vec[i] <- suppressWarnings(cor(pred, df_test$Y, method = method))
     MSE_vec[i] <- mean((df_test$Y - pred)^2)
     # cor_vec[i]  <- suppressWarnings(cor(pred, df_test[,1], method = method))
@@ -61,53 +63,80 @@ lasso_res_boot <- function(df_train, df_test, pred_mech, additive=TRUE, func=las
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-t_ <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=T, func=lasso_sample, method="pearson", n_bootstraps=10)
+t_ <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=T, func=lasso_sample, method="pearson", n_bootstraps=1)
 mean(t_$cor_vec)
 sd(t_$cor_vec)
 
 # The predictions of the mechanistic model is scales by a linear model to be more similar to the proliferation scores
-# But the relationship between mechnistic prediction and proliferation score is not fully linear
+# But the relationship between mechanistic prediction and proliferation score is not fully linear
 pred_mech <- df_771genes_mech_pred.scaled_prolif$model_prediction
 
 # RUN: lb_obj_residuals6_prolif
+# Here just testing if I can use the df01 directly:
+df_prolif_6genes <- select(df_771genes_mech_pred.scaled_prolif, -model_prediction)
+df_prolif_6genes <- select(df_prolif_6genes, c(Y, CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1))
 set.seed(123)
-lb_obj_residuals6_prolif  <- lasso_res_boot(prolif_6genes, prolif_6genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
-head(lb_obj_residuals6_prolif$coef_matrix)[,1:6]
-save(lb_obj_residuals6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_prolif.RData")
-mean(lb_obj_residuals6_prolif$cor_vec)
-sd(lb_obj_residuals6_prolif$cor_vec)
+lb_obj_residuals_6_prolif  <- lasso_res_boot(df_prolif_6genes, df_prolif_6genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals_6_prolif$coef_matrix)[,1:6]
+save(lb_obj_residuals_6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_6_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_6_prolif.RData")
+mean(lb_obj_residuals_6_prolif$cor_vec)
+sd(lb_obj_residuals_6_prolif$cor_vec)
 
 # RUN: lb_obj_residuals6_RORprolif
 set.seed(123)
-lb_obj_residuals6_RORprolif  <- lasso_res_boot(RORprolif_6genes, RORprolif_6genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+lb_obj_residuals6_RORprolif  <- lasso_res_boot(RORprolif_6genes, RORprolif_6genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
 head(lb_obj_residuals6_RORprolif$coef_matrix)[,1:6]
 save(lb_obj_residuals6_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_RORprolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals6_RORprolif.RData")
 mean(lb_obj_residuals6_RORprolif$cor_vec)
 sd(lb_obj_residuals6_RORprolif$cor_vec)
 
-# RUN: lb_obj_residuals771_prolif
-set.seed(123)
-lb_obj_residuals771_prolif  <- lasso_res_boot(prolif_771genes, prolif_771genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
-head(lb_obj_residuals771_prolif$coef_matrix)[,1:8]
-save(lb_obj_residuals771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_prolif.RData")
-mean(lb_obj_residuals771_prolif$cor_vec)
-sd(lb_obj_residuals771_prolif$cor_vec)
 
-# RUN: lb_obj_residuals771_RORprolif
+# RUN: lb_obj_residuals_771_prolif_a (additive)
 set.seed(123)
-lb_obj_residuals771_RORprolif  <- lasso_res_boot(ROR_prolif_771genes, ROR_prolif_771genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
-head(lb_obj_residuals771_RORprolif$coef_matrix)[,1:8]
-save(lb_obj_residuals771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals771_RORprolif.RData")
-mean(lb_obj_residuals771_RORprolif$cor_vec)
-sd(lb_obj_residuals771_RORprolif$cor_vec)
+lb_obj_residuals_771_prolif_a  <- lasso_res_boot(prolif_771genes, prolif_771genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals_771_prolif_a$coef_matrix)[,1:8]
+save(lb_obj_residuals_771_prolif_a, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif_a.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif_a.RData")
+mean(lb_obj_residuals_771_prolif_a$cor_vec)
+sd(lb_obj_residuals_771_prolif_a$cor_vec)
+
+# RUN: lb_obj_residuals_771_prolif_m (multiplicative)
+set.seed(123)
+lb_obj_residuals_771_prolif_m  <- lasso_res_boot(prolif_771genes, prolif_771genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals_771_prolif_m$coef_matrix)[,1:8]
+save(lb_obj_residuals_771_prolif_m, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif_m.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif_m.RData")
+mean(lb_obj_residuals_771_prolif_m$cor_vec)
+sd(lb_obj_residuals_771_prolif_m$cor_vec)
+
+
+# RUN: lb_obj_residuals_771_RORprolif_a (additive)
+set.seed(123)
+lb_obj_residuals_771_RORprolif_a  <- lasso_res_boot(ROR_prolif_771genes, ROR_prolif_771genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals_771_RORprolif_a$coef_matrix)[,1:8]
+save(lb_obj_residuals_771_RORprolif_a, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_a.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_a.RData")
+mean(lb_obj_residuals_771_RORprolif_a$cor_vec)
+sd(lb_obj_residuals_771_RORprolif_a$cor_vec)
+
+
+# RUN: lb_obj_residuals_771_RORprolif_m (multiplicative)
+set.seed(123)
+lb_obj_residuals_771_RORprolif_m  <- lasso_res_boot(ROR_prolif_771genes, ROR_prolif_771genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
+head(lb_obj_residuals_771_RORprolif_m$coef_matrix)[,1:8]
+save(lb_obj_residuals_771_RORprolif_m, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_m.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_m.RData")
+mean(lb_obj_residuals_771_RORprolif_m$cor_vec)
+sd(lb_obj_residuals_771_RORprolif_m$cor_vec)
+
+
+
 
 # RUN: lb_obj_nodes_residuals_prolif
 set.seed(123)
-lb_obj_nodes_residuals_prolif  <- lasso_res_boot(prolif_nodes, prolif_nodes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+lb_obj_nodes_residuals_prolif  <- lasso_res_boot(prolif_nodes, prolif_nodes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
 head(lb_obj_nodes_residuals_prolif$coef_matrix)[,1:8]
 save(lb_obj_nodes_residuals_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_residuals_prolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_residuals_prolif.RData")
@@ -116,7 +145,7 @@ sd(lb_obj_nodes_residuals_prolif$cor_vec)
 
 # RUN: lb_obj_nodes_residuals_RORprolif
 set.seed(123)
-lb_obj_nodes_residuals_RORprolif  <- lasso_res_boot(ROR_prolif_nodes, ROR_prolif_nodes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
+lb_obj_nodes_residuals_RORprolif  <- lasso_res_boot(ROR_prolif_nodes, ROR_prolif_nodes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
 head(lb_obj_nodes_residuals_RORprolif$coef_matrix)[,1:8]
 save(lb_obj_nodes_residuals_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_residuals_RORprolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_residuals_RORprolif.RData")

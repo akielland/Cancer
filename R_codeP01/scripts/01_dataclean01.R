@@ -61,7 +61,7 @@ df_6genes_with_output <- function(output){
     filter(timepoint=="SCR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_output <- df01 |> select(c(UniqueID, output, timepoint, TrialArmNeo)) |>
+  df_output <- df01 |> select(c(UniqueID, all_of(output), timepoint, TrialArmNeo)) |>
     filter(timepoint=="SUR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
@@ -119,7 +119,7 @@ df_genes_with_output <- function(df, predictors, output){
 }
 
 prolif_771genes <- df_genes_with_output(df01, all_genes, "ProliferationScore")
-RORprolif_771genes <- df_genes_with_output(df01, all_genes, "ROR_P_Subtype_Proliferation")
+ROR_prolif_771genes <- df_genes_with_output(df01, all_genes, "ROR_P_Subtype_Proliferation")
 
 head(prolif_771genes[,1:5])
 lastcol <- ncol(prolif_771genes)
@@ -181,12 +181,12 @@ df_genes_with_mech.pred_and_output <- function(df, predictors, output){
     filter(timepoint=="SCR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_SUR <- df |> select(c(UniqueID, timepoint, TrialArmNeo, output, model_prediction)) |>
+  df_SUR <- df |> select(c(UniqueID, timepoint, TrialArmNeo, all_of(output), model_prediction)) |>
     filter(timepoint=="SUR") |> 
     filter(TrialArmNeo=="Letro+Ribo")
   
-  df_out <- full_join(df_SUR, df_genes, by = "UniqueID") |> 
-    select(-UniqueID)
+  df_out <- full_join(df_SUR, df_genes, by = "UniqueID") |>               # join the two time points
+    select(-UniqueID)                                                     # remove UniqueID
   
   df_out <- df_out |> 
     select(- c(timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))  # remove unnecessary columns
@@ -220,6 +220,10 @@ df_771genes_mech_pred.scaled_prolif <- df_771genes_mech_pred_prolif |>
 
 # check if data looks the same
 hist(df_771genes_mech_pred.scaled_prolif$model_prediction)
+
+# extracting prediction of mechanistic model
+pred_mech <- select(df_771genes_mech_pred.scaled_prolif, model_prediction)
+pred_mech <- df_771genes_mech_pred.scaled_prolif$model_prediction
 
 
 # Matrices for lasso (not necessary for newer code)
