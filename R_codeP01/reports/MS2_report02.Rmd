@@ -268,23 +268,23 @@ l_c_nodes_ROR_p <- report02_out(lc_obj_nodes_RORprolif)
 
 ### Mechanistic + Residuals -> proliferation score (additive)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif.RData")
-l_b_residuals_771_p_a <- report02_out(lb_obj_residuals_771_prolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_prolif.RData")
+lc_residuals_771_p_a <- report02_out(lc_obj_residuals_771_p_a)
 ```
 ### Mechanistic + Residuals -> proliferation score (multiplicative)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif.RData")
-l_b_residuals_771_p_m <- report02_out(lb_obj_residuals_771_prolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_prolif.RData")
+lc_residuals_771_p_m <- report02_out(lc_obj_residuals_771_prolif)
 ```
 ### Mechnaistic + Residuals -> ROR-proliferation score (additive)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif.RData")
-l_b_residuals_ROR_p_a <- report02_out(lb_obj_residuals_771_RORprolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_RORprolif.RData")
+lc_residuals_ROR_p_a <- report02_out(lc_obj_residuals_771_RORprolif)
 ```
 ### Mechnaistic + Residuals -> ROR-proliferation score (multiplicative)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif.RData")
-l_b_residuals_ROR_p_m <- report02_out(lb_obj_residuals_771_RORprolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_RORprolif.RData")
+lc_residuals_ROR_p_m <- report02_out(lc_obj_residuals_771_RORprolif)
 ```
 
 
