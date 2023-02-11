@@ -143,6 +143,7 @@ Two levels of evaluation is considered:
 ## Synergistic learning
 ```{r}
 source("/Users/anders/Documents/Master/Cancer/R_codeP01/scripts/90_output01.R")
+source("/Users/anders/Documents/Master/Cancer/R_codeP01/scripts/90_output_ridge_01.R")
 ```
 
 # Lasso - Bootstrap
@@ -182,27 +183,27 @@ l_b_nodes_ROR_p <- report02_out(lb_obj_nodes_RORprolif)
 
 ### Mechanistic + Residuals -> proliferation score (additive)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif.RData")
-l_b_residuals_771_p_a <- report02_out(lb_obj_residuals_771_prolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif_a.RData")
+l_b_residuals_771_p_a <- report02_out(lb_obj_residuals_771_prolif_a)
 ```
 ### Mechanistic + Residuals -> proliferation score (multiplicative)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif.RData")
-l_b_residuals_771_p_m <- report02_out(lb_obj_residuals_771_prolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif_m.RData")
+l_b_residuals_771_p_m <- report02_out(lb_obj_residuals_771_prolif_m)
 ```
 ### Mechnaistic + Residuals -> ROR-proliferation score (additive)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif.RData")
-l_b_residuals_ROR_p_a <- report02_out(lb_obj_residuals_771_RORprolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_a.RData")
+l_b_residuals_ROR_p_a <- report02_out(lb_obj_residuals_771_RORprolif_a)
 ```
 ### Mechnaistic + Residuals -> ROR-proliferation score (multiplicative)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif.RData")
-l_b_residuals_ROR_p_m <- report02_out(lb_obj_residuals_771_RORprolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_m.RData")
+l_b_residuals_ROR_p_m <- report02_out(lb_obj_residuals_771_RORprolif_m)
 ```
 
 
-# Summery results: lasso proliferation score (bootstrap) 
+### Summery results: lasso proliferation score (bootstrap) 
 ```{r}
 library(knitr)
 data_table <- data.frame(
@@ -215,7 +216,7 @@ data_table <- data.frame(
 kable(data_table)
 ```
 
-# Summery results: lasso ROR+proliferation score (bootstrap) 
+### Summery results: lasso ROR+proliferation score (bootstrap) 
 ```{r}
 data_table <- data.frame(
   Model = c("lasso 6 genes", "lasso 771 genes", "Nodes", "Residual additive", "Residual multiplicative"),
@@ -268,47 +269,47 @@ l_c_nodes_ROR_p <- report02_out(lc_obj_nodes_RORprolif)
 
 ### Mechanistic + Residuals -> proliferation score (additive)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_prolif.RData")
-lc_residuals_771_p_a <- report02_out(lc_obj_residuals_771_p_a)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_p_a.RData")
+l_c_residuals_771_p_a <- report02_out(lc_obj_residuals_771_p_a)
 ```
 ### Mechanistic + Residuals -> proliferation score (multiplicative)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_prolif.RData")
-lc_residuals_771_p_m <- report02_out(lc_obj_residuals_771_prolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_p_m.RData")
+l_c_residuals_771_p_m <- report02_out(lc_obj_residuals_771_p_m)
 ```
 ### Mechnaistic + Residuals -> ROR-proliferation score (additive)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_RORprolif.RData")
-lc_residuals_ROR_p_a <- report02_out(lc_obj_residuals_771_RORprolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_ROR_p_a.RData")
+l_c_residuals_ROR_p_a <- report02_out(lc_obj_residuals_771_ROR_p_a)
 ```
 ### Mechnaistic + Residuals -> ROR-proliferation score (multiplicative)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_RORprolif.RData")
-lc_residuals_ROR_p_m <- report02_out(lc_obj_residuals_771_RORprolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_ROR_p_m.RData")
+l_c_residuals_ROR_p_m <- report02_out(lc_obj_residuals_771_ROR_p_m)
 ```
 
 
-# Summery results: lasso proliferation score (bootstrap) 
+### Summery results: lasso proliferation score (repeated cross-validation) 
 ```{r}
 library(knitr)
 data_table <- data.frame(
   Model = c("lasso 6 genes", "lasso 771 genes", "Nodes", "Residual additive", "Residual multiplicative"),
-  cor_mean = c(l_b_6_p$cor_mean, l_b_771_p$cor_mean, l_b_nodes_p$cor_mean, l_b_residuals_771_p_a$cor_mean, l_b_residuals_771_p_m$cor_mean),
-  sd_cor = c(l_b_6_p$cor_sd, l_b_771_p$cor_sd, l_b_nodes_p$cor_sd, l_b_residuals_771_p_a$cor_sd, l_b_residuals_771_p_m$cor_sd),
-  MSE_mean = c(l_b_6_p$MSE_mean, l_b_771_p$MSE_mean, l_b_nodes_p$MSE_mean, l_b_residuals_771_p_a$MSE_mean, l_b_residuals_771_p_m$MSE_mean),
-  MSE_sd = c(l_b_6_p$MSE_sd, l_b_771_p$MSE_sd, l_b_nodes_p$MSE_sd, l_b_residuals_771_p_a$MSE_sd, l_b_residuals_771_p_m$MSE_sd)
+  cor_mean = c(l_c_6_p$cor_mean, l_c_771_p$cor_mean, l_c_nodes_p$cor_mean, l_c_residuals_771_p_a$cor_mean, l_c_residuals_771_p_m$cor_mean),
+  sd_cor = c(l_c_6_p$cor_sd, l_c_771_p$cor_sd, l_c_nodes_p$cor_sd, l_c_residuals_771_p_a$cor_sd, l_c_residuals_771_p_m$cor_sd),
+  MSE_mean = c(l_c_6_p$MSE_mean, l_b_771_p$MSE_mean, l_c_nodes_p$MSE_mean, l_c_residuals_771_p_a$MSE_mean, l_c_residuals_771_p_m$MSE_mean),
+  MSE_sd = c(l_c_6_p$MSE_sd, l_c_771_p$MSE_sd, l_c_nodes_p$MSE_sd, l_c_residuals_771_p_a$MSE_sd, l_c_residuals_771_p_m$MSE_sd)
 )
 kable(data_table)
 ```
 
-# Summery results: lasso ROR+proliferation score (bootstrap) 
+### Summery results: lasso ROR+proliferation score (repeated cross-validation) 
 ```{r}
 data_table <- data.frame(
   Model = c("lasso 6 genes", "lasso 771 genes", "Nodes", "Residual additive", "Residual multiplicative"),
-  cor_mean = c(l_b_6_ROR_p$cor_mean, l_b_771_ROR_p$cor_mean, l_b_nodes_ROR_p$cor_mean, l_b_residuals_ROR_p_a$cor_mean, l_b_residuals_ROR_p_m$cor_mean),
-  sd_cor = c(l_b_6_ROR_p$cor_sd, l_b_771_ROR_p$cor_sd, l_b_nodes_ROR_p$cor_sd, l_b_residuals_ROR_p_a$cor_sd, l_b_residuals_ROR_p_m$cor_sd),
-  MSE_mean = c(l_b_6_ROR_p$MSE_mean, l_b_771_ROR_p$MSE_mean, l_b_nodes_ROR_p$MSE_mean, l_b_residuals_ROR_p_a$MSE_mean, l_b_residuals_ROR_p_m$MSE_mean),
-  MSE_sd = c(l_b_6_ROR_p$MSE_sd, l_b_771_ROR_p$MSE_sd, l_b_nodes_ROR_p$MSE_sd, l_b_residuals_ROR_p_a$MSE_sd, l_b_residuals_ROR_p_m$MSE_sd)
+  cor_mean = c(l_c_6_ROR_p$cor_mean, l_c_771_ROR_p$cor_mean, l_c_nodes_ROR_p$cor_mean, l_c_residuals_ROR_p_a$cor_mean, l_c_residuals_ROR_p_m$cor_mean),
+  sd_cor = c(l_c_6_ROR_p$cor_sd, l_c_771_ROR_p$cor_sd, l_c_nodes_ROR_p$cor_sd, l_c_residuals_ROR_p_a$cor_sd, l_c_residuals_ROR_p_m$cor_sd),
+  MSE_mean = c(l_c_6_ROR_p$MSE_mean, l_c_771_ROR_p$MSE_mean, l_c_nodes_ROR_p$MSE_mean, l_c_residuals_ROR_p_a$MSE_mean, l_c_residuals_ROR_p_m$MSE_mean),
+  MSE_sd = c(l_c_6_ROR_p$MSE_sd, l_c_771_ROR_p$MSE_sd, l_c_nodes_ROR_p$MSE_sd, l_c_residuals_ROR_p_a$MSE_sd, l_c_residuals_ROR_p_m$MSE_sd)
 )
 kable(data_table)
 ```
@@ -316,8 +317,83 @@ kable(data_table)
 
 
 
-# Ridge
-# Elastic Net
+# Ridge bootstrap
+### 771 genes -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_p.RData")
+r_b_771_p <- report02_out_ridge(r_b_obj_771_p)
+```
+### 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_ROR_p.RData")
+r_b_771_ROR_p <- report02_out_ridge(r_b_obj_771_ROR_p)
+```
+
+# Ridge repeated cross-validation
+### 771 genes -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_prolif.RData")
+r_c_771_p <- report02_out_ridge(r_c_obj_771_prolif)
+```
+### 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_RORprolif.RData")
+r_c_771_ROR_p <- report02_out_ridge(r_c_obj_771_RORprolif)
+```
+
+### Summery results: ridge 771 genes bootstrap and repeated cross-validation
+```{r}
+data_table <- data.frame(
+  Model = c("prolif boot", "ROR-prolif boot", "prolif rep cross-val", "ROR-prolif rep cross-val"),
+  cor_mean = c(r_b_771_p$cor_mean, r_b_771_ROR_p$cor_mean, r_c_771_p$cor_mean, r_c_771_ROR_p$cor_mean),
+  sd_cor = c(r_b_771_p$cor_sd, r_b_771_ROR_p$cor_sd, r_c_771_p$cor_sd, r_c_771_ROR_p$cor_sd),
+  MSE_mean = c(r_b_771_p$MSE_mean, r_b_771_ROR_p$MSE_mean, r_c_771_p$MSE_mean, r_c_771_ROR_p$MSE_mean),
+  MSE_sd = c(r_b_771_p$MSE_sd, r_b_771_ROR_p$MSE_sd, r_c_771_p$MSE_sd, r_c_771_ROR_p$MSE_sd)
+)
+kable(data_table)
+```
+
+
+
+# Elastic Net - bootstrap
+### 771 genes -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_p.RData")
+e_b_771_p <- report02_out_ridge(e_b_obj_771_p)
+```
+### 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_ROR_p.RData")
+e_b_771_ROR_p <- report02_out_ridge(e_b_obj_771_ROR_p)
+```
+
+# Elastic Net: cross-validation
+### 771 genes -> proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_prolif.RData")
+e_c_771_p <- report02_out_ridge(e_c_obj_771_prolif)
+```
+### 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_RORprolif.RData")
+e_c_771_ROR_p <- report02_out_ridge(e_c_obj_771_RORprolif)
+```
+
+### Summery results: elastic net 771 genes bootstrap and repeated cross-validation
+```{r}
+data_table <- data.frame(
+  Model = c("prolif boot", "ROR-prolif boot", "prolif rep cross-val", "ROR-prolif rep cross-val"),
+  cor_mean = c(e_b_771_p$cor_mean, e_b_771_ROR_p$cor_mean, e_c_771_p$cor_mean, e_c_771_ROR_p$cor_mean),
+  sd_cor = c(e_b_771_p$cor_sd, e_b_771_ROR_p$cor_sd, e_c_771_p$cor_sd, e_c_771_ROR_p$cor_sd),
+  MSE_mean = c(e_b_771_p$MSE_mean, e_b_771_ROR_p$MSE_mean, e_c_771_p$MSE_mean, e_c_771_ROR_p$MSE_mean),
+  MSE_sd = c(e_b_771_p$MSE_sd, e_b_771_ROR_p$MSE_sd, e_c_771_p$MSE_sd, e_c_771_ROR_p$MSE_sd)
+)
+kable(data_table)
+```
+
+
+
+
 # Boosting with stumps as base learner
 
 

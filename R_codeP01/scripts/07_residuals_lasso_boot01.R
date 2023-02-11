@@ -75,6 +75,7 @@ pred_mech <- df_771genes_mech_pred.scaled_prolif$model_prediction
 # Here just testing if I can use the df01 directly:
 df_prolif_6genes <- select(df_771genes_mech_pred.scaled_prolif, -model_prediction)
 df_prolif_6genes <- select(df_prolif_6genes, c(Y, CCND1, CCNE1, CDKN1A, ESR1, MYC, RB1))
+
 set.seed(123)
 lb_obj_residuals_6_prolif  <- lasso_res_boot(df_prolif_6genes, df_prolif_6genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
 head(lb_obj_residuals_6_prolif$coef_matrix)[,1:6]
@@ -124,7 +125,7 @@ sd(lb_obj_residuals_771_RORprolif_a$cor_vec)
 
 # RUN: lb_obj_residuals_771_RORprolif_m (multiplicative)
 set.seed(123)
-lb_obj_residuals_771_RORprolif_m  <- lasso_res_boot(ROR_prolif_771genes, ROR_prolif_771genes, pred_mech, additive=T, lasso_sample, method="pearson", n_bootstraps=1000)
+lb_obj_residuals_771_RORprolif_m  <- lasso_res_boot(ROR_prolif_771genes, ROR_prolif_771genes, pred_mech, additive=F, lasso_sample, method="pearson", n_bootstraps=1000)
 head(lb_obj_residuals_771_RORprolif_m$coef_matrix)[,1:8]
 save(lb_obj_residuals_771_RORprolif_m, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_m.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_m.RData")

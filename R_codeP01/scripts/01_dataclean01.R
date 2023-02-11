@@ -129,9 +129,12 @@ head(prolif_771genes[, (lastcol-5): lastcol])
 dfA03 <- Proliferation_ALLgenes |> 
   select(- c(timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))
 
-# Matrices for glmnet (not in use anymore)
-X <- as.matrix(Proliferation_ALLgenes |> select(all_of(genes)))
-Y <- as.matrix(select(Proliferation_ALLgenes, Y))
+# Matrices for glmnet
+X <- as.matrix(prolif_771genes |> select(all_of(genes)))
+Y <- as.matrix(select(prolif_771genes, Y))
+
+X <- as.matrix(ROR_prolif_771genes |> select(all_of(genes)))
+Y <- as.matrix(select(ROR_prolif_771genes, Y))
 
 
 #################
