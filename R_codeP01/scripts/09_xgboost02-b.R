@@ -110,12 +110,12 @@ head(xg_b_obj_771_p$coef_matrix)[,1:6]
 save(xg_b_obj_771_p, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_p.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_p.RData")
 
-# RUN: e_b_obj_771_ROR_p
+# RUN: xg_b_obj_771_ROR_p
 set.seed(123)
-e_b_obj_771_ROR_p <- xgboost_boot(fm=fm05, ROR_prolif_771genes, ROR_prolif_771genes, method="pearson", n_bootstraps=1000)
-head(e_b_obj_771_ROR_p$coef_matrix)[,1:6]
-save(e_b_obj_771_ROR_p, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_ROR_p.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_ROR_p.RData")
+xg_b_obj_771_ROR_p <- xgboost_boot(fm=fm05, ROR_prolif_771genes, ROR_prolif_771genes, method="pearson", n_bootstraps=1000)
+head(xg_b_obj_771_ROR_p$coef_matrix)[,1:6]
+save(xg_b_obj_771_ROR_p, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_ROR_p.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_ROR_p.RData")
 
 
 

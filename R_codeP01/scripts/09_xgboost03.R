@@ -125,7 +125,7 @@ folds = 5
 
 # RUN: xc_obj_6_prolif
 set.seed(123)
-xc_obj_6_prolif <- lasso_rep_cv(prolif_6genes, func=lasso_sample, folds, repeats, method="pearson")
+xc_obj_6_prolif <- _rep_cv(prolif_6genes, func=, folds, repeats, method="pearson")
 head(xc_obj_6_prolif$coef_matrix)[,1:6]
 save(xc_obj_6_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_prolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_prolif.RData")
@@ -134,7 +134,7 @@ sd(xc_obj_6_prolif$cor_vec)
 
 # RUN: xc_obj_6_RORprolif
 set.seed(123)
-xc_obj_6_RORprolif <- lasso_rep_cv(RORprolif_6genes, func=lasso_sample, folds, repeats, method="pearson")
+xc_obj_6_RORprolif <- _rep_cv(RORprolif_6genes, func=, folds, repeats, method="pearson")
 head(xc_obj_6_RORprolif$coef_matrix)[,1:6]
 save(xc_obj_6_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_RORprolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_6_RORprolif.RData")
@@ -142,28 +142,28 @@ mean(xc_obj_6_RORprolif$cor_vec)
 sd(xc_obj_6_RORprolif$cor_vec)
 
 
-# RUN: xc_obj_771_prolif
+# RUN: xg_c_obj_771_prolif
 set.seed(123)
-xc_obj_771_prolif <- lasso_rep_cv(prolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_771_prolif$coef_matrix)[,1:8]
-save(xc_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_prolif.RData")
-mean(xc_obj_771_prolif$cor_vec)
-sd(xc_obj_771_prolif$cor_vec)
+xg_c_obj_771_prolif <- XGBoost_rep_cv(prolif_771genes, folds, repeats, method="pearson")
+head(xg_c_obj_771_prolif$coef_matrix)[,1:8]
+save(xg_c_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_prolif.RData")
+mean(xg_c_obj_771_prolif$cor_vec)
+sd(xg_c_obj_771_prolif$cor_vec)
 
-# RUN: xc_obj_771_RORprolif
+# RUN: xg_c_obj_771_RORprolif
 set.seed(123)
-xc_obj_771_RORprolif <- lasso_rep_cv(RORprolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_771_RORprolif$coef_matrix)[,1:8]
-save(xc_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_771_RORprolif.RData")
-mean(xc_obj_771_RORprolif$cor_vec)
-sd(xc_obj_771_RORprolif$cor_vec)
+xg_c_obj_771_RORprolif <- XGBoost_rep_cv(RORprolif_771genes, folds, repeats, method="pearson")
+head(xg_c_obj_771_RORprolif$coef_matrix)[,1:8]
+save(xg_c_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_RORprolif.RData")
+mean(xg_c_obj_771_RORprolif$cor_vec)
+sd(xg_c_obj_771_RORprolif$cor_vec)
 
 
 # RUN: xc_obj_nodes_prolif
 set.seed(123)
-xc_obj_nodes_prolif <- lasso_rep_cv(prolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
+xc_obj_nodes_prolif <- XGBoost_rep_cv(prolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
 head(xc_obj_nodes_prolif$coef_matrix)[,1:8]
 save(xc_obj_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
