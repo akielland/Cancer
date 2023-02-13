@@ -98,7 +98,7 @@ length(genes)
 
 df_genes_with_output <- function(df, predictors, output){
   print(output)
-  print(length(genes))
+  print(length(predictors))
   features <- c("UniqueID", "timepoint", "TrialArmNeo", predictors)
   
   df_genes <- df |> select(all_of(features)) |>
@@ -111,7 +111,7 @@ df_genes_with_output <- function(df, predictors, output){
 
   df_out <- full_join(df_output, df_genes, by = "UniqueID")
   
-  colnames(df_out)[which(names(df_out) == output)] <- "Y"
+  colnames(df_out)[which(names(df_out) == all_of(output))] <- "Y"
   
   df_out <- df_out |> select(-c(UniqueID, timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y)) # remove unnecessary columns
   df_out <- na.omit(df_out) # remove rows with missing values
@@ -130,10 +130,10 @@ dfA03 <- Proliferation_ALLgenes |>
   select(- c(timepoint.x, TrialArmNeo.x, timepoint.y, TrialArmNeo.y))
 
 # Matrices for glmnet
-X <- as.matrix(prolif_771genes |> select(all_of(genes)))
+X <- as.matrix(prolif_771genes |> select(all_of(all_genes)))
 Y <- as.matrix(select(prolif_771genes, Y))
 
-X <- as.matrix(ROR_prolif_771genes |> select(all_of(genes)))
+X <- as.matrix(ROR_prolif_771genes |> select(all_of(all_genes)))
 Y <- as.matrix(select(ROR_prolif_771genes, Y))
 
 

@@ -392,15 +392,13 @@ kable(data_table)
 ```
 
 
-
-
 # Boosting with stumps as base learner
 
 
 
 # Post Lasso
 
-# Summery of results
+# Summery of all results
 ## Lasso proliferation score (bootstrap) 
 ```{r}
 data_table <- data.frame(

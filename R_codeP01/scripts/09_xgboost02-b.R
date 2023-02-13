@@ -13,10 +13,12 @@
 
 library(xgboost)
 library(Matrix)
+library(data.table)
+
 
 # structure of base learners
 fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
-fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
+fm05 <- as.formula(paste("Y", paste(all_genes, collapse="+"), sep=" ~ "))
 
 XGBoost_sample <- function(fm, df_train) {
   # Convert the dataMatrix to a DMatrix object
@@ -59,7 +61,7 @@ XGBoost_sample <- function(fm, df_train) {
 t_ <- XGBoost_sample(fm01, Proliferation_6genes)
 
 # 1000 bootstrap fits
-XGboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=10){
+xgboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=1000){
   # run many bootstraps
   # output: - vector with correlations 
   #         - matrix with features
@@ -84,12 +86,9 @@ XGboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=10
     
     # Extract feature importance
     feature_importance <- data.table(xgb.importance(colnames(df_train), model = xgb_model))
-    print(feature_importance[,1:2])
+
     # Sum up the feature importance
     coef_matrix[i, feature_importance$Feature] <- 1
-    print(coef_matrix)
-
-    #coef_matrix[i, ] <- coef(fit, s = "lambda.min")[-1]
 
     pred = predict(object = xgb_model, newdata = d_validation)
     cor_vec[i] <- suppressWarnings(cor(pred, df_test$Y, method = method))
@@ -99,9 +98,26 @@ XGboost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=10
     cat(i, "")
   }  
   #return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec))
-  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec, 
-              coef_matrix=coef_matrix))
+  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, n_rounds_vec=n_rounds_vec, coef_matrix=coef_matrix))
 }
+
+
+# 1000 bootstrap fits
+# RUN: xg_b_obj_771_p
+set.seed(123)
+xg_b_obj_771_p <- xgboost_boot(fm=fm05, prolif_771genes, prolif_771genes, method="pearson", n_bootstraps=1000)
+head(xg_b_obj_771_p$coef_matrix)[,1:6]
+save(xg_b_obj_771_p, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_p.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_p.RData")
+
+# RUN: e_b_obj_771_ROR_p
+set.seed(123)
+e_b_obj_771_ROR_p <- xgboost_boot(fm=fm05, ROR_prolif_771genes, ROR_prolif_771genes, method="pearson", n_bootstraps=1000)
+head(e_b_obj_771_ROR_p$coef_matrix)[,1:6]
+save(e_b_obj_771_ROR_p, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_ROR_p.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_ROR_p.RData")
+
+
 
 set.seed(123)
 bb_object_t <- XGboost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=10)

@@ -79,8 +79,8 @@ elastic_rep_cv <- function(df_data, func=elastic_sample, folds=5, repeats=200, m
   print(n_models)
   cor_vec <- rep(NA, n_models)
   MSE_vec <- rep(NA, n_models)
-  co_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data[,-1]))
-  colnames(co_matrix) <- colnames(df_data[, -1])
+  coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data[,-1]))
+  colnames(coef_matrix) <- colnames(df_data[, -1])
   
   coef_matrix_row_index <- 1
   
@@ -97,14 +97,14 @@ elastic_rep_cv <- function(df_data, func=elastic_sample, folds=5, repeats=200, m
       # Run elastic net function and get results
       out <- func(train_data, test_data, lambda.min=TRUE, method="pearson")
       cor_vec[coef_matrix_row_index] <- out$cor
-      co_matrix[coef_matrix_row_index,] <- out$co[-1]
+      coef_matrix[coef_matrix_row_index,] <- out$co[-1]
       MSE_vec[coef_matrix_row_index] <- out$MSE
       
       cat(coef_matrix_row_index, "")
       coef_matrix_row_index <- coef_matrix_row_index + 1
     }
   }
-  return(list(cor_vec=cor_vec, co_matrix=co_matrix, MSE_vec=MSE_vec))
+  return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
 # Set repeats and folds of the cross-validations
@@ -136,7 +136,7 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_prol
 
 # RUN: e_c_obj_771_RORprolif
 set.seed(123)
-e_c_obj_771_RORprolif <- elastic_rep_cv(RORprolif_771genes, func=elastic_sample, folds, repeats, method="pearson")
+e_c_obj_771_RORprolif <- elastic_rep_cv(ROR_prolif_771genes, func=elastic_sample, folds, repeats, method="pearson")
 head(e_c_obj_771_RORprolif$coef_matrix)[,1:6]
 save(e_c_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_RORprolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_RORprolif.RData")

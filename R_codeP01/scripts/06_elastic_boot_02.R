@@ -9,7 +9,6 @@
 
 library(glmnet)
 
-
 elastic_bootstrap_sample <- function(X, Y, ext.X, ext.Y, lambda.min=TRUE, method="pearson"){
   # one bootstrap sample
   # output: 
