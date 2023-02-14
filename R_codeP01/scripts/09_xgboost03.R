@@ -67,12 +67,13 @@ XGBoost_sample(fm01, prolif_6genes)
 XGboost_rep_cv = function(fm, df_data, folds=5, repeats=200, method="pearson"){
   n_models <- repeats * folds
   print(n_models)
+  print(dim(df_data))
   
   cor_vec <- rep(NA, n_models)
   MSE_vec <- rep(NA, n_models)
   n_rounds_vec <- integer(length = n_models)
   
-  coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data)-1)
+  coef_matrix <- matrix(NA, nrow = n_models, ncol = (ncol(df_data)-1))
   colnames(coef_matrix) <- colnames(df_data[, -1])
   
   coef_matrix_row_index <- 1
@@ -115,7 +116,7 @@ XGboost_rep_cv = function(fm, df_data, folds=5, repeats=200, method="pearson"){
   return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, coef_matrix=coef_matrix, n_rounds_vec=n_rounds_vec))
 }
 
-bb_object_t <- XGboost_rep_cv(fm01, prolif_6genes, folds=5, repeats=2)
+bb_object_t <- XGboost_rep_cv(fm05, prolif_771genes, folds=5, repeats=2)
 bb_object_t
 
 
@@ -144,7 +145,7 @@ sd(xc_obj_6_RORprolif$cor_vec)
 
 # RUN: xg_c_obj_771_prolif
 set.seed(123)
-xg_c_obj_771_prolif <- XGBoost_rep_cv(prolif_771genes, folds, repeats, method="pearson")
+xg_c_obj_771_prolif <- XGboost_rep_cv(fm05, prolif_771genes, folds, repeats, method="pearson")
 head(xg_c_obj_771_prolif$coef_matrix)[,1:8]
 save(xg_c_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_prolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_prolif.RData")
@@ -153,7 +154,7 @@ sd(xg_c_obj_771_prolif$cor_vec)
 
 # RUN: xg_c_obj_771_RORprolif
 set.seed(123)
-xg_c_obj_771_RORprolif <- XGBoost_rep_cv(RORprolif_771genes, folds, repeats, method="pearson")
+xg_c_obj_771_RORprolif <- XGboost_rep_cv(fm05, ROR_prolif_771genes, folds, repeats, method="pearson")
 head(xg_c_obj_771_RORprolif$coef_matrix)[,1:8]
 save(xg_c_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_RORprolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_RORprolif.RData")

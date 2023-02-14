@@ -1,7 +1,7 @@
 ###################################################################
 ## Repeated cross-validation for testing the PCA-Ensemble models ##
 ###################################################################
-##
+##THERE IS NEWER VERSION OF THIS CODE (but this workes)
 ## Test against the fold
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## output: selected genes; proliferation.score correlation; SEM
@@ -19,7 +19,7 @@ library(stringr)
 ##  Repeated cross validation ##
 ###########################################################
 
-pca_results <- function(name, characters, data, percentage=0.9){
+pca_components<- function(name, characters, data, percentage=0.9){
   sign_data <-  data[, characters]
   pca_results <- prcomp(sign_data, scale = TRUE, center=TRUE) # create PCA object
   # Get the number of components that explain at least 90 % of the variance
@@ -39,6 +39,30 @@ lasso_sample <- function(train_data){
   fit.cv <- cv.glmnet(X_, Y_, nfolds = 5)
   return(fit.cv)
 }
+
+# PCA's:
+
+char_list <- list(imm_inf_ = char_immune_inf,
+                  prolif_ = char_prolif,
+                  ER_sing_ = char_ER_signaling,
+                  anti_pres_ = char_antigen_present,
+                  angiogen_ = char_angiogenesis
+                  )
+
+
+pca_as_features <- function(named_list, df_data, percentage=0.9){
+  df_Y_PCA <- data.frame(Y=df_data[,1])
+  for (key in names(named_list)) {
+    char_matrix <- named_list[[key]]
+    df_ <- pca_components(key, char_matrix, data=df_data, percentage=0.9)
+    df_Y_PCA <- cbind(df_Y_PCA, df_)
+
+  }
+  return(df_Y_PCA)
+}
+t <-pca_as_features(char_list, prolif_771genes)
+
+
 
 # Function: repeated k-fold cross validation
 lasso_PCA_rep_cv <- function(df_data, folds=5, repeats=1, method="pearson") {

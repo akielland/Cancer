@@ -1,7 +1,7 @@
 ###################################################################
 ## Repeated cross-validation for testing the Stacking - Ensemble models ##
 ###################################################################
-##
+## EXIST NEWER VAERSION
 ## Test against the fold
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## output: selected genes; proliferation.score correlation; SEM
