@@ -65,7 +65,8 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, method="pearso
   cor_vec <- rep(NA, n_models)
   MSE_vec <- rep(NA, n_models)
   coef_matrix <- matrix(NA, nrow = n_models, ncol = length(char_list))
-  colnames(coef_matrix) <- c(named_list)
+  colnames(coef_matrix) <- names(named_list)
+  print(coef_matrix)
   
   count <- 1
   # Repeat the cross-validation process
@@ -111,9 +112,7 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, method="pearso
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=5, repeats=2, method="pearson")
-
-
+t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=5, repeats=1, method="pearson")
 
 reps <- 2
 folds <- 5
