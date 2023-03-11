@@ -1,5 +1,6 @@
 ##########################################################################
-## Repeated cross-validation for testing the Stacking - Ensemble models ##
+## Repeated cross-validation for testing the Stacking - Ensemble models 
+## Here also with interaction terms
 ##########################################################################
 ##
 ## Test against the fold
@@ -21,28 +22,27 @@ char_list <- list(imm_inf_ = char_immune_inf,
 
 # function to calculate new feature set from level 0 learners
 level_0_model <- function(named_list, train_data){
-  pred_y_L0 <- data.frame(Y=train_data$Y)
+  pred_L0 <- data.frame(matrix(nrow = nrow(train_data), ncol = 0))
   fits <- list()
   
   for (key in names(named_list)) {
     char_matrix <- named_list[[key]]
     X_ <- as.matrix(train_data[c(char_matrix)])
     fit_ <- cv.glmnet(X_, train_data$Y, nfolds=5)
+    # here prediction is made using same data as used in learning the model... ?
     pred_ = predict(fit_, newx = X_, type = "response", s = "lambda.min")
     colnames(pred_) <- key
-    pred_y_L0 <- cbind(pred_y_L0, pred_)
-    
+    pred_L0 <- cbind(pred_L0, pred_)
     fits[[key]] <- fit_
-
   }
-  return(list(pred_y_L0=pred_y_L0, fits=fits))
+  return(list(pred_L0=pred_L0, fits=fits))
 }
-t <-level_0(char_list, prolif_771genes)
+t <-level_0_model(char_list, prolif_771genes)
 class(t)
 
 # function to calculate predictions of the level 0 models
 level_0_test <- function(named_list, test_data, fits){
-  pred_test_L0 <- data.frame(Y=test_data$Y)
+  pred_test_L0 <- data.frame(matrix(nrow = nrow(test_data), ncol = 0))
   
   for (key in names(named_list)) {
     char_matrix <- named_list[[key]]
@@ -58,15 +58,27 @@ level_0_test <- function(named_list, test_data, fits){
 t1 <- level_0_test(char_list, prolif_771genes, t$fit)
 
 
+# create df with interaction terms between level_0_models 
+level_0_interactions <- function(named_list, df_data){
+  interaction_matrix <- model.matrix(~ .^2 - 1, data = df_data)
+  colnames(interaction_matrix) <- sub(":", "*", colnames(interaction_matrix)) # replace ':' with '*' in column names
+  return(interaction_matrix)
+}
+
+
 # Function: repeated k-fold cross validation
-lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, method="pearson") {
+lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=FALSE, method="pearson") {
   n_models <- repeats * folds
   print(n_models)
+  
+  if (interactions){
+    binom_coef <- choose(length(char_list), 2)
+    coef_matrix <- matrix(NA, nrow = n_models, ncol = length(char_list) + binom_coef)
+  } else {
+    coef_matrix <- matrix(NA, nrow = n_models, ncol = length(char_list))
+  }
   cor_vec <- rep(NA, n_models)
   MSE_vec <- rep(NA, n_models)
-  coef_matrix <- matrix(NA, nrow = n_models, ncol = length(char_list))
-  colnames(coef_matrix) <- names(named_list)
-  print(coef_matrix)
   
   count <- 1
   # Repeat the cross-validation process
@@ -85,20 +97,34 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, method="pearso
       # pred0 <- train_data[ind==2,]
       
       # Partition feature space; run lasso and stack in-sample predictions
-      predictions <- level_0_model(char_list, train_data)
-      pred_y_L0 <- predictions$pred_y_L0
-      fits <- predictions$fits
+      pred_and_fit <- level_0_model(char_list, train_data)
+      pred_L0 <- pred_and_fit$pred_L0
+      
+      # here make interaction matrix/df
+      if (interactions){
+        input_matrix <- model.matrix(~ .^2 - 1, data = pred_L0)
+      } else {
+        input_matrix = pred_L0
+      }
+      
+      fits <- pred_and_fit$fits
       # fit lasso meta-model
-     # meta_model <- cv.glmnet(as.matrix(pred_y_L0[,-1]), train_data$Y, nfolds=5)
-      meta_model <- cv.glmnet(as.matrix(pred_y_L0[,-1]), train_data$Y, nfolds=5, alpha=0.5)
+     # meta_model <- cv.glmnet(as.matrix(pred_L0), train_data$Y, nfolds=5)
+      meta_model <- cv.glmnet(as.matrix(input_matrix), train_data$Y, nfolds=5, alpha=0.5)
    
       ####################################################################
       ## test part
       ####################################################################
       # test data prediction from level 0 
-      pred_y_test_L0 <- level_0_test(named_list, test_data, fits)
+      pred_test_L0 <- level_0_test(named_list, test_data, fits)
+      # here make interaction matrix/df
+      if (interactions){
+        input_matrix <- model.matrix(~ .^2 - 1, data = pred_test_L0)
+      } else {
+        input_matrix = pred_test_L0
+      }
       # predict meta_model with test-data
-      test_pred <- predict(meta_model, newx = as.matrix(pred_y_test_L0[,-1]), type = "response", s = "lambda.min")
+      test_pred <- predict(meta_model, newx = as.matrix(input_matrix), type = "response", s = "lambda.min")
      
       coef_matrix[count, ] <- coef(meta_model, s = "lambda.min")[-1]
       cor_vec[count]  <- suppressWarnings(cor(test_pred, test_data[,1], method=method))
@@ -108,60 +134,16 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, method="pearso
       count <- count + 1
     }
   }
-  #return(cor_vec)
+  colnames(coef_matrix) <- colnames(input_matrix)
+  colnames(coef_matrix) <- sub(":", "*", colnames(interaction_matrix)) # replace ':' with '*' in column names
+  
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=5, repeats=1, method="pearson")
+t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=2, repeats=1, method="pearson")
 
+set.seed(123)
 reps <- 2
 folds <- 5
 
-# Create a vector to store the MSE values
-mse_values <- rep(NA, reps)
 
-# Repeat k-fold cross-validation
-for (i in 1:reps) {
-  # Split the data into training and testing sets using k-fold cross-validation
-  set.seed(i)
-  cv_folds <- createFolds(iris$Species, k = folds, returnTrain = TRUE)
-  cv_indices <- lapply(cv_folds, function(x) which(x))
-  
-  # Initialize a list to store the fitted models for each fold
-  cv_models <- list()
-  
-  # Loop over each fold
-  for (j in 1:folds) {
-    # Extract the training and testing data for this fold
-    train <- iris[cv_indices[[j]], ]
-    test <- iris[-cv_indices[[j]], ]
-    
-
-    
-    # Fit models using different algorithms
-    models <- list(lm = train(Species ~ ., data=train, method="lm"),
-                   rf = train(Species ~ ., data=train, method="rf"),
-                   svm = train(Species ~ ., data=train, method="svmRadial"))
-    
-    # Make predictions using the fitted models
-    preds <- lapply(models, function(x) predict(x, newdata=test))
-    
-    # Stack the predictions
-    preds <- do.call(cbind, preds)
-    
-    # Fit a meta-model to the stacked predictions
-    meta_model <- train(Species ~ ., data=data.frame(preds), method="glmnet")
-    
-    # Make final predictions using the meta-model
-    final_preds <- predict(meta_model, newx=preds)
-    
-    # Store the fitted meta-model for this fold
-    cv_models[[j]] <- meta_model
-    
-    # Calculate the MSE on the hold-out set
-    mse_values[i] <- mse_values[i] + mean((final_preds - test$Species)^2) / folds
-  }
-}
-
-# Calculate the average MSE over the repetitions
-mean(mse_values)

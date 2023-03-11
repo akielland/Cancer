@@ -1,7 +1,7 @@
 ###################################################################
 ## Repeated cross-validation for testing the PCA-Ensemble models ##
 ###################################################################
-##THERE IS NEWER VERSION OF THIS CODE (but this workes)
+##THERE IS NEWER VERSION OF THIS CODE (but this works)
 ## Test against the fold
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## output: selected genes; proliferation.score correlation; SEM

@@ -2,6 +2,8 @@
 ## Ensemble: characters matrices for the signature genes ##
 ###############################################################
 
+# NB: looks to be the same/or very close to 30_ensembel_01 ???
+
 
 ## Create character matrix from signature genes
 signature_char <- function(words){
@@ -11,7 +13,6 @@ signature_char <- function(words){
   character_matrix <- do.call(rbind, split_words)
   return(character_matrix)
 }
-
 
 
 ## Immune Infiltration
@@ -33,5 +34,6 @@ char_antigen_present <- signature_char(words)
 ## ER Signaling	
 words <- c("ADCY9	ADD1	ANXA9	BORCS7	CDCA8	DDX39A	DNAJC12	EIF3B	ELOVL2	ESR1	HEMK1	IFT140	ITPR1	MAPT	NAT1	PFDN2	PGR	PTGER3	SCUBE2	SERBP1	SHMT2	SYTL4	TBC1D9	TCEAL1	TFF1	TLE3	WDR77")
 char_ER_signaling <- signature_char(words)
+
 
 split_words <- strsplit(words, "\t")
