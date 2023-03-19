@@ -40,7 +40,8 @@ level_0_model <- function(named_list, train_data){
 t <-level_0_model(char_list, prolif_771genes)
 class(t)
 
-# function to calculate predictions of the level 0 models
+# function to calculate predictions of the level 0 models on some test data
+# The only different from the one above is that it takes fited model as argument instead of fiting them in the function
 level_0_test <- function(named_list, test_data, fits){
   pred_test_L0 <- data.frame(matrix(nrow = nrow(test_data), ncol = 0))
   
@@ -57,13 +58,6 @@ level_0_test <- function(named_list, test_data, fits){
 
 t1 <- level_0_test(char_list, prolif_771genes, t$fit)
 
-
-# create df with interaction terms between level_0_models 
-level_0_interactions <- function(named_list, df_data){
-  interaction_matrix <- model.matrix(~ .^2 - 1, data = df_data)
-  colnames(interaction_matrix) <- sub(":", "*", colnames(interaction_matrix)) # replace ':' with '*' in column names
-  return(interaction_matrix)
-}
 
 
 # Function: repeated k-fold cross validation
@@ -100,14 +94,14 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=F
       pred_and_fit <- level_0_model(char_list, train_data)
       pred_L0 <- pred_and_fit$pred_L0
       
-      # here make interaction matrix/df
+      # here make interaction matrix
       if (interactions){
         input_matrix <- model.matrix(~ .^2 - 1, data = pred_L0)
       } else {
         input_matrix = pred_L0
       }
       
-      fits <- pred_and_fit$fits
+      fits <- pred_and_fit$fits   # collect the fitted models for each signature gene sets 
       # fit lasso meta-model
      # meta_model <- cv.glmnet(as.matrix(pred_L0), train_data$Y, nfolds=5)
       meta_model <- cv.glmnet(as.matrix(input_matrix), train_data$Y, nfolds=5, alpha=0.5)
@@ -117,7 +111,7 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=F
       ####################################################################
       # test data prediction from level 0 
       pred_test_L0 <- level_0_test(named_list, test_data, fits)
-      # here make interaction matrix/df
+      # here make interaction matrix
       if (interactions){
         input_matrix <- model.matrix(~ .^2 - 1, data = pred_test_L0)
       } else {
@@ -134,13 +128,13 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=F
       count <- count + 1
     }
   }
-  colnames(coef_matrix) <- colnames(input_matrix)
-  colnames(coef_matrix) <- sub(":", "*", colnames(interaction_matrix)) # replace ':' with '*' in column names
+  colnames(coef_matrix) <- sub(":", "*", colnames(input_matrix)) # replace ':' with '*' in column names
   
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=2, repeats=1, method="pearson")
+t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=5, repeats=50, method="pearson")
+t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=5, repeats=50, interactions=TRUE, method="pearson")
 
 set.seed(123)
 reps <- 2
