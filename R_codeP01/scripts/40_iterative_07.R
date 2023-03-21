@@ -2,23 +2,9 @@ library(glmnet)
 set.seed(123)
 
 elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 1000) {
-  # x_df: data frame of features (n x p)
-  # y: response vector (n x 1)
-  # char_list: list of character vectors representing groups of features
-  # alpha: elastic-net mixing parameter (0 <= alpha <= 1)
-  # lambda: regularization parameter
-  # tol: tolerance for convergence
-  # max_iters: maximum number of iterations
-  
-  # Convert data frame to matrix
+
   x <- as.matrix(x_df)
   
-  # If no lambda sequence is provided, use cv.glmnet's default
-  if (is.null(lambda_seq)) {
-    lambda_seq <- NULL
-  } else {
-    lambda_seq <- as.vector(lambda_seq)
-  }
   
   # Create a list of groups, each group containing the column indices of x corresponding to the feature names in char_list
   groups <- lapply(char_list, function(char_group) {
@@ -35,11 +21,11 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
   best_lambda <- fit_beta0$lambda.min
   beta_main <- coef(fit_beta0, s = best_lambda)[-1]  # exclude intercept
   
-  # Calculate interaction terms for all combinations of groups
+  # calculate interaction terms for all combinations of groups
   n_groups <- length(groups)
   interaction_indices <- t(combn(n_groups, 2))
   
-  # Initialize interaction matrix
+  # initialize interaction matrix
   n_combinations <- ncol(combn(n_groups, 2))
   interactions <- matrix(0, nrow(x), n_combinations)
   
@@ -50,10 +36,10 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
     interactions[, i] <- interaction_terms(x, beta_main, group1, group2)
   }
   
-  # Make feature matrix with original features and interactions
+  # make feature matrix with original features and interactions
   x_with_interactions <- cbind(x, interactions)
   
-  # Initialize variables for convergence check
+  # initialize variables for convergence checking
   converged <- FALSE
   iter <- 0
   obj_diff <- NULL
@@ -80,11 +66,10 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
     # Update betas using the new beta values
     new_betas <- as.vector(coef(fit_with_interactions))[-1]  # exclude intercept
     
-    # Check for convergence
+
     new_beta_main <- new_betas[1:ncol(x)]
-    
     obj_diff <- c(obj_diff, mean(abs(new_betas - betas)))
-    # print(mean(abs(new_betas - betas)))
+
     
     if (mean(abs(new_beta_main - beta_main)) < tol && mean(abs(new_betas[-(1:ncol(x))] - betas[-(1:ncol(x))])) < tol*100) {  # Only check convergence for the betas without interaction terms
       converged <- TRUE
@@ -97,10 +82,10 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
   # betas <- new_betas
   beta_interaction <- betas[(ncol(x) + 1):length(betas)]
   
-  # Create named vectors for beta_main and beta_interaction
+  # make named vectors for beta_main and beta_interaction
   named_beta_main <- setNames(beta_main, colnames(x_df))
   
-  # Create named vector for beta_interaction
+  # make named vector for beta_interaction
   interaction_names <- apply(interaction_indices, 1, function(idx) {
     paste(names(char_list)[idx[1]], "*", names(char_list)[idx[2]])
   })
