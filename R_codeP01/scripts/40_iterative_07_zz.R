@@ -69,10 +69,14 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
     # Update betas using the new beta values
     new_betas <- as.vector(coef(fit_with_interactions))[-1]  # exclude intercept
     
-
     new_beta_main <- new_betas[1:ncol(x)]
     
     best_lambda_idx <- which(fit_with_interactions$lambda == best_lambda)
+    
+    # calculates the deviance for the current model using the best lambda value. 
+    # The deviance is calculated as (1 - dev.ratio) * nulldev since we can only extract dev.ratio from the model object
+    # dev.ratio is the deviance ratio at the best lambda: (null deviance - model deviance) / null deviance
+    # nulldev is the null deviance (the deviance of a model with no features -> just the intercept).
     dev_glmnet_curr <-  (1 - fit_with_interactions$glmnet$dev.ratio[best_lambda_idx]) * fit_with_interactions$glmnet$nulldev
     obj_dev <- abs(dev_glmnet_curr - dev_glmnet)/dev_glmnet_curr
     if ( obj_dev < tol ) {  # Only check convergence for the betas without interaction terms
