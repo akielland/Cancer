@@ -428,6 +428,50 @@ data_table <- data.frame(
 kable(data_table)
 ```
 
+
+
+# START USING DOMAIN KNOWLEDGE
+
+# PCA on signature gene sets, cross-validation
+### Ridge: 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif.RData")
+r_pca_c_771_RORprolif <- report02_out_ridge(r_pca_c_771_RORprolif)
+```
+
+### Ridge: 771 genes -> ROR-proliferation score + interactions between PCs
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_interact_771_RORprolif.RData")
+r_pca_c_interact_771_RORprolif <- report02_out_ridge(r_pca_c_interact_771_RORprolif)
+```
+
+### Lasso: 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_771_RORprolif.RData")
+l_pca_c_771_RORprolif <- report02_out(l_pca_c_771_RORprolif)
+```
+
+### Lasso: 771 genes -> ROR-proliferation score + interactions between PCs
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_interact_771_RORprolif.RData")
+l_pca_c_interact_771_RORprolif <- report02_out(l_pca_c_interact_771_RORprolif)
+```
+
+### ElasticNet: 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_771_RORprolif.RData")
+en_pca_c_771_RORprolif <- report02_out(en_pca_c_771_RORprolif)
+```
+
+### ElasticNet: 771 genes -> ROR-proliferation score + interactions between PCs
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_interact_771_RORprolif.RData")
+en_pca_c_interact_771_RORprolif <- report02_out(en_pca_c_interact_771_RORprolif)
+```
+
+LAGE TABELLER HER
+
+
 # Post Lasso
 not done
 
@@ -512,3 +556,23 @@ data_table <- data.frame(
 )
 kable(data_table)
 ```
+
+
+
+
+### Summery results: Boosting with stumps 771 genes bootstrap and repeated cross-validation
+```{r}
+data_table <- data.frame(
+  Model = c("prolif boot", "ROR-prolif boot", "prolif rep cross-val", "ROR-prolif rep cross-val"),
+  cor_mean = c(xg_b_771_p$cor_mean, xg_b_771_ROR_p$cor_mean, xg_c_771_p$cor_mean, xg_c_771_ROR_p$cor_mean),
+  sd_cor = c(xg_b_771_p$cor_sd, xg_b_771_ROR_p$cor_sd, xg_c_771_p$cor_sd, xg_c_771_ROR_p$cor_sd),
+  MSE_mean = c(xg_b_771_p$MSE_mean, xg_b_771_ROR_p$MSE_mean, xg_c_771_p$MSE_mean, xg_c_771_ROR_p$MSE_mean),
+  MSE_sd = c(xg_b_771_p$MSE_sd, xg_b_771_ROR_p$MSE_sd, xg_c_771_p$MSE_sd, xg_c_771_ROR_p$MSE_sd)
+)
+kable(data_table)
+```
+
+
+
+
+

@@ -94,7 +94,7 @@ all_genes <- colnames(df01 |> select(41:811))
 # just for testing with fewer features
 test_genes <- colnames(df01 |> select(41:46))
 
-length(genes)
+length(all_genes)
 
 df_genes_with_output <- function(df, predictors, output){
   print(output)
@@ -124,6 +124,7 @@ ROR_prolif_771genes <- df_genes_with_output(df01, all_genes, "ROR_P_Subtype_Prol
 head(prolif_771genes[,1:5])
 lastcol <- ncol(prolif_771genes)
 head(prolif_771genes[, (lastcol-5): lastcol])
+
 
 # dataframe for caret
 dfA03 <- Proliferation_ALLgenes |> 

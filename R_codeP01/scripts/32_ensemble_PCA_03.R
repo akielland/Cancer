@@ -86,7 +86,7 @@ t <-pca_as_features_interaction(char_list, prolif_771genes)
 t <-pca_as_features(char_list, prolif_771genes)
 
 
-# Lasso function returning a trained object
+# Lasso function returning a trained object DONT NEED:just change alpha value in elastic net function
 lasso_sample <- function(train_data){
   X_ <- as.matrix(train_data |> select(-1))
   Y_ <- as.matrix(train_data |>  select(1))
@@ -97,23 +97,22 @@ lasso_sample <- function(train_data){
   return(fit.cv)
 }
 
-
 # Elastic Net function returning a trained object
-elastic_net_sample <- function(train_data){
+elastic_net_sample <- function(train_data, alpha){
   X_ <- as.matrix(train_data |> select(-1))
   Y_ <- as.matrix(train_data |>  select(1))
   # Fit the model with elastic net regularization
-  fit.en <- glmnet(X_, Y_, family = "gaussian", alpha = 0.5, standardize = TRUE, nlambda = 100, nfolds = 5)
+  fit.en <- glmnet(X_, Y_, family = "gaussian", alpha=alpha, standardize = TRUE, nlambda = 100, nfolds = 5)
   # Perform cross-validation to select the best model
-  fit.cv <- cv.glmnet(X_, Y_, lambda = fit.en$lambda, alpha = 0.5, nfolds = 5)
+  fit.cv <- cv.glmnet(X_, Y_, lambda = fit.en$lambda, alpha=alpha, nfolds = 5)
   return(fit.cv)
 }
 
-
 # Function: repeated k-fold cross validation: NEED TO select if interaction terms or not
-lasso_PCA_rep_cv <- function(df_data, folds=5, repeats=1, interactions=FALSE, method="pearson", model) {
+PCA_rep_cv <- function(df_data, alpha, folds=5, repeats=1, interactions=FALSE, method="pearson") {
   n_models <- repeats * folds
   print(n_models)
+  print(alpha)
 
   # make df with response Y and the PCA's from the different signatures
   if (interactions){
@@ -138,70 +137,80 @@ lasso_PCA_rep_cv <- function(df_data, folds=5, repeats=1, interactions=FALSE, me
       train_data <- df_Y_PCA[kf[[j]],]
       test_data <- df_Y_PCA[-kf[[j]],]
   
-      # Fit the function on the training data and get results
-      if (model == "lasso") {
-        fit <- lasso_sample(train_data)
-      } else if (model == "elastic_net") {
-        fit <- elastic_net_sample(train_data)
-      }
-    
+      # # Fit the function on the training data and get results
+      fit <- elastic_net_sample(train_data, alpha)
+      # if (model == "lasso") {
+      #   fit <- lasso_sample(train_data)
+      # } else if (model == "elastic_net") {
+      #   fit <- elastic_net_sample(train_data)
+      # }
+      
+      
       coef_matrix[row_index, ] <- coef(fit, s = "lambda.min")[-1]
       
       pred = predict(fit, newx = as.matrix(test_data)[,-1], type = "response", s = "lambda.min")  
       cor_vec[row_index]  <- suppressWarnings(cor(pred, test_data[,1], method=method))
       MSE_vec[row_index] <- mean((pred - test_data[,1])^2)
       
-      cat(row_index, "")
+      if(!row_index %% 10) cat(row_index, "")
       row_index <- row_index + 1
     }
   }
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-
-t1 <- lasso_PCA_rep_cv(prolif_771genes, folds=5, repeats=50, interactions=TRUE, method="spearman", model="lasso")
+percentage = 0.9
+t1 <- PCA_rep_cv(prolif_771genes, alpha=0.5, folds=5, repeats=5, interactions=TRUE, method="pearson")
 mean(t1$cor, na.rm=TRUE)
 t1$coef_matrix
 
+# Ridge
+# RUN: r_pca_c_771_RORprolif
+set.seed(123)
 percentage = 0.9
-# RUN: pc_c_obj_771_prolif
-set.seed(123)
-pc_c_obj_771_prolif <- lasso_PCA_rep_cv(prolif_771genes, folds=5, repeats=200, method="pearson")
-head(pc_c_obj_771_prolif$coef_matrix)[,1:8]
-save(pc_c_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/pc_c_obj_771_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/pc_c_obj_771_prolif.RData")
-mean(pc_c_obj_771_prolif$cor_vec, na.rm=T)
-sd(pc_c_obj_771_prolif$cor_vec)
+r_pca_c_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(r_pca_c_771_RORprolif$coef_matrix)[,1:8]
+save(r_pca_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif.RData")
+mean(r_pca_c_771_RORprolif$cor_vec, na.rm=T)
+sd(r_pca_c_771_RORprolif$cor_vec)
 
-# RUN: pc_c_obj_771_RORprolif
+# RUN: r_pca_c_interact_771_RORprolif
 set.seed(123)
-pc_c_obj_771_RORprolif <- lasso_PCA_rep_cv(ROR_prolif_771genes, folds, repeats, method="pearson")
-head(pc_c_obj_771_RORprolif$coef_matrix)[,1:8]
-save(pc_c_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/pc_c_obj_771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/pc_c_obj_771_RORprolif.RData")
-mean(pc_c_obj_771_RORprolif$cor_vec, na.rm=T)
-sd(pc_c_obj_771_RORprolif$cor_vec)
+r_pca_c_interact_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=0, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(r_pca_c_interact_771_RORprolif$coef_matrix)[,1:8]
+save(r_pca_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_interact_771_RORprolif.RData")
+mean(r_pca_c_interact_771_RORprolif$cor_vec, na.rm=T)
 
-# RUN: l_pc_c_obj_interaction_771_RORprolif
+# Lasso
+# RUN: l_pca_c_771_RORprolif
 set.seed(123)
-folds=5
-repeats=200
-model="lasso"
-l_pc_c_obj_interaction_771_RORprolif <- lasso_PCA_rep_cv(prolif_771genes, folds, repeats, interactions=TRUE, method="pearson", model)
-head(l_pc_c_obj_interaction_771_RORprolif$coef_matrix)[,1:8]
-save(l_pc_c_obj_interaction_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pc_c_obj_interaction_771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pc_c_obj_interaction_771_RORprolif.RData")
-mean(l_pc_c_obj_interaction_771_RORprolif$cor_vec, na.rm=T)
-sd(l_pc_c_obj_interaction_771_RORprolif$cor_vec)
+percentage = 0.9
+l_pca_c_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(l_pca_c_771_RORprolif$coef_matrix)[,1:8]
+save(l_pca_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_771_RORprolif.RData")
+mean(l_pca_c_771_RORprolif$cor_vec, na.rm=T)
 
-# RUN: en_pc_c_obj_interaction_771_RORprolif
+# RUN: l_pca_c_interact_771_RORprolif
 set.seed(123)
-folds=5
-repeats=200
-model="elstic_net"
-en_pc_c_obj_interaction_771_RORprolif <- lasso_PCA_rep_cv(prolif_771genes, folds, repeats, interactions=TRUE, method="pearson", model)
-head(en_pc_c_obj_interaction_771_RORprolif$coef_matrix)[,1:8]
-save(en_pc_c_obj_interaction_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pc_c_obj_interaction_771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pc_c_obj_interaction_771_RORprolif.RData")
-mean(en_pc_c_obj_interaction_771_RORprolif$cor_vec, na.rm=T)
-sd(en_pc_c_obj_interaction_771_RORprolif$cor_vec)
+l_pca_c_interact_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=1, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(l_pca_c_interact_771_RORprolif$coef_matrix)[,1:8]
+save(l_pca_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_interact_771_RORprolif.RData")
+mean(l_pca_c_interact_771_RORprolif$cor_vec, na.rm=T)
+
+# Elastic
+# RUN: en_pca_c_771_RORprolif
+set.seed(123)
+percentage = 0.9
+en_pca_c_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=0.5, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(en_pca_c_771_RORprolif$coef_matrix)[,1:8]
+save(en_pca_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_771_RORprolif.RData")
+mean(en_pca_c_771_RORprolif$cor_vec, na.rm=T)
+
+# RUN: en_pca_c_interact_771_RORprolif
+set.seed(123)
+en_pca_c_interact_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=0.5, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(en_pca_c_interact_771_RORprolif$coef_matrix)[,1:8]
+save(en_pca_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_interact_771_RORprolif.RData")
+mean(en_pca_c_interact_771_RORprolif$cor_vec, na.rm=T)
+

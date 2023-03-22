@@ -41,7 +41,7 @@ t <-level_0_model(char_list, prolif_771genes)
 class(t)
 
 # function to calculate predictions of the level 0 models on some test data
-# The only different from the one above is that it takes fited model as argument instead of fiting them in the function
+# The only different from the one above is that it takes fitted model as argument instead of fitting them in the function
 level_0_test <- function(named_list, test_data, fits){
   pred_test_L0 <- data.frame(matrix(nrow = nrow(test_data), ncol = 0))
   
@@ -133,8 +133,9 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=F
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=5, repeats=50, method="pearson")
-t3 <- lasso_rep_cv(prolif_771genes, char_list, folds=5, repeats=50, interactions=TRUE, method="pearson")
+t3 <- lasso_rep_cv(ROR_prolif_771genes, char_list, folds=5, repeats=50, interactions=FALSE, method="pearson")
+t3 <- lasso_rep_cv(ROR_prolif_771genes, char_list, folds=5, repeats=50, interactions=TRUE, method="pearson")
+mean(t3$cor_vec)
 
 set.seed(123)
 reps <- 2
