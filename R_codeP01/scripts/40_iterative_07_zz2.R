@@ -1,7 +1,7 @@
 library(glmnet)
 set.seed(123)
 
-elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 1000) {
+elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 100) {
 
   x <- as.matrix(x_df)
   
@@ -114,8 +114,7 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
   named_beta_interaction <- setNames(beta_interaction, interaction_names)
   
   return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
-  # return(list(beta_main = beta_main, beta_interaction = beta_interaction, iterations = iter, best_lambda = best_lambda))
-}
+ }
 
 # Create a synthetic dataset with some interaction effect
 set.seed(42)
