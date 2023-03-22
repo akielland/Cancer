@@ -5,7 +5,6 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
 
   x <- as.matrix(x_df)
   
-  
   # Create a list of groups, each group containing the column indices of x corresponding to the feature names in char_list
   groups <- lapply(char_list, function(char_group) {
     sapply(char_group, function(feature_name) which(colnames(x_df) == feature_name))
@@ -69,11 +68,18 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
 
     new_beta_main <- new_betas[1:ncol(x)]
     obj_diff <- c(obj_diff, mean(abs(new_betas - betas)))
-
     
-    if (mean(abs(new_beta_main - beta_main)) < tol && mean(abs(new_betas[-(1:ncol(x))] - betas[-(1:ncol(x))])) < tol*100) {  # Only check convergence for the betas without interaction terms
-      converged <- TRUE
-    } else {
+    if (!any(new_beta_main != 0))
+      stop("Warning: all beta manins are zero!")
+    
+    beta_main0 <- beta_main[beta_main != 0]
+    new_beta_main0 <- new_beta_main[new_beta_main != 0]
+    
+    # if (mean(abs(new_beta_main - beta_main)) < tol && mean(abs(new_betas[-(1:ncol(x))] - betas[-(1:ncol(x))])) < tol*100) {  # Only check convergence for the betas without interaction terms
+    if (max(abs(new_beta_main0 - beta_main0)) < tol ) {  # Only check convergence for the betas without interaction terms
+        converged <- TRUE
+    } 
+    else {
       beta_main <- new_beta_main
       betas <- new_betas  # Update betas only if not converged
     }
@@ -95,10 +101,66 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
   # return(list(beta_main = beta_main, beta_interaction = beta_interaction, iterations = iter, best_lambda = best_lambda))
 }
 
+
+
 # Create a synthetic dataset with some interaction effect
 set.seed(42)
 n <- 100
 p <- 20
+
+X_df <- matrix(rnorm(n * p), n, p)
+colnames(X_df) <- paste0("X", 1:p)
+
+X_df <- cbind(X_df, matrix(rnorm(n*100, sd=0.5), nrow = n))
+
+
+# Create true betas
+true_betas <- runif(p, -1, 1)
+true_betas <- c(true_betas, rep(0,100))
+
+beta1 <- matrix(true_betas[1:5], ncol=1)
+beta2 <- matrix(true_betas[6:10], ncol=1)
+beta4 <- matrix(true_betas[16:20], ncol=1)
+
+# Define character lists for each group of features
+char_group1 <- colnames(X_df)[1:5]
+char_group2 <- colnames(X_df)[6:10]
+char_group3 <- colnames(X_df)[11:15]
+char_group4 <- colnames(X_df)[16:20]
+
+X_group1 = X_df[, char_group1]
+X_group2 = X_df[, char_group2]
+X_group4 = X_df[, char_group4]
+
+# Add interaction effects
+interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 + (X_group1 %*% beta1) * (X_group4 %*% beta4) * 0.5
+X_mat <- as.matrix(X_df)
+y <- X_mat %*% true_betas + interaction_effect + rnorm(n)
+
+char_list <- list(group1 = char_group1,
+                  group2 = char_group2,
+                  group3 = char_group3,
+                  group4 = char_group4)
+
+x_df <- scale(X_df)
+y <- scale(y)
+# Run the elastic net interaction function
+set.seed(123)
+result <- elastic_net_interaction(x_df, y, char_list, alpha = 1e-6, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 300)
+# Print the results
+print(result)
+plot(result$obj_diff, type = "l", lty = 1)
+
+
+
+
+
+
+
+
+
+
+
 
 X_df <- matrix(rnorm(n * p), n, p)
 colnames(X_df) <- paste0("X", 1:p)

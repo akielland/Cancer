@@ -72,13 +72,29 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
 
     new_beta_main <- new_betas[1:ncol(x)]
     
-    best_lambda_idx <- which(fit_with_interactions$lambda == best_lambda)
-    dev_glmnet_curr <-  (1 - fit_with_interactions$glmnet$dev.ratio[best_lambda_idx]) * fit_with_interactions$glmnet$nulldev
-    obj_dev <- abs(dev_glmnet_curr - dev_glmnet)/dev_glmnet_curr
-    if ( obj_dev < tol ) {  # Only check convergence for the betas without interaction terms
+    # best_lambda_idx <- which(fit_with_interactions$lambda == best_lambda)
+    # dev_glmnet_curr <-  (1 - fit_with_interactions$glmnet$dev.ratio[best_lambda_idx]) * fit_with_interactions$glmnet$nulldev
+    # obj_dev <- abs(dev_glmnet_curr - dev_glmnet)/dev_glmnet_curr
+    # if ( obj_dev < tol ) {  # Only check convergence for the betas without interaction terms
+    #   converged <- TRUE
+    # } else {
+    #   dev_glmnet <- dev_glmnet_curr
+    #   beta_main <- new_beta_main
+    #   betas <- new_betas  # Update betas only if not converged
+    # }
+    # 
+    if (!any(new_beta_main != 0) && iter > 10)
+      stop("Warning: all beta manins are zero!")
+    
+    beta_main0 <- beta_main[beta_main != 0]
+    new_beta_main0 <- new_beta_main[new_beta_main != 0]
+    
+    # if (mean(abs(new_beta_main - beta_main)) < tol && mean(abs(new_betas[-(1:ncol(x))] - betas[-(1:ncol(x))])) < tol*100) {  # Only check convergence for the betas without interaction terms
+    if (length(beta_main0) > 0 && length(new_beta_main0) > 0) {  # Only check convergence for the betas without interaction terms
+      if (max(abs(new_beta_main0 - beta_main0)) < tol )
       converged <- TRUE
-    } else {
-      dev_glmnet <- dev_glmnet_curr
+    } 
+    else {
       beta_main <- new_beta_main
       betas <- new_betas  # Update betas only if not converged
     }

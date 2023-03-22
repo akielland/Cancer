@@ -86,7 +86,7 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
     obj_diff <- c(obj_diff, mean(abs(new_betas - betas)))
     # print(mean(abs(new_betas - betas)))
     
-    if (mean(abs(new_beta_main - beta_main)) < tol && mean(abs(new_betas[-(1:ncol(x))] - betas[-(1:ncol(x))])) < tol*100) {  # Only check convergence for the betas without interaction terms
+    if (max(abs(new_beta_main - beta_main)) < tol ) {  # Only check convergence for the betas without interaction terms
       converged <- TRUE
     } else {
       beta_main <- new_beta_main
@@ -107,7 +107,6 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
   named_beta_interaction <- setNames(beta_interaction, interaction_names)
   
   return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
-  # return(list(beta_main = beta_main, beta_interaction = beta_interaction, iterations = iter, best_lambda = best_lambda))
 }
 
 # Create a synthetic dataset with some interaction effect
