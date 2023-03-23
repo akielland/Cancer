@@ -686,6 +686,7 @@ kable(data_table)
 Response is just ROR+proliferation score, and only used repeated cross-validation.
 
 ```{r}
+options(digits=3)
 data_table <- data.frame(
   Model = c("Lasso", "Ridge", "ElasticNet", "Boosting", "Residual (lasso/additive)", 
             "PCA ON GENE SETS", "ridge", "ridge_interac", "lasso", "lasso_interact", "elastic", "elastic_interact", 
@@ -775,7 +776,11 @@ data_table <- data.frame(
     en_stack_c_771_RORprolif$MSE_sd, 
     en_stack_c_interact_771_RORprolif$MSE_sd)
 )
-kable(data_table)
+
+rounded_data_table <- data_table |>
+  mutate_if(is.numeric, round, digits = 3)
+
+kable(rounded_data_table)
 ```
 
 
