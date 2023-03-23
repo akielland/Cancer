@@ -68,25 +68,32 @@ knitr::opts_chunk$set(fig.width=12, fig.height=8, fig.path='Figs/',
 ```
 
 # Data
-One clinical trails on breast cancer (advanced HR+/HER2- and HER2-E breast cancer) using two different drug combination; and a cohorts study (here used as test data set).  
-Both data set have mRNA expression of 771 genes at baseline (prior to treatment). This genes are specifically selected based on their potential roles in breast cancer pathology:  
+One clinical trails on breast cancer (advanced HR+/HER2-) using two different drug combination
+
+The data set have mRNA expression of 771 genes at baseline (prior to treatment). This genes are specifically selected based on their potential roles in breast cancer pathology:  
+
 The gene set is dived into 25 sets of "signature genes"; which are thought to represent functional unities with respect to cancer biology. Often signaling pathways. Furthermore, 8 immune cells are represented with specific genes. These sets are substantially smaller then the signature genes; which I presume leads to some issue in modeling (as for clinical data too - see next sentence).
+In the domain knowledge part at the end 5 signature gene sets are use. Make sense to add more...
 
-Additionally, both data-set contains clinical data; which up to now is not used in any models. If included they maybe should have a higher weight or be implemented differently from a sole gene. Maybe in a stacked ensemble model as signature.
+Additionally, the data-set contains clinical data; which up to now is not used in any models. If included they maybe should have a higher weight or be implemented differently from a sole gene. Maybe in a stacked ensemble model as signature.
 
-## Respones used
+## Respones in study -ish
 ### Proliferation score
+
 A score based on expression level of some of the genes. Range: -1.1366 to 0.8511
+
 ### Risk of relapse score (ROR)
-A score based on expression level of some of the genes. Range: -8.035678 to 75.13174
-### Risk of relapse score with proliferaton score (ROR-Prolif)
-A combined score based on expression level of more genes. Range: 1 to 97 (1-100). 
 
-The two scores involving ROR also have categorical variants containing: \ 
-low, medium, high
+A combined score based on expression level of genes and some clinical findings. Range: -8.035678 to 75.13174
 
-### Progression free survival (PFS)
-This is the outcome used in the clinical cohort. Here i have used correlation with the scores described above. Spearman can maybe be used. Another approach is to use the above scores to divide the patient in to two groups and see if the two groups show clearly separable PFS over time (basically lock at the graphs). The differentiation into two groups is done base on best values from a ROC curve. 
+(only used in combination with proliferation score as described bellow)
+
+### Risk of relapse score with proliferaton score (ROR_Prolif)
+
+A combined score of the two above. Range: 1 to 97 (1-100)
+
+The two scores involving ROR also have categorical variants containing: low, medium, high
+(but not used...)
 
 
 ## Trail
@@ -95,11 +102,6 @@ Two treatments which differ with respect to drug combination
 - Chemotherapy: doxorubicin, cyclophosphamide and paclitaxel. 
 approx. 50 patients in each group.
 Endpoints: proliferation score, ROR score, combined ROR and prolif
-
-## Cohort
-The primary objective of this study is to compare two cdk4/6 targeted drugs (Palbociclib, n=36; Abemaciclib, n=3 in combination with endocrine therapy (tamoxifen, fulvestrant or aromatase inhibitors,  I think?) 
-
-Endpoints: progression free survival (months), OS?, and status of the two former (dont know what that means)
 
 # Major goal
 1. Find best model to predict outcome of cancer treatment with genetic profile as predictive features
@@ -115,32 +117,46 @@ Test all thinkable models in a search for superior models
 Two levels of evaluation is considered:
 
 ## 1. Relative comparison of the different models
-1000 bootstrap models are fitted and then evaluated on the original sample. This gives a relative comparison of the various models with respect to data very similar to the given data set. In addition to Correlation and MSE, frequency of selected features is compared.
+1000 bootstrap models are fitted and then evaluated on the original sample. This gives a relative comparison of the various models with respect to data very similar to the given data set. Correlation, MSE and frequency of selected features is compared.
 
 ## 2. Expected outcome of future patients
 3 strategies are considered:  
-1. Repeated cross-validations (200 rep, 5-fold) \ 
-2. Bootstrap models with 0.632 (or 0.632?) adjustment (Not done) \ 
-3. Use the cohort as test data-set (Challenge: This trail have different responses) \ 
+
+1. Repeated cross-validations (200 rep, 5-fold)
+
+2. Bootstrap models with 0.632 (or 0.632?) adjustment (Not done)
+
+3. Use the cohort as test data-set (Challenge: This trail have different responses)
 
 
 
 # RESULTS
+## Features tested:
+### 6 genes
+### 771 genes
+### node values of mech model
+### residuals of mech model
+
+## Responses tested:
+### proliferation score
+### combined score including proliferation and ROR
+
+## Models tested:
+### Lasso
+### Ridge
+### Elastic Net
+### Boosting with stumps as base learner
+#### (- mboost)
+#### - xgboost
+### PCA on subsets of genes
+### Stacking using different features in the base models
+### Sparse group lasso (not done)
+### Iterative learning (ongoing)
+### Post Lasso (not done)
+
 
 # Results of individual modles:
 
-# Models tested
-## Lasso
-## Post Lasso
-## Residuals
-## Ridge
-## Elastic Net
-## Boosting with stumps as base learner
-### - mboost
-### - xgboost
-## PCA feature engineering
-## Stacking using different features in the base models 
-## Synergistic learning
 ```{r}
 source("/Users/anders/Documents/Master/Cancer/R_codeP01/scripts/90_output01.R")
 source("/Users/anders/Documents/Master/Cancer/R_codeP01/scripts/90_output_ridge_01.R")
@@ -231,7 +247,8 @@ kable(data_table)
 
 
 ## Lasso - Repeated cross-validation
-200 repeats of five fold cross-validation \ 
+200 repeats of five fold cross-validation
+
 ### 6 genes -> proliferation score
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_prolif.RData")
@@ -432,7 +449,7 @@ kable(data_table)
 
 # START USING DOMAIN KNOWLEDGE
 
-# PCA on signature gene sets, cross-validation
+# PCA on signature gene sets using repeated cross-validation
 
 ### Ridge: 771 genes -> ROR-proliferation score
 ```{r}
@@ -488,7 +505,7 @@ kable(data_table)
 
 
 
-# Stacking on signature gene sets, cross-validation
+# Stacking on signature gene sets using repeated cross-validation
 
 ### Ridge: 771 genes -> ROR-proliferation score
 ```{r}
@@ -660,6 +677,103 @@ data_table <- data.frame(
   MSE_mean = c(r_stack_c_771_RORprolif$MSE_mean, r_stack_c_interact_771_RORprolif$MSE_mean, l_stack_c_771_RORprolif$MSE_mean, l_stack_c_interact_771_RORprolif$MSE_mean, en_stack_c_771_RORprolif$MSE_mean, en_stack_c_interact_771_RORprolif$MSE_mean),
   
   MSE_sd = c(r_stack_c_771_RORprolif$MSE_sd, r_stack_c_interact_771_RORprolif$MSE_sd, l_stack_c_771_RORprolif$MSE_sd, l_stack_c_interact_771_RORprolif$MSE_sd, en_stack_c_771_RORprolif$MSE_sd, en_stack_c_interact_771_RORprolif$MSE_sd)
+)
+kable(data_table)
+```
+
+
+# Summery most interesting maybe
+Response is just ROR+proliferation score, and only used repeated cross-validation.
+
+```{r}
+data_table <- data.frame(
+  Model = c("Lasso", "Ridge", "ElasticNet", "Boosting", "Residual (lasso/additive)", 
+            "PCA ON GENE SETS", "ridge", "ridge_interac", "lasso", "lasso_interact", "elastic", "elastic_interact", 
+            "STACKING ON GENE SETS", "ridge", "ridge_interac", "lasso", "lasso_interact", "elastic", "elastic_interact"),
+  
+  cor_mean = c(
+    l_c_771_ROR_p$cor_mean,
+    r_c_771_ROR_p$cor_mean,
+    e_c_771_ROR_p$cor_mean,
+    xg_c_771_ROR_p$cor_mean,
+    l_c_residuals_ROR_p_a$cor_mean,
+    "",
+    r_pca_c_771_RORprolif$cor_mean, 
+    r_pca_c_interact_771_RORprolif$cor_mean, 
+    l_pca_c_771_RORprolif$cor_mean, 
+    l_pca_c_interact_771_RORprolif$cor_mean, 
+    en_pca_c_771_RORprolif$cor_mean, 
+    en_pca_c_interact_771_RORprolif$cor_mean,
+    "", 
+    r_stack_c_771_RORprolif$cor_mean, 
+    r_stack_c_interact_771_RORprolif$cor_mean, 
+    l_stack_c_771_RORprolif$cor_mean, 
+    l_stack_c_interact_771_RORprolif$cor_mean, 
+    en_stack_c_771_RORprolif$cor_mean,
+    en_stack_c_interact_771_RORprolif$cor_mean),
+  
+  sd_cor = c(
+    l_c_771_ROR_p$cor_sd,
+    r_c_771_ROR_p$cor_sd,
+    e_c_771_ROR_p$cor_sd,
+    xg_c_771_ROR_p$cor_sd,
+    l_c_residuals_ROR_p_a$cor_sd,
+    "",
+    r_pca_c_771_RORprolif$cor_sd, 
+    r_pca_c_interact_771_RORprolif$cor_sd, 
+    l_pca_c_771_RORprolif$cor_sd, 
+    l_pca_c_interact_771_RORprolif$cor_sd, 
+    en_pca_c_771_RORprolif$cor_sd, 
+    en_pca_c_interact_771_RORprolif$cor_sd,
+    "",
+    r_stack_c_771_RORprolif$cor_sd, 
+    r_stack_c_interact_771_RORprolif$cor_sd, 
+    l_stack_c_771_RORprolif$cor_sd, 
+    l_stack_c_interact_771_RORprolif$cor_sd, 
+    en_stack_c_771_RORprolif$cor_sd, 
+    en_stack_c_interact_771_RORprolif$cor_sd),
+  
+  MSE_mean = c(    
+    l_c_771_ROR_p$MSE_mean,
+    r_c_771_ROR_p$MSE_mean,
+    e_c_771_ROR_p$MSE_mean,
+    xg_c_771_ROR_p$MSE_mean,
+    l_c_residuals_ROR_p_a$MSE_mean,
+    "", 
+    r_pca_c_771_RORprolif$MSE_mean, 
+    r_pca_c_interact_771_RORprolif$MSE_mean, 
+    l_pca_c_771_RORprolif$MSE_mean, 
+    l_pca_c_interact_771_RORprolif$MSE_mean, 
+    en_pca_c_771_RORprolif$MSE_mean, 
+    en_pca_c_interact_771_RORprolif$MSE_mean,
+    "",
+    r_stack_c_771_RORprolif$MSE_mean, 
+    r_stack_c_interact_771_RORprolif$MSE_mean, 
+    l_stack_c_771_RORprolif$MSE_mean,
+    l_stack_c_interact_771_RORprolif$MSE_mean, 
+    en_stack_c_771_RORprolif$MSE_mean, 
+    en_stack_c_interact_771_RORprolif$MSE_mean),
+  
+  MSE_sd = c(    
+    l_c_771_ROR_p$MSE_sd,
+    r_c_771_ROR_p$MSE_sd,
+    e_c_771_ROR_p$MSE_sd,
+    xg_c_771_ROR_p$MSE_sd,
+    l_c_residuals_ROR_p_a$MSE_sd,
+    "",
+    r_pca_c_771_RORprolif$MSE_sd, 
+    r_pca_c_interact_771_RORprolif$MSE_sd, 
+    l_pca_c_771_RORprolif$MSE_sd, 
+    l_pca_c_interact_771_RORprolif$MSE_sd, 
+    en_pca_c_771_RORprolif$MSE_sd, 
+    en_pca_c_interact_771_RORprolif$MSE_sd,
+    "",
+    r_stack_c_771_RORprolif$MSE_sd,
+    r_stack_c_interact_771_RORprolif$MSE_sd, 
+    l_stack_c_771_RORprolif$MSE_sd, 
+    l_stack_c_interact_771_RORprolif$MSE_sd, 
+    en_stack_c_771_RORprolif$MSE_sd, 
+    en_stack_c_interact_771_RORprolif$MSE_sd)
 )
 kable(data_table)
 ```
