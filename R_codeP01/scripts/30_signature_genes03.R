@@ -4,6 +4,16 @@
 
 # NB: looks to be the same/or very close to 30_ensembel_01 ???
 
+# Name list og gene signature sets 
+char_list <- list(imm_inf_ = char_immune_inf,
+                  prolif_ = char_prolif,
+                  ER_sing_ = char_ER_signaling,
+                  anti_pres_ = char_antigen_present,
+                  angiogen_ = char_angiogenesis
+                  )
+
+
+
 
 ## Create character matrix from signature genes
 signature_char <- function(words){

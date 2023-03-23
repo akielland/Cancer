@@ -5,30 +5,17 @@
 ##
 ## Test against the fold
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
-## output: selected genes; proliferation.score correlation; SEM
-
-library(caret)
-library(glmnet)
-library(ggplot2)
-
-
-# Name list og gene signature sets 
-char_list <- list(imm_inf_ = char_immune_inf,
-                  prolif_ = char_prolif,
-                  ER_sing_ = char_ER_signaling,
-                  anti_pres_ = char_antigen_present,
-                  angiogen_ = char_angiogenesis
-)
+## output: selected genes (); proliferation.score correlation; SEM
 
 # function to calculate new feature set from level 0 learners
-level_0_model <- function(named_list, train_data){
+level_0_model <- function(named_list, train_data, alpha0){
   pred_L0 <- data.frame(matrix(nrow = nrow(train_data), ncol = 0))
   fits <- list()
   
   for (key in names(named_list)) {
     char_matrix <- named_list[[key]]
     X_ <- as.matrix(train_data[c(char_matrix)])
-    fit_ <- cv.glmnet(X_, train_data$Y, nfolds=5)
+    fit_ <- cv.glmnet(X_, train_data$Y, alpha=alpha0, nfolds=5)
     # here prediction is made using same data as used in learning the model... ?
     pred_ = predict(fit_, newx = X_, type = "response", s = "lambda.min")
     colnames(pred_) <- key
@@ -37,8 +24,8 @@ level_0_model <- function(named_list, train_data){
   }
   return(list(pred_L0=pred_L0, fits=fits))
 }
-t <-level_0_model(char_list, prolif_771genes)
-class(t)
+# t <-level_0_model(char_list, prolif_771genes, )
+# class(t)
 
 # function to calculate predictions of the level 0 models on some test data
 # The only different from the one above is that it takes fitted model as argument instead of fitting them in the function
@@ -55,13 +42,11 @@ level_0_test <- function(named_list, test_data, fits){
   }
   return(pred_test_L0)
 }
-
-t1 <- level_0_test(char_list, prolif_771genes, t$fit)
-
+# t1 <- level_0_test(char_list, prolif_771genes, t$fit)
 
 
 # Function: repeated k-fold cross validation
-lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=FALSE, method="pearson") {
+stacking_rep_cv <- function(df_data, named_list, alpha0=0, alpha1=0.5, folds=5, repeats=1, interactions=FALSE, method="pearson") {
   n_models <- repeats * folds
   print(n_models)
   
@@ -91,7 +76,7 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=F
       # pred0 <- train_data[ind==2,]
       
       # Partition feature space; run lasso and stack in-sample predictions
-      pred_and_fit <- level_0_model(char_list, train_data)
+      pred_and_fit <- level_0_model(char_list, train_data, alpha0) # returns a dictionary with predictions and models
       pred_L0 <- pred_and_fit$pred_L0
       
       # here make interaction matrix
@@ -103,13 +88,14 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=F
       
       fits <- pred_and_fit$fits   # collect the fitted models for each signature gene sets 
       # fit lasso meta-model
-     # meta_model <- cv.glmnet(as.matrix(pred_L0), train_data$Y, nfolds=5)
-      meta_model <- cv.glmnet(as.matrix(input_matrix), train_data$Y, nfolds=5, alpha=0.5)
+      # meta_model <- cv.glmnet(as.matrix(pred_L0), train_data$Y, nfolds=5)
+      meta_model <- cv.glmnet(as.matrix(input_matrix), train_data$Y, nfolds=5, alpha=alpha1)
    
       ####################################################################
       ## test part
       ####################################################################
       # test data prediction from level 0 
+      # level_0_test returns the predictions from the the model fits of the individual sign.gene.sets
       pred_test_L0 <- level_0_test(named_list, test_data, fits)
       # here make interaction matrix
       if (interactions){
@@ -124,7 +110,7 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=F
       cor_vec[count]  <- suppressWarnings(cor(test_pred, test_data[,1], method=method))
       MSE_vec[count] <- mean((test_pred - test_data[,1])^2)
     
-      cat(count, "")
+      if (!count %% 10 ) cat(count, "")
       count <- count + 1
     }
   }
@@ -133,12 +119,59 @@ lasso_rep_cv <- function(df_data, named_list, folds=5, repeats=1, interactions=F
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-t3 <- lasso_rep_cv(ROR_prolif_771genes, char_list, folds=5, repeats=50, interactions=FALSE, method="pearson")
-t3 <- lasso_rep_cv(ROR_prolif_771genes, char_list, folds=5, repeats=50, interactions=TRUE, method="pearson")
+t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=20, interactions=FALSE, method="pearson")
+t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=20, interactions=TRUE, method="pearson")
 mean(t3$cor_vec)
 
+
+# Ridge
+# RUN: r_stack_c_771_RORprolif
 set.seed(123)
-reps <- 2
-folds <- 5
+r_stack_c_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(r_stack_c_771_RORprolif$coef_matrix)
+save(r_stack_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_771_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_771_RORprolif.RData")
+mean(r_stack_c_771_RORprolif$cor_vec, na.rm=T)
+sd(r_stack_c_771_RORprolif$cor_vec)
+
+# RUN: r_stack_interact_771_RORprolif
+set.seed(123)
+r_stack_c_interact_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes,char_list, alpha0=0, alpha1=0, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(r_stack_c_interact_771_RORprolif$coef_matrix)
+save(r_stack_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_interact_771_RORprolif.RData")
+mean(r_stack_c_interact_771_RORprolif$cor_vec, na.rm=T)
+
+# Lasso
+# RUN: l_stack_c_771_RORprolif
+set.seed(123)
+l_stack_c_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes,char_list, alpha0=0, alpha1=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(l_stack_c_771_RORprolif$coef_matrix)
+save(l_stack_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif.RData")
+mean(l_stack_c_771_RORprolif$cor_vec, na.rm=T)
+
+# RUN: l_stack_c_interact_771_RORprolif
+set.seed(123)
+l_stack_c_interact_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes,char_list, alpha0=0, alpha1=1, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(l_stack_c_interact_771_RORprolif$coef_matrix)
+save(l_stack_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_interact_771_RORprolif.RData")
+mean(l_stack_c_interact_771_RORprolif$cor_vec, na.rm=T)
+
+# Elastic
+# RUN: en_stack_c_771_RORprolif
+set.seed(123)
+en_stack_c_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(en_stack_c_771_RORprolif$coef_matrix)
+save(en_stack_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_stack_c_771_RORprolif.RData")
+mean(en_stack_c_771_RORprolif$cor_vec, na.rm=T)
+
+# RUN: en_stack_c_interact_771_RORprolif
+set.seed(123)
+en_stack_c_interact_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes,char_list, alpha0=0, alpha1=0.5, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(en_stack_c_interact_771_RORprolif$coef_matrix)
+save(en_stack_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_stack_c_interact_771_RORprolif.RData")
+mean(en_stack_c_interact_771_RORprolif$cor_vec, na.rm=T)
+
+
+
 
 

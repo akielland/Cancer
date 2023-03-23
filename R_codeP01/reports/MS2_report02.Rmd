@@ -433,6 +433,7 @@ kable(data_table)
 # START USING DOMAIN KNOWLEDGE
 
 # PCA on signature gene sets, cross-validation
+
 ### Ridge: 771 genes -> ROR-proliferation score
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif.RData")
@@ -469,7 +470,80 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_interac
 en_pca_c_interact_771_RORprolif <- report02_out(en_pca_c_interact_771_RORprolif)
 ```
 
-LAGE TABELLER HER
+
+### Summery results: PCA ROR+proliferation score (repeated cross-validation) 
+```{r}
+data_table <- data.frame(
+  Model = c("ridge", "ridge_interac", "lasso", "lasso_interact", "elastic", "elastic_interact"),
+  cor_mean = c(r_pca_c_771_RORprolif$cor_mean, r_pca_c_interact_771_RORprolif$cor_mean, l_pca_c_771_RORprolif$cor_mean, l_pca_c_interact_771_RORprolif$cor_mean, en_pca_c_771_RORprolif$cor_mean, en_pca_c_interact_771_RORprolif$cor_mean),
+  
+  sd_cor = c(r_pca_c_771_RORprolif$cor_sd, r_pca_c_interact_771_RORprolif$cor_sd, l_pca_c_771_RORprolif$cor_sd, l_pca_c_interact_771_RORprolif$cor_sd, en_pca_c_771_RORprolif$cor_sd, en_pca_c_interact_771_RORprolif$cor_sd),
+  
+  MSE_mean = c(r_pca_c_771_RORprolif$MSE_mean, r_pca_c_interact_771_RORprolif$MSE_mean, l_pca_c_771_RORprolif$MSE_mean, l_pca_c_interact_771_RORprolif$MSE_mean, en_pca_c_771_RORprolif$MSE_mean, en_pca_c_interact_771_RORprolif$MSE_mean),
+  
+  MSE_sd = c(r_pca_c_771_RORprolif$MSE_sd, r_pca_c_interact_771_RORprolif$MSE_sd, l_pca_c_771_RORprolif$MSE_sd, l_pca_c_interact_771_RORprolif$MSE_sd, en_pca_c_771_RORprolif$MSE_sd, en_pca_c_interact_771_RORprolif$MSE_sd)
+)
+kable(data_table)
+```
+
+
+
+# Stacking on signature gene sets, cross-validation
+
+### Ridge: 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_771_RORprolif.RData")
+r_stack_c_771_RORprolif <- report02_out_ridge(r_stack_c_771_RORprolif)
+```
+
+### Ridge: 771 genes -> ROR-proliferation score + interactions between PCs
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_interact_771_RORprolif.RData")
+r_stack_c_interact_771_RORprolif <- report02_out_ridge(r_stack_c_interact_771_RORprolif)
+```
+
+### Lasso: 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif.RData")
+l_stack_c_771_RORprolif <- report02_out(l_stack_c_771_RORprolif)
+```
+
+### Lasso: 771 genes -> ROR-proliferation score + interactions between PCs
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_interact_771_RORprolif.RData")
+l_stack_c_interact_771_RORprolif <- report02_out(l_stack_c_interact_771_RORprolif)
+```
+
+### ElasticNet: 771 genes -> ROR-proliferation score
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_stack_c_771_RORprolif.RData")
+en_stack_c_771_RORprolif <- report02_out(en_stack_c_771_RORprolif)
+```
+
+### ElasticNet: 771 genes -> ROR-proliferation score + interactions between PCs
+```{r}
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_stack_c_interact_771_RORprolif.RData")
+en_stack_c_interact_771_RORprolif <- report02_out(en_stack_c_interact_771_RORprolif)
+```
+
+
+### Summery results: Stacking ROR+proliferation score (repeated cross-validation) 
+```{r}
+data_table <- data.frame(
+  Model = c("ridge", "ridge_interac", "lasso", "lasso_interact", "elastic", "elastic_interact"),
+  cor_mean = c(r_stack_c_771_RORprolif$cor_mean, r_stack_c_interact_771_RORprolif$cor_mean, l_stack_c_771_RORprolif$cor_mean, l_stack_c_interact_771_RORprolif$cor_mean, en_stack_c_771_RORprolif$cor_mean, en_stack_c_interact_771_RORprolif$cor_mean),
+  
+  sd_cor = c(r_stack_c_771_RORprolif$cor_sd, r_stack_c_interact_771_RORprolif$cor_sd, l_stack_c_771_RORprolif$cor_sd, l_stack_c_interact_771_RORprolif$cor_sd, en_stack_c_771_RORprolif$cor_sd, en_stack_c_interact_771_RORprolif$cor_sd),
+  
+  MSE_mean = c(r_stack_c_771_RORprolif$MSE_mean, r_stack_c_interact_771_RORprolif$MSE_mean, l_stack_c_771_RORprolif$MSE_mean, l_stack_c_interact_771_RORprolif$MSE_mean, en_stack_c_771_RORprolif$MSE_mean, en_stack_c_interact_771_RORprolif$MSE_mean),
+  
+  MSE_sd = c(r_stack_c_771_RORprolif$MSE_sd, r_stack_c_interact_771_RORprolif$MSE_sd, l_stack_c_771_RORprolif$MSE_sd, l_stack_c_interact_771_RORprolif$MSE_sd, en_stack_c_771_RORprolif$MSE_sd, en_stack_c_interact_771_RORprolif$MSE_sd)
+)
+kable(data_table)
+```
+
+
+
 
 
 # Post Lasso
@@ -557,21 +631,38 @@ data_table <- data.frame(
 kable(data_table)
 ```
 
+## Summary using domain knowledge
 
-
-
-### Summery results: Boosting with stumps 771 genes bootstrap and repeated cross-validation
+### Summery results: PCA ROR+proliferation score (repeated cross-validation) 
 ```{r}
 data_table <- data.frame(
-  Model = c("prolif boot", "ROR-prolif boot", "prolif rep cross-val", "ROR-prolif rep cross-val"),
-  cor_mean = c(xg_b_771_p$cor_mean, xg_b_771_ROR_p$cor_mean, xg_c_771_p$cor_mean, xg_c_771_ROR_p$cor_mean),
-  sd_cor = c(xg_b_771_p$cor_sd, xg_b_771_ROR_p$cor_sd, xg_c_771_p$cor_sd, xg_c_771_ROR_p$cor_sd),
-  MSE_mean = c(xg_b_771_p$MSE_mean, xg_b_771_ROR_p$MSE_mean, xg_c_771_p$MSE_mean, xg_c_771_ROR_p$MSE_mean),
-  MSE_sd = c(xg_b_771_p$MSE_sd, xg_b_771_ROR_p$MSE_sd, xg_c_771_p$MSE_sd, xg_c_771_ROR_p$MSE_sd)
+  Model = c("ridge", "ridge_interac", "lasso", "lasso_interact", "elastic", "elastic_interact"),
+  cor_mean = c(r_pca_c_771_RORprolif$cor_mean, r_pca_c_interact_771_RORprolif$cor_mean, l_pca_c_771_RORprolif$cor_mean, l_pca_c_interact_771_RORprolif$cor_mean, en_pca_c_771_RORprolif$cor_mean, en_pca_c_interact_771_RORprolif$cor_mean),
+  
+  sd_cor = c(r_pca_c_771_RORprolif$cor_sd, r_pca_c_interact_771_RORprolif$cor_sd, l_pca_c_771_RORprolif$cor_sd, l_pca_c_interact_771_RORprolif$cor_sd, en_pca_c_771_RORprolif$cor_sd, en_pca_c_interact_771_RORprolif$cor_sd),
+  
+  MSE_mean = c(r_pca_c_771_RORprolif$MSE_mean, r_pca_c_interact_771_RORprolif$MSE_mean, l_pca_c_771_RORprolif$MSE_mean, l_pca_c_interact_771_RORprolif$MSE_mean, en_pca_c_771_RORprolif$MSE_mean, en_pca_c_interact_771_RORprolif$MSE_mean),
+  
+  MSE_sd = c(r_pca_c_771_RORprolif$MSE_sd, r_pca_c_interact_771_RORprolif$MSE_sd, l_pca_c_771_RORprolif$MSE_sd, l_pca_c_interact_771_RORprolif$MSE_sd, en_pca_c_771_RORprolif$MSE_sd, en_pca_c_interact_771_RORprolif$MSE_sd)
 )
 kable(data_table)
 ```
 
+
+### Summery results: Stacking ROR+proliferation score (repeated cross-validation) 
+```{r}
+data_table <- data.frame(
+  Model = c("ridge", "ridge_interac", "lasso", "lasso_interact", "elastic", "elastic_interact"),
+  cor_mean = c(r_stack_c_771_RORprolif$cor_mean, r_stack_c_interact_771_RORprolif$cor_mean, l_stack_c_771_RORprolif$cor_mean, l_stack_c_interact_771_RORprolif$cor_mean, en_stack_c_771_RORprolif$cor_mean, en_stack_c_interact_771_RORprolif$cor_mean),
+  
+  sd_cor = c(r_stack_c_771_RORprolif$cor_sd, r_stack_c_interact_771_RORprolif$cor_sd, l_stack_c_771_RORprolif$cor_sd, l_stack_c_interact_771_RORprolif$cor_sd, en_stack_c_771_RORprolif$cor_sd, en_stack_c_interact_771_RORprolif$cor_sd),
+  
+  MSE_mean = c(r_stack_c_771_RORprolif$MSE_mean, r_stack_c_interact_771_RORprolif$MSE_mean, l_stack_c_771_RORprolif$MSE_mean, l_stack_c_interact_771_RORprolif$MSE_mean, en_stack_c_771_RORprolif$MSE_mean, en_stack_c_interact_771_RORprolif$MSE_mean),
+  
+  MSE_sd = c(r_stack_c_771_RORprolif$MSE_sd, r_stack_c_interact_771_RORprolif$MSE_sd, l_stack_c_771_RORprolif$MSE_sd, l_stack_c_interact_771_RORprolif$MSE_sd, en_stack_c_771_RORprolif$MSE_sd, en_stack_c_interact_771_RORprolif$MSE_sd)
+)
+kable(data_table)
+```
 
 
 

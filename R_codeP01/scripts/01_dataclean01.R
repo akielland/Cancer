@@ -92,7 +92,7 @@ Y <- as.matrix(select(Proliferation_6genes, Y))
 all_genes <- colnames(df01 |> select(41:811))
 
 # just for testing with fewer features
-test_genes <- colnames(df01 |> select(41:46))
+# test_genes <- colnames(df01 |> select(41:46))
 
 length(all_genes)
 
