@@ -1,11 +1,9 @@
 library(glmnet)
 set.seed(123)
 
-synergistic <- function(df, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 100) {
-  # Extract predictor matrix and response vector; assuming response variable in first column
-  X <- as.matrix(df[, -1])
-  X <- scale(X)
-  y <- df[, 1]
+elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 100) {
+
+  x <- as.matrix(x_df)
   
   # Create a list of groups, each group containing the column indices of x corresponding to the feature names in char_list
   groups <- lapply(char_list, function(char_group) {

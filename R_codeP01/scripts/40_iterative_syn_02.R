@@ -1,5 +1,3 @@
-
-
 synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 100) {
   # Extract predictor matrix and response vector; assuming response variable in first column
   X <- as.matrix(df[, -1])
@@ -58,14 +56,25 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
       interactions[, i] <- interaction_terms(X, beta_main, group1, group2)
     }
     
+    
+    interactions_sd = apply(interactions, 2, sd)
+    interactions = interactions[, interactions_sd != 0]
+    print(dim(interactions))
     # Make feature matrix with original features and interactions
     X_with_interactions <- cbind(X, interactions)
     
     # Fit model using adaptive elastic-net
-    pf <- betas
+    #pf <- betas
+    
+    pf <- rep(1, ncol(X_with_interactions))
+    print(length(pf))
+    pf[1:ncol(X)] <- betas[1:ncol(X)] 
     pf[pf == 0] <- 1e-2
     pf <- 1 / pf
-    pf[(ncol(X) + 1):length(betas)] <- 0
+    if (ncol(dim(interactions)[2]) > 0) {
+      pf[(ncol(X) + 1):ncol(X_with_interactions)] <- 0
+    }
+    print(length(pf))
     fit_with_interactions <- cv.glmnet(X_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds, penalty.factor = pf)
     best_lambda <- fit_with_interactions$lambda.min
     
@@ -86,14 +95,15 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
       converged <- TRUE
     } else {
       dev_glmnet <- dev_glmnet_curr
-      beta_main <- new_beta_main
       betas <- new_betas  # Update betas only if not converged
+      beta_main <- new_beta_main
     }
     
     obj_diff <- c(obj_diff, dev_glmnet)
   }
   # betas <- new_betas
-  beta_interaction <- betas[(ncol(X) + 1):length(betas)]
+  # beta_interaction <- betas[(ncol(X) + 1):length(betas)]
+  beta_interaction <- betas[ncol(X) + 1:ncol(interactions)]
   
   # make named vectors for beta_main and beta_interaction
   named_beta_main <- setNames(beta_main, colnames(df)[-1])
@@ -107,7 +117,7 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
   return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
  }
 
-result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.001, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 300)
+result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 3)
 
 
 char_list <- list(imm_inf_ = char_immune_inf,
@@ -124,9 +134,9 @@ char_list <- list(ER_sing_ = char_ER_signaling,
 dat <- list(ROR_prolif_771genes=ROR_prolif_771genes, char_list=char_list, synergistic=synergistic)
 save(dat, file = "dat.RData")
 set.seed(123)
-result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.0001, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
+result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.001, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 300)
 
-res## Bootstrapping a large data set in order to capture > 1 interactions
+## Bootstrapping a large data set in order to capture > 1 interactions
 set.seed(123)
 std_df <- scale(ROR_prolif_771genes)
 dim(std_df)
@@ -135,11 +145,7 @@ boot_idx <- sample(1:dim(std_df)[1], 1000, replace = TRUE)
 
 df_boot <- std_df[boot_idx, ]
 
-result <- synergistic(df_boot, char_list, alpha = 0.01, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
-
-
-
-
+result <- synergistic(df_boot, char_list, alpha = 0.00001, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
 
 
 # Create a synthetic dataset with some interaction effect

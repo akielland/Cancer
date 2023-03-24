@@ -6,8 +6,6 @@
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
 ## output: selected genes; proliferation.score correlation; SEM
 
-
-# PCA's:
 char_list <- list(imm_inf_ = char_immune_inf,
                   prolif_ = char_prolif,
                   ER_sing_ = char_ER_signaling,
