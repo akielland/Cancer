@@ -778,7 +778,7 @@ data_table <- data.frame(
 )
 
 rounded_data_table <- data_table |>
-  mutate_if(is.numeric, round, digits = 3)
+  mutate_if(is.numeri, round, digits = 3)
 
 kable(rounded_data_table)
 ```

@@ -1,11 +1,9 @@
 library(glmnet)
 set.seed(123)
 
-synergistic <- function(df, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 100) {
-  # Extract predictor matrix and response vector; assuming response variable in first column
-  X <- as.matrix(df[, -1])
-  X <- scale(X)
-  y <- df[, 1]
+elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 1000) {
+
+  x <- as.matrix(x_df)
   
   # Create a list of groups, each group containing the column indices of x corresponding to the feature names in char_list
   groups <- lapply(char_list, function(char_group) {
@@ -74,29 +72,22 @@ synergistic <- function(df, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, 
 
     new_beta_main <- new_betas[1:ncol(x)]
     
-    # best_lambda_idx <- which(fit_with_interactions$lambda == best_lambda)
-    # dev_glmnet_curr <-  (1 - fit_with_interactions$glmnet$dev.ratio[best_lambda_idx]) * fit_with_interactions$glmnet$nulldev
-    # obj_dev <- abs(dev_glmnet_curr - dev_glmnet)/dev_glmnet_curr
-    # if ( obj_dev < tol ) {  # Only check convergence for the betas without interaction terms
-    #   converged <- TRUE
+    best_lambda_idx <- which(fit_with_interactions$lambda == best_lambda)
+    dev_glmnet_curr <-  (1 - fit_with_interactions$glmnet$dev.ratio[best_lambda_idx]) * fit_with_interactions$glmnet$nulldev
+    obj_dev <- abs(dev_glmnet_curr - dev_glmnet)/dev_glmnet_curr
+    
+    # obj_dev <- abs(new_beta_main - beta_main)
+    # obj_dev <- max(obj_dev)
+    # if (obj_dev == 0) {
+    #   obj_dev <- 1
     # } else {
-    #   dev_glmnet <- dev_glmnet_curr
-    #   beta_main <- new_beta_main
-    #   betas <- new_betas  # Update betas only if not converged
+    #   obj_dev <- mean(abs((new_beta_main - beta_main))[new_beta_main != 0 | beta_main != 0])
     # }
-    # 
-    if (!any(new_beta_main != 0) && iter > 10)
-      stop("Warning: all beta manins are zero!")
     
-    beta_main0 <- beta_main[beta_main != 0]
-    new_beta_main0 <- new_beta_main[new_beta_main != 0]
-    
-    # if (mean(abs(new_beta_main - beta_main)) < tol && mean(abs(new_betas[-(1:ncol(x))] - betas[-(1:ncol(x))])) < tol*100) {  # Only check convergence for the betas without interaction terms
-    if (length(beta_main0) > 0 && length(new_beta_main0) > 0) {  # Only check convergence for the betas without interaction terms
-      if (max(abs(new_beta_main0 - beta_main0)) < tol )
+    if ( obj_dev < tol ) {  # Only check convergence for the betas without interaction terms
       converged <- TRUE
-    } 
-    else {
+    } else {
+      dev_glmnet <- dev_glmnet_curr
       beta_main <- new_beta_main
       betas <- new_betas  # Update betas only if not converged
     }
@@ -116,7 +107,8 @@ synergistic <- function(df, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, 
   named_beta_interaction <- setNames(beta_interaction, interaction_names)
   
   return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
- }
+  # return(list(beta_main = beta_main, beta_interaction = beta_interaction, iterations = iter, best_lambda = best_lambda))
+}
 
 # Create a synthetic dataset with some interaction effect
 set.seed(42)
@@ -158,9 +150,16 @@ char_list <- list(group1 = char_group1,
 
 x_df <- scale(X_df)
 y <- scale(y)
+boot_idx <- sample(1:n, 1000, replace = TRUE)
+
+## Bootstrapping a large data set in order to capture > 1 interactions
+set.seed(123)
+x_df <- x_df[boot_idx, ]
+y <- y[boot_idx]
+  
 # Run the elastic net interaction function
 set.seed(123)
-result <- elastic_net_interaction(x_df, y, char_list, alpha = 0.05, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 300)
+result <- elastic_net_interaction(x_df, y, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-3, max_iters = 300)
 # Print the results
 print(result)
 plot(result$obj_diff, type = "l", lty = 1)

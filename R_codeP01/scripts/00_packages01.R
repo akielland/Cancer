@@ -11,10 +11,17 @@ library(boot)
 library(caret)
 library(mboost)
 
+library(sparsgel)
+
+
 
 install.packages("grpreg")
 install.packages("sparsegl")
 
+# Install and load the sparsgel package
+if (!requireNamespace("sparsgel", quietly = TRUE)) {
+  install.packages("sparsgel")
+}
 
 
 
