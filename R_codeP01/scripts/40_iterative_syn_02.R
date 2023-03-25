@@ -56,31 +56,26 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
       interactions[, i] <- interaction_terms(X, beta_main, group1, group2)
     }
     
-    
+    # Remove interactions terms = 0
     interactions_sd = apply(interactions, 2, sd)
-    interactions = interactions[, interactions_sd != 0]
-    print(dim(interactions))
+    interactions_scaled = interactions[, interactions_sd != 0]
+    
     # Make feature matrix with original features and interactions
-    X_with_interactions <- cbind(X, interactions)
+    X_with_interactions <- cbind(X, interactions_scaled)
     
     # Fit model using adaptive elastic-net
-    #pf <- betas
-    
     pf <- rep(1, ncol(X_with_interactions))
-    print(length(pf))
     pf[1:ncol(X)] <- betas[1:ncol(X)] 
     pf[pf == 0] <- 1e-2
     pf <- 1 / pf
-    if (ncol(dim(interactions)[2]) > 0) {
+    if (ncol(interactions_scaled) > 0) {
       pf[(ncol(X) + 1):ncol(X_with_interactions)] <- 0
     }
-    print(length(pf))
     fit_with_interactions <- cv.glmnet(X_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds, penalty.factor = pf)
     best_lambda <- fit_with_interactions$lambda.min
     
     # Update betas using the new beta values
     new_betas <- as.vector(coef(fit_with_interactions))[-1]  # exclude intercept
-    
     new_beta_main <- new_betas[1:ncol(X)]
     
     best_lambda_idx <- which(fit_with_interactions$lambda == best_lambda)
@@ -101,8 +96,7 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
     
     obj_diff <- c(obj_diff, dev_glmnet)
   }
-  # betas <- new_betas
-  # beta_interaction <- betas[(ncol(X) + 1):length(betas)]
+
   beta_interaction <- betas[ncol(X) + 1:ncol(interactions)]
   
   # make named vectors for beta_main and beta_interaction
@@ -117,7 +111,7 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
   return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
  }
 
-result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 3)
+result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.0001, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 3)
 
 
 char_list <- list(imm_inf_ = char_immune_inf,
@@ -145,7 +139,7 @@ boot_idx <- sample(1:dim(std_df)[1], 1000, replace = TRUE)
 
 df_boot <- std_df[boot_idx, ]
 
-result <- synergistic(df_boot, char_list, alpha = 0.00001, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
+result <- synergistic(df_boot, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
 
 
 # Create a synthetic dataset with some interaction effect

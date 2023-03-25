@@ -3,6 +3,7 @@
 #################################
 
 library(ggplot2)
+library(gridExtra)
 
 report02_out <- function(object){
   cor_vec <- object$cor_vec
@@ -19,21 +20,10 @@ report02_out <- function(object){
   cor_median <- median(cor_vec, na.rm=TRUE)
   cat("Median:", cor_median, "\n")
   cor_var <- var(cor_vec, na.rm=TRUE)
-  cat("Variance:", cor_var, "\n")
+  # cat("Variance:", cor_var, "\n")
   cor_sd <- sd(na.omit(cor_vec)) 
   cat("st.dev.:", cor_sd, "\n")
-  
-  # Histogram correlations
-  correlations_finite <- cor_vec[is.finite(cor_vec)]
-  cor_df <- data.frame(correlation = correlations_finite)
-  
-  h <- ggplot(cor_df, aes(x=correlation)) +
-    geom_histogram(bins = 30, color = "black", fill = "white") +
-    xlab("Correlation") +
-    ylab("Frequency") +
-    ggtitle("Histogram of Correlation Values")
-  show(h)
-
+  cat("\n")
   
   ## MSE
   cat("MSE RESULTS", "\n")
@@ -43,26 +33,64 @@ report02_out <- function(object){
   MSE_median <- median(MSE_vec, na.rm=TRUE)
   cat("Median:", MSE_median, "\n")
   MSE_var <- var(MSE_vec, na.rm=TRUE)
-  cat("Variance:", MSE_var, "\n")
+  # cat("Variance:", MSE_var, "\n")
   MSE_sd <- sd(na.omit(MSE_vec)) 
   cat("st.dev.:", MSE_sd)
+  cat("\n")
   
-  
-  # Histogram MSE
-  MSE_df <- data.frame(MSE = MSE_vec)
-  
-  h <- ggplot(MSE_df, aes(x=MSE)) +
-    geom_histogram(bins = 30, color = "black", fill = "white") +
-    xlab("MSE") +
-    ylab("Frequency") +
-    ggtitle("Histogram of MSE Values")
-  show(h)
   
   ## Most prevalent Features
+  
   # Order the features based on their selection frequency
   coef_matrix <- object$coef_matrix
   frequency <- data.frame(Feature = colnames(coef_matrix), Frequency = colSums(coef_matrix != 0) / (n_models))
   frequency <- frequency[order(frequency$Frequency, decreasing = TRUE),]
+  
+  # extract the top features
+  perc_best <- 0.5 # how often they where selected in percentage
+  top_features_with_index = which(colSums(coef_matrix != 0) >= perc_best * n_models)
+  top_feature_names = colnames(coef_matrix)[top_features_with_index]
+  cat("\n")
+  cat("Features selected 50% or more times:", "\n")
+  if (length(top_feature_names) == 0) {
+    cat("Non selected that many times \n")
+  } else {
+    cat(top_feature_names, "\n")
+  }
+  cat("\n")
+
+  num_features_to_keep <- 20 
+  # count the frequency of each feature in coef_matrix
+  counts <- colSums(coef_matrix != 0)
+  # sort the features based on their frequency
+  sorted_features <- names(sort(counts, decreasing = TRUE))
+  cat("Top 20 featrues:", "\n")
+  print(sorted_features[1:num_features_to_keep])
+  
+  ## HISTOGRAMS
+  # Histogram correlations
+  correlations_finite <- cor_vec[is.finite(cor_vec)]
+  cor_df <- data.frame(correlation = correlations_finite)
+  
+  h1 <- ggplot(cor_df, aes(x=correlation)) +
+    geom_histogram(bins = 30, color = "black", fill = "white") +
+    xlab("Correlation") +
+    ylab("Frequency") +
+    ggtitle("Histogram of Correlation Values")
+  # show(h1)
+  
+  # Histogram MSE
+  MSE_df <- data.frame(MSE = MSE_vec)
+  
+  h2 <- ggplot(MSE_df, aes(x=MSE)) +
+    geom_histogram(bins = 30, color = "black", fill = "white") +
+    xlab("MSE") +
+    ylab("Frequency") +
+    ggtitle("Histogram of MSE Values")
+  # show(h2)
+  
+  # Display the histograms side by side
+  grid.arrange(h1, h2, ncol=2)
   
   # Bar plot of the selection frequency of the features
   n_best <- 50
@@ -74,21 +102,6 @@ report02_out <- function(object){
     theme(axis.text.y = element_text(angle = 0, hjust = 0))
   show(h)
   
-  # extract the top features
-  perc_best <- 0.5 # how often they where selected in percentage
-  top_features_with_index = which(colSums(coef_matrix != 0) >= perc_best * n_models)
-  top_feature_names = colnames(coef_matrix)[top_features_with_index]
-  cat("\n")
-  cat("Features selected 50% or more times:", "\n")
-  cat(top_feature_names, "\n")
-  
-  num_features_to_keep <- 20 
-  # count the frequency of each feature in coef_matrix
-  counts <- colSums(coef_matrix != 0)
-  # sort the features based on their frequency
-  sorted_features <- names(sort(counts, decreasing = TRUE))
-  cat("Top 20 featrues:", "\n")
-  print(sorted_features[1:num_features_to_keep])
   out <- list(cor_mean=cor_mean,
               cor_median=cor_median,
               cor_var=cor_var,

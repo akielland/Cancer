@@ -29,6 +29,6 @@ sum(a %in% as.vector(char_list$ER_sing_))
 [1] 4
 
 
-lapply(char_list, function(xx) sum(a %in% as.vector(xx)))
+
 
 

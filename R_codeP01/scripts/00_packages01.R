@@ -6,6 +6,8 @@ library(tidymodels)
 library(dplyr)
 library(ggplot2)
 
+library(gridExtra)
+
 library(glmnet)
 library(boot)
 library(caret)
@@ -17,6 +19,9 @@ library(sparsgel)
 
 install.packages("grpreg")
 install.packages("sparsegl")
+
+install.packages("gridExtra")
+
 
 # Install and load the sparsgel package
 if (!requireNamespace("sparsgel", quietly = TRUE)) {
