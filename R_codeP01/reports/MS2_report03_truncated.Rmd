@@ -165,62 +165,62 @@ source("/Users/anders/Documents/Master/Cancer/R_codeP01/scripts/90_output_ridge_
 ```
 
 # Lasso - Bootstrap
-### 6 genes -> proliferation score
+### 6 genes -> proliferation score (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_6_prolif.RData")
 l_b_6_p <- report02_out(lb_obj_6_prolif)
 ```
 
-### 6 genes -> ROR_proliferation score
+### 6 genes -> ROR_proliferation score (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_6_RORprolif.RData")
 l_b_6_ROR_p <- report02_out(lb_obj_6_RORprolif)
 ```
 
-### 771 genes -> proliferation score
+### 771 genes -> proliferation score (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_prolif.RData")
 l_b_771_p <- report02_out(lb_obj_771_prolif)
 ```
 
-### 771 genes -> ROR-proliferation score
+### 771 genes -> ROR-proliferation score (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_RORprolif.RData")
 l_b_771_ROR_p <- report02_out(lb_obj_771_RORprolif)
 ```
 
-### node values -> proliferation score
+### node values -> proliferation score (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_prolif.RData")
 l_b_nodes_p <- report02_out(lb_obj_nodes_prolif)
 ```
 
-### node values -> ROR-proliferation score
+### node values -> ROR-proliferation score (lasso - bootstrap) 
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_nodes_RORprolif.RData")
 l_b_nodes_ROR_p <- report02_out(lb_obj_nodes_RORprolif)
 ```
 
 
-### Mechanistic + Residuals -> proliferation score (additive)
+### Mechanistic + Residuals (additive) -> proliferation score  (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif_a.RData")
 l_b_residuals_771_p_a <- report02_out(lb_obj_residuals_771_prolif_a)
 ```
 
-### Mechanistic + Residuals -> proliferation score (multiplicative)
+### Mechanistic + Residuals (multiplicative) -> proliferation score   (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_prolif_m.RData")
 l_b_residuals_771_p_m <- report02_out(lb_obj_residuals_771_prolif_m)
 ```
 
-### Mechnaistic + Residuals -> ROR-proliferation score (additive)
+### Mechnaistic + Residuals (additive) -> ROR-proliferation score  (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_a.RData")
 l_b_residuals_ROR_p_a <- report02_out(lb_obj_residuals_771_RORprolif_a)
 ```
 
-### Mechnaistic + Residuals -> ROR-proliferation score (multiplicative)
+### Mechnaistic + Residuals (multiplicative) -> ROR-proliferation score (lasso - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_residuals_771_RORprolif_m.RData")
 l_b_residuals_ROR_p_m <- report02_out(lb_obj_residuals_771_RORprolif_m)
@@ -257,36 +257,36 @@ kable(data_table)
 ## Lasso - Repeated cross-validation
 200 repeats of five fold cross-validation
 
-### 6 genes -> proliferation score
+### 6 genes -> proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_prolif.RData")
 l_c_6_p <- report02_out(lc_obj_6_prolif)
 ```
-### 6 genes -> ROR_proliferation score
+### 6 genes -> ROR_proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_6_RORprolif.RData")
 l_c_6_ROR_p <- report02_out(lc_obj_6_RORprolif)
 ```
 
-### 771 genes -> proliferation score
+### 771 genes -> proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_prolif.RData")
 l_c_771_p <- report02_out(lc_obj_771_prolif)
 ```
 
-### 771 genes -> ROR-proliferation score
+### 771 genes -> ROR-proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_RORprolif.RData")
 l_c_771_ROR_p <- report02_out(lc_obj_771_RORprolif)
 ```
 
-### node values -> proliferation score
+### node values -> proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_prolif.RData")
 l_c_nodes_p <- report02_out(lc_obj_nodes_prolif)
 ```
 
-### node values -> ROR-proliferation score
+### node values -> ROR-proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_RORprolif.RData")
 l_c_nodes_ROR_p <- report02_out(lc_obj_nodes_RORprolif)
@@ -294,25 +294,25 @@ l_c_nodes_ROR_p <- report02_out(lc_obj_nodes_RORprolif)
 
 
 
-### Mechanistic + Residuals -> proliferation score (additive)
+### Mechanistic + Residuals (additive) -> proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_p_a.RData")
 l_c_residuals_771_p_a <- report02_out(lc_obj_residuals_771_p_a)
 ```
 
-### Mechanistic + Residuals -> proliferation score (multiplicative)
+### Mechanistic + Residuals (multiplicative) -> proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_p_m.RData")
 l_c_residuals_771_p_m <- report02_out(lc_obj_residuals_771_p_m)
 ```
 
-### Mechnaistic + Residuals -> ROR-proliferation score (additive)
+### Mechnaistic + Residuals (additive) -> ROR-proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_ROR_p_a.RData")
 l_c_residuals_ROR_p_a <- report02_out(lc_obj_residuals_771_ROR_p_a)
 ```
 
-### Mechnaistic + Residuals -> ROR-proliferation score (multiplicative)
+### Mechnaistic + Residuals (multiplicative) -> ROR-proliferation score (lasso - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_ROR_p_m.RData")
 l_c_residuals_ROR_p_m <- report02_out(lc_obj_residuals_771_ROR_p_m)
@@ -348,29 +348,29 @@ kable(data_table)
 
 
 # Ridge bootstrap
-### 771 genes -> proliferation score
+### 771 genes -> proliferation score (ridge bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_p.RData")
 r_b_771_p <- report02_out_ridge(r_b_obj_771_p)
 ```
 
-### 771 genes -> ROR-proliferation score
+### 771 genes -> ROR-proliferation score (ridge bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_ROR_p.RData")
 r_b_771_ROR_p <- report02_out_ridge(r_b_obj_771_ROR_p)
 ```
 
 # Ridge repeated cross-validation
-### 771 genes -> proliferation score
+### 771 genes -> proliferation score (ridge repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_prolif.RData")
 r_c_771_p <- report02_out_ridge(r_c_obj_771_prolif)
 ```
 
-### 771 genes -> ROR-proliferation score
+### 771 genes -> ROR-proliferation score (ridge repeated cross-validation)
 ```{r}
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_RORprolif.RData")
-r_c_771_ROR_p <- report02_out_ridge(r_c_obj_771_RORprolif)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_RORprolif.RData")
+r_c_771_ROR_p <- report02_out_ridge(r_c_771_RORprolif)
 ```
 
 ### Summery results: ridge 771 genes bootstrap and repeated cross-validation
@@ -388,26 +388,26 @@ kable(data_table)
 
 
 # Elastic Net - bootstrap
-### 771 genes -> proliferation score
+### 771 genes -> proliferation score (elastic Net - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_p.RData")
 e_b_771_p <- report02_out_ridge(e_b_obj_771_p)
 ```
 
-### 771 genes -> ROR-proliferation score
+### 771 genes -> ROR-proliferation score (elastic Net - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_ROR_p.RData")
 e_b_771_ROR_p <- report02_out_ridge(e_b_obj_771_ROR_p)
 ```
 
 # Elastic Net: cross-validation
-### 771 genes -> proliferation score
+### 771 genes -> proliferation score  (elastic Net - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_prolif.RData")
 e_c_771_p <- report02_out_ridge(e_c_obj_771_prolif)
 ```
 
-### 771 genes -> ROR-proliferation score
+### 771 genes -> ROR-proliferation score  (elastic Net - repeated cross-validation)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_RORprolif.RData")
 e_c_771_ROR_p <- report02_out_ridge(e_c_obj_771_RORprolif)
@@ -427,26 +427,26 @@ kable(data_table)
 
 
 # Boosting with stumps as base learner - bootstrap
-### 771 genes -> proliferation score
+### 771 genes -> proliferation score (boosting - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_p.RData")
 xg_b_771_p <- report02_out_ridge(xg_b_obj_771_p)
 ```
 
-### 771 genes -> ROR-proliferation score
+### 771 genes -> ROR-proliferation score  (boosting - bootstrap)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_ROR_p.RData")
 xg_b_771_ROR_p <- report02_out_ridge(xg_b_obj_771_ROR_p)
 ```
 
 # Boosting with stumps as base learner cross-validation
-### 771 genes -> proliferation score
+### 771 genes -> proliferation score  (boosting - rep cross-val)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_prolif.RData")
 xg_c_771_p <- report02_out_ridge(xg_c_obj_771_prolif)
 ```
 
-### 771 genes -> ROR-proliferation score
+### 771 genes -> ROR-proliferation score   (boosting - rep cross-val)
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_RORprolif.RData")
 xg_c_771_ROR_p <- report02_out_ridge(xg_c_obj_771_RORprolif)

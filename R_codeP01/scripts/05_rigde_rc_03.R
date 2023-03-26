@@ -68,37 +68,37 @@ ridge_sample <- function(train_data, alpha=0){
 repeats = 200
 folds = 5
 
-# RUN: r_c_obj_771_prolif
+# RUN: r_c_771_prolif
 set.seed(123)
-r_c_obj_771_prolif <- ridge_rep_cv(prolif_771genes, func=ridge_sample, folds, repeats, method="pearson")
-head(r_c_obj_771_prolif$coef_matrix)[,1:6]
-save(r_c_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_prolif.RData")
+r_c_771_prolif <- ridge_rep_cv(prolif_771genes, func=ridge_sample, folds, repeats, method="pearson")
+head(r_c_771_prolif$coef_matrix)[,1:6]
+save(r_c_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_prolif.RData")
 
-# RUN: r_c_obj_771_RORprolif
+# RUN: r_c_771_RORprolif
 set.seed(123)
-r_c_obj_771_RORprolif <- lasso_rep_cv(RORprolif_771genes, func=lasso_sample, folds, repeats, method="pearson")
-head(r_c_obj_771_RORprolif$coef_matrix)[,1:6]
-save(r_c_obj_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_RORprolif.RData")
+r_c_771_RORprolif <- ridge_rep_cv(ROR_prolif_771genes, func=ridge_sample, folds, repeats, method="pearson")
+head(r_c_771_RORprolif$coef_matrix)[,1:6]
+save(r_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_RORprolif.RData")
 
 
 
 
 
-# RUN: lc_obj_nodes_prolif
+# RUN: r_c_nodes_prolif
 set.seed(123)
-lc_obj_nodes_prolif <- lasso_rep_cv(prolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
-head(lc_obj_nodes_prolif$coef_matrix)[,1:6]
-save(lc_obj_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_prolif.RData")
+r_c_nodes_prolif <- ridge_rep_cv(prolif_nodes, func=ridge_sample, folds, repeats, method="pearson")
+head(r_c_nodes_prolif$coef_matrix)[,1:6]
+save(r_c_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_nodes_prolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_nodes_prolif.RData")
 
-# RUN: lc_obj_nodes_RORprolif
+# RUN: l_c_nodes_RORprolif
 set.seed(123)
-lc_obj_nodes_RORprolif <- lasso_rep_cv(RORprolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
-head(lc_obj_nodes_RORprolif$coef_matrix)[,1:6]
-save(lc_obj_nodes_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_nodes_prolif.RData")
+l_c_nodes_RORprolif <- ridge_rep_cv(RORprolif_nodes, func=ridge_sample, folds, repeats, method="pearson")
+head(l_c_nodes_RORprolif$coef_matrix)[,1:6]
+save(l_c_nodes_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_c_nodes_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_c_nodes_RORprolif.RData")
 
 
 

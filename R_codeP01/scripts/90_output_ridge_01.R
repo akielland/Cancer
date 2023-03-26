@@ -3,6 +3,7 @@
 ###############################################################################
 
 library(ggplot2)
+library(gridExtra)
 
 report02_out_ridge <- function(object){
   cor_vec <- object$cor_vec
@@ -19,20 +20,10 @@ report02_out_ridge <- function(object){
   cor_median <- median(cor_vec, na.rm=TRUE)
   cat("Median:", cor_median, "\n")
   cor_var <- var(cor_vec, na.rm=TRUE)
-  cat("Variance:", cor_var, "\n")
+  # cat("Variance:", cor_var, "\n")
   cor_sd <- sd(na.omit(cor_vec)) 
   cat("st.dev.:", cor_sd, "\n")
-  
-  # Histogram correlations
-  correlations_finite <- cor_vec[is.finite(cor_vec)]
-  cor_df <- data.frame(correlation = correlations_finite)
-  
-  h <- ggplot(cor_df, aes(x=correlation)) +
-    geom_histogram(bins = 30, color = "black", fill = "white") +
-    xlab("Correlation") +
-    ylab("Frequency") +
-    ggtitle("Histogram of Correlation Values")
-  show(h)
+  cat("\n")
   
   ## MSE
   cat("MSE RESULTS", "\n")
@@ -42,20 +33,33 @@ report02_out_ridge <- function(object){
   MSE_median <- median(MSE_vec, na.rm=TRUE)
   cat("Median:", MSE_median, "\n")
   MSE_var <- var(MSE_vec, na.rm=TRUE)
-  cat("Variance:", MSE_var, "\n")
+  # cat("Variance:", MSE_var, "\n")
   MSE_sd <- sd(na.omit(MSE_vec)) 
   cat("st.dev.:", MSE_sd)
+  cat("\n")
   
+  ## HISTOGRAMS
+  # Histogram correlations
+  correlations_finite <- cor_vec[is.finite(cor_vec)]
+  cor_df <- data.frame(correlation = correlations_finite)
+  
+  h1 <- ggplot(cor_df, aes(x=correlation)) +
+    geom_histogram(bins = 30, color = "black", fill = "white") +
+    xlab("Correlation") +
+    ylab("Frequency") +
+    ggtitle("Histogram of Correlation Values")
   
   # Histogram MSE
   MSE_df <- data.frame(MSE = MSE_vec)
   
-  h <- ggplot(MSE_df, aes(x=MSE)) +
+  h2 <- ggplot(MSE_df, aes(x=MSE)) +
     geom_histogram(bins = 30, color = "black", fill = "white") +
     xlab("MSE") +
     ylab("Frequency") +
     ggtitle("Histogram of MSE Values")
-  show(h)
+  
+  # Display the histograms side by side
+  grid.arrange(h1, h2, ncol=2)
   
   out <- list(cor_mean=cor_mean,
               cor_median=cor_median,

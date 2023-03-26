@@ -1,3 +1,5 @@
+
+
 synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 100) {
   # Extract predictor matrix and response vector; assuming response variable in first column
   X <- as.matrix(df[, -1])
@@ -111,7 +113,7 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
   return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
  }
 
-result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.0001, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 3)
+result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-5, max_iters = 100)
 
 
 char_list <- list(imm_inf_ = char_immune_inf,
