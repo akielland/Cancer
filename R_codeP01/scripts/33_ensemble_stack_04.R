@@ -118,7 +118,7 @@ stacking_rep_cv <- function(df_data, named_list, alpha0=0, alpha1=0.5, folds=5, 
   
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
-
+set.seed(1)
 t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=20, interactions=FALSE, method="pearson")
 t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=20, interactions=TRUE, method="pearson")
 mean(t3$cor_vec)

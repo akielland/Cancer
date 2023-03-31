@@ -482,7 +482,7 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_interact
 r_pca_c_interact_771_RORprolif <- report02_out_ridge(r_pca_c_interact_771_RORprolif)
 ```
 
-### Lasso: 771 genes -> ROR-proliferation score
+### Lasso/pca: 771 genes -> ROR-proliferation score
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_771_RORprolif.RData")
 l_pca_c_771_RORprolif <- report02_out(l_pca_c_771_RORprolif)
@@ -494,7 +494,7 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_interact
 l_pca_c_interact_771_RORprolif <- report02_out(l_pca_c_interact_771_RORprolif)
 ```
 
-### ElasticNet: 771 genes -> ROR-proliferation score
+### ElasticNet/pca: 771 genes -> ROR-proliferation score
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_771_RORprolif.RData")
 en_pca_c_771_RORprolif <- report02_out(en_pca_c_771_RORprolif)
@@ -526,37 +526,37 @@ kable(data_table)
 
 # Stacking on signature gene sets using repeated cross-validation
 
-### Ridge: 771 genes -> ROR-proliferation score
+### Ridge/stack: 771 genes -> ROR-proliferation score
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_771_RORprolif.RData")
 r_stack_c_771_RORprolif <- report02_out_ridge(r_stack_c_771_RORprolif)
 ```
 
-### Ridge: 771 genes -> ROR-proliferation score + interactions between PCs
+### Ridge/stack: 771 genes -> ROR-proliferation score + interactions between base models
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_interact_771_RORprolif.RData")
 r_stack_c_interact_771_RORprolif <- report02_out_ridge(r_stack_c_interact_771_RORprolif)
 ```
 
-### Lasso: 771 genes -> ROR-proliferation score
+### Lasso/stack: 771 genes -> ROR-proliferation score
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif.RData")
 l_stack_c_771_RORprolif <- report02_out(l_stack_c_771_RORprolif)
 ```
 
-### Lasso: 771 genes -> ROR-proliferation score + interactions between PCs
+### Lasso/stack: 771 genes -> ROR-proliferation score + interactions between base models
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_interact_771_RORprolif.RData")
 l_stack_c_interact_771_RORprolif <- report02_out(l_stack_c_interact_771_RORprolif)
 ```
 
-### ElasticNet: 771 genes -> ROR-proliferation score
+### ElasticNet/stack: 771 genes -> ROR-proliferation score
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_stack_c_771_RORprolif.RData")
 en_stack_c_771_RORprolif <- report02_out(en_stack_c_771_RORprolif)
 ```
 
-### ElasticNet: 771 genes -> ROR-proliferation score + interactions between PCs
+### ElasticNet/stack: 771 genes -> ROR-proliferation score + interactions base models
 ```{r}
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_stack_c_interact_771_RORprolif.RData")
 en_stack_c_interact_771_RORprolif <- report02_out(en_stack_c_interact_771_RORprolif)
