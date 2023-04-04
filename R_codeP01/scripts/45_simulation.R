@@ -11,7 +11,10 @@ result <- synergistic(df_boot, char_list, alpha = 0.1, lambda_seq = NULL, nfolds
 
 
 # Create a synthetic dataset with some interaction effect
-set.seed(42)
+for i in c(1:100){
+  
+}
+set.seed(i)
 n <- 100
 p <- 20
 
@@ -27,6 +30,7 @@ true_betas <- c(true_betas, rep(0,100))
 
 beta1 <- matrix(true_betas[1:5], ncol=1)
 beta2 <- matrix(true_betas[6:10], ncol=1)
+
 beta4 <- matrix(true_betas[16:20], ncol=1)
 
 # Define character lists for each group of features
@@ -43,8 +47,26 @@ X_group4 <- X_df[, char_group4]
 
 
 # Add interaction effects
-interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 + (X_group1 %*% beta1) * (X_group4 %*% beta4) * 0.5
+
+# 1 interaction term between the 4 groups: gives 6 simulations
 interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 
+interaction_effect <- (X_group1 %*% beta1) * (X_group3 %*% beta3) * 0.5 
+interaction_effect <- (X_group1 %*% beta1) * (X_group4 %*% beta4) * 0.5 
+interaction_effect <- (X_group2 %*% beta2) * (X_group3 %*% beta3) * 1 
+interaction_effect <- (X_group2 %*% beta2) * (X_group4 %*% beta4) * 0.5 
+interaction_effect <- (X_group3 %*% beta3) * (X_group4 %*% beta4) * 1 
+
+# All possible interaction term between the 4 groups: gives 1 simulation
+interaction_effect <- 
+  (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 
++ (X_group1 %*% beta1) * (X_group3 %*% beta3) * 0.5 
++ (X_group1 %*% beta1) * (X_group4 %*% beta4) * 0.5 
++ (X_group2 %*% beta2) * (X_group3 %*% beta3) * 1 
++ (X_group2 %*% beta2) * (X_group4 %*% beta4) * 0.5 
++ (X_group3 %*% beta3) * (X_group4 %*% beta4) * 1 
+
+
+
 X_mat <- as.matrix(X_df)
 y <- X_mat %*% true_betas + interaction_effect + rnorm(n)
 
