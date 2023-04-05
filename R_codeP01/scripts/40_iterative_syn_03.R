@@ -67,32 +67,13 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
     
     # Fit model using adaptive elastic-net
     pf <- rep(1, ncol(X_with_interactions))
-    pf[1:ncol(X)] <- betas[1:ncol(X)]
+    pf[1:ncol(X)] <- betas[1:ncol(X)] 
     pf[pf == 0] <- 1e-2
     pf <- 1 / pf
-    if (is.vector(interactions_scaled)) {
-      interactions_scaled <- matrix(interactions_scaled, ncol = 1)  # Convert a vector to a matrix with 1 column
-    }
-    # browser()
-    print(length(interactions_scaled))
-    print(head(interactions_scaled))
     if (ncol(interactions_scaled) > 0) {
       pf[(ncol(X) + 1):ncol(X_with_interactions)] <- 0
     }
-    
-    # if (length(interactions_scaled) != 0){
-    #   if (ncol(interactions_scaled) > 0) {
-    #     pf[(ncol(X) + 1):ncol(X_with_interactions)] <- 0
-    #   }
-    # }
-    
-    # USE if NOT adaptive elastic net:
-    # fit_with_interactions <- cv.glmnet(X_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds, penalty.factor = pf)
-    # best_lambda <- fit_with_interactions$lambda.min
-    # 
-    # 
-    # Fit model using JUST elastic-net
-    fit_with_interactions <- cv.glmnet(X_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds)
+    fit_with_interactions <- cv.glmnet(X_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds, penalty.factor = pf)
     best_lambda <- fit_with_interactions$lambda.min
     
     # Update betas using the new beta values
@@ -130,89 +111,53 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
   named_beta_interaction <- setNames(beta_interaction, interaction_names)
   
   
-  
-  return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
+  return(list(model=fit_with_interactions, coef=beta_interaction))
+  # return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
  }
 
-result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-5, max_iters = 100)
+#result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-5, max_iters = 100)
 
 
-char_list <- list(imm_inf_ = char_immune_inf,
-                  prolif_ = char_prolif,
-                  ER_sing_ = char_ER_signaling,
-                  anti_pres_ = char_antigen_present,
-                  angiogen_ = char_angiogenesis
-                  )
 
-char_list <- list(ER_sing_ = char_ER_signaling,
-                  prolif_ = char_prolif
-                  )
+# Function: repeated k-fold cross validation: 
+syn_sym_rep_cv <- function(df_data=sim.data, groups=char_list, folds=5, repeats=2, method="pearson") {
+  n_models <- repeats * folds
+  print(n_models)
+  
+  cor_vec <- rep(NA, n_models)
+  MSE_vec <- rep(NA, n_models)
+  # coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data[,-1]))
+  # colnames(coef_matrix) <- colnames(df_data[,-1])
 
-dat <- list(ROR_prolif_771genes=ROR_prolif_771genes, char_list=char_list, synergistic=synergistic)
-save(dat, file = "dat.RData")
-set.seed(123)
-result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.001, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 300)
+  coef_matrix <- matrix(NA, nrow = n_models, ncol = 6)
+    
+  row_index <- 1
+  
+  # Repeat the cross-validation process
+  for (i in 1:repeats) {
+    # Create the folds for evaluating the performance
+    kf <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
+    # Loop through the folds
+    for (j in 1:folds) {
+      # Get the training and testing data
+      train_data <- df_data[kf[[j]],]
+      test_data <- df_data[-kf[[j]],]
+      
+      # # Fit the function on the training data and get results
+      out <- synergistic(train_data, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-5, max_iters = 100)
+ 
+      model <- out$model
+      coef_matrix[row_index, ] <- out$coef[-1]   # remove intercept
+      
+      pred = predict(model, newx = as.matrix(test_data)[,-1], type = "response", s = "lambda.min")  
+      cor_vec[row_index]  <- suppressWarnings(cor(pred, test_data[,1], method=method))
+      MSE_vec[row_index] <- mean((pred - test_data[,1])^2)
+      
+      if(!row_index %% 10) cat(row_index, "")
+      row_index <- row_index + 1
+    }
+  }
+  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, coef_matrix=coef_matrix))
+}
 
-## Bootstrapping a large data set in order to capture > 1 interactions
-set.seed(123)
-std_df <- scale(ROR_prolif_771genes)
-dim(std_df)
-
-boot_idx <- sample(1:dim(std_df)[1], 1000, replace = TRUE)
-
-df_boot <- std_df[boot_idx, ]
-
-result <- synergistic(df_boot, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
-
-
-# Create a synthetic dataset with some interaction effect
-set.seed(42)
-n <- 100
-p <- 20
-
-X_df <- matrix(rnorm(n * p), n, p)
-colnames(X_df) <- paste0("X", 1:p)
-X_df <- as.data.frame(X_df)
-X_df <- cbind(X_df, matrix(rnorm(n*100), nrow = n))
-
-
-# Create true betas
-true_betas <- runif(p, -1, 1)
-true_betas <- c(true_betas, rep(0,100))
-
-beta1 <- matrix(true_betas[1:5], ncol=1)
-beta2 <- matrix(true_betas[6:10], ncol=1)
-beta4 <- matrix(true_betas[16:20], ncol=1)
-
-# Define character lists for each group of features
-char_group1 <- colnames(X_df)[1:5]
-char_group2 <- colnames(X_df)[6:10]
-char_group3 <- colnames(X_df)[11:15]
-char_group4 <- colnames(X_df)[16:20]
-
-X_df <- as.matrix(X_df)
-
-X_group1 <- X_df[, char_group1]
-X_group2 <- X_df[, char_group2]
-X_group4 <- X_df[, char_group4]
-
-
-# Add interaction effects
-interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 + (X_group1 %*% beta1) * (X_group4 %*% beta4) * 0.5
-interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 
-X_mat <- as.matrix(X_df)
-y <- X_mat %*% true_betas + interaction_effect + rnorm(n)
-
-char_list <- list(group1 = char_group1,
-                  group2 = char_group2,
-                  group3 = char_group3,
-                  group4 = char_group4)
-
-
-# Run the elastic net interaction function
-set.seed(123)
-result <- synergistic(X_df, char_list, alpha = 0.05, lambda_seq = NULL, nfolds = 5, tol = 1e-2, max_iters = 300)
-# Print the results
-print(result)
-plot(result$obj_diff, type = "l", lty = 1)
-
+t <- syn_sym_rep_cv()
