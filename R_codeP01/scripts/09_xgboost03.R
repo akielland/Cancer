@@ -162,23 +162,24 @@ mean(xg_c_obj_771_RORprolif$cor_vec)
 sd(xg_c_obj_771_RORprolif$cor_vec)
 
 
-# RUN: xc_obj_nodes_prolif
-set.seed(123)
-xc_obj_nodes_prolif <- XGBoost_rep_cv(prolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_nodes_prolif$coef_matrix)[,1:8]
-save(xc_obj_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
-mean(xc_obj_nodes_prolif$cor_vec)
-sd(xc_obj_nodes_prolif$cor_vec)
-
-# RUN: xc_obj_nodes_RORprolif
-set.seed(123)
-xc_obj_nodes_RORprolif <- lasso_rep_cv(RORprolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
-head(xc_obj_nodes_RORprolif$coef_matrix)[,1:8]
-save(xc_obj_nodes_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_RORprolif.RData")
-mean(xc_obj_nodes_RORprolif$cor_vec)
-sd(xc_obj_nodes_RORprolif$cor_vec)
+# 
+# # RUN: xc_obj_nodes_prolif
+# set.seed(123)
+# xc_obj_nodes_prolif <- XGBoost_rep_cv(prolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
+# head(xc_obj_nodes_prolif$coef_matrix)[,1:8]
+# save(xc_obj_nodes_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
+# load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_prolif.RData")
+# mean(xc_obj_nodes_prolif$cor_vec)
+# sd(xc_obj_nodes_prolif$cor_vec)
+# 
+# # RUN: xc_obj_nodes_RORprolif
+# set.seed(123)
+# xc_obj_nodes_RORprolif <- lasso_rep_cv(RORprolif_nodes, func=lasso_sample, folds, repeats, method="pearson")
+# head(xc_obj_nodes_RORprolif$coef_matrix)[,1:8]
+# save(xc_obj_nodes_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_RORprolif.RData")
+# load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xc_obj_nodes_RORprolif.RData")
+# mean(xc_obj_nodes_RORprolif$cor_vec)
+# sd(xc_obj_nodes_RORprolif$cor_vec)
 
 ###################
 
