@@ -17,7 +17,7 @@ library(mboost)
 fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
 fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
-boost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson"){
+mboost_sample <- function(fm, df_train, df_test, method="pearson"){
   # one bootstrap sample
   # output: 
   # 1. correlation between prediction and full input sample  (pearson or spearman should be set)
@@ -54,6 +54,67 @@ boost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson"){
 
 boost_bootstrap_sample(fm01, Proliferation_6genes, Proliferation_6genes)
 
+
+
+# Function: repeated k-fold cross validation
+mboost_rep_cv = function(fm, df_data, folds=5, repeats=200, method="pearson"){
+  n_models <- repeats * folds
+  print(n_models)
+  print(dim(df_data))
+  
+  cor_vec <- rep(NA, n_models)
+  MSE_vec <- rep(NA, n_models)
+  n_rounds_vec <- integer(length = n_models)
+  
+  coef_matrix <- matrix(NA, nrow = n_models, ncol = (ncol(df_data)-1))
+  colnames(coef_matrix) <- colnames(df_data[, -1])
+  
+  coef_matrix_row_index <- 1
+  
+  # Repeat the cross-validation process
+  for (i in 1:repeats) {
+    # Create the folds for evaluating the performance
+    kf <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
+    # Loop through the folds
+    for (j in 1:folds) {
+      # Get the training and testing data
+      train_data <- df_data[kf[[j]],]
+      test_data <- df_data[-kf[[j]],]
+      
+      # Fit the function on the training data and get results
+      mboost_model <- mboost_sample(fm, train_data)
+      
+      # Extract feature importance
+      feature_importance <- data.table(xgb.importance(colnames(df_data), model = xgb_model))
+      # print(feature_importance[,1:2])
+      # Sum up the feature importance
+      coef_matrix[coef_matrix_row_index, feature_importance$Feature] <- 1
+      # print(coef_matrix)
+      
+      # Test set converted to DMatrix object
+      test_sparse = sparse.model.matrix(object = fm, data = test_data)
+      d_test = xgb.DMatrix(data = test_sparse, label = test_data$Y)
+      
+      pred = predict(object = xgb_model, newdata = d_test)
+      
+      cor_vec[coef_matrix_row_index] <- suppressWarnings(cor(pred, test_data$Y, method = method))
+      MSE_vec[coef_matrix_row_index] <- mean((test_data$Y - pred)^2)
+      # cor_vec[i]  <- suppressWarnings(cor(pred, test_data[,1], method = method))
+      # MSE_vec[i] <- mean((pred - test_data[,1])^2)     
+      
+      cat(coef_matrix_row_index, "")
+      coef_matrix_row_index <- coef_matrix_row_index + 1
+    }
+  }  
+  return(list(cor_vec=cor_vec, MSE_vec=MSE_vec, coef_matrix=coef_matrix, n_rounds_vec=n_rounds_vec))
+}
+
+bb_object_t <- XGboost_rep_cv(fm05, prolif_771genes, folds=5, repeats=2)
+bb_object_t
+
+
+
+
 # 1000 bootstrap fits
 boost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=1000){
   # run many bootstraps
@@ -73,6 +134,7 @@ boost_boot = function(fm, df_train, df_test, method="pearson", n_bootstraps=1000
   }  
   return(list(cor_vec=cor_vec, inds_vec=inds_vec, MSE_vec=MSE_vec))
 }
+
 
 set.seed(123)
 bb_object_t <- boost_boot(fm01, Proliferation_6genes, Proliferation_6genes, n_bootstraps=2)

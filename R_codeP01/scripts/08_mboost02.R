@@ -2,22 +2,21 @@
 ##  mBoost on bootstrap samples - using original sample as test set ##
 ######################################################################
 
-## Boosting using bootstrap sample to train 1000 models
+## Boosting using repeated cross validation to train 1000 models
 ## Base learners:
 ## - linear
 ## - spline
 ## - btree
 ## 
-## Test against original data sample
-## output: proliferation.score correlation; SEM; Coefficient of genes
+## output: ROR_proliferation.score correlation; SEM; Coefficient of genes
 
 library(mboost)
 
 # linear base learner
-fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
-fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
+# fm01 <- Y ~ CCND1 + CCNE1 + CDKN1A + ESR1 + MYC + RB1
+# fm05 <- as.formula(paste("Y", paste(genes, collapse="+"), sep=" ~ "))
 
-boost_bootstrap_sample <- function(fm, df_train, df_test, method="pearson"){
+mboost_sample <- function(fm, df_train, df_test, method="pearson"){
   # one bootstrap sample
   # output: 
   # 1. correlation between prediction and full input sample  (pearson or spearman should be set)
