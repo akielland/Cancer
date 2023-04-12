@@ -6,6 +6,23 @@ library(extrafont)
 library(ggplot2)
 library(gridExtra)
 
+# Boosting with stumps as base learner - bootstrap
+### 771 genes -> proliferation score 
+
+
+
+### 771 genes -> ROR-proliferation score
+
+
+
+# Boosting with stumps as base learner cross-validation
+### 771 genes -> proliferation score  
+
+
+
+### 771 genes -> ROR-proliferation score   #
+
+
 
 
 # 771 genes -> proliferation score - bootstrap
@@ -14,7 +31,13 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_p.RD
 cor_vec_b <- r_b_obj_771_p$cor_vec
 # (lasso)
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_prolif.RData")
-cor_vec_b <- lb_obj_771_prolif
+cor_vec_b <- lb_obj_771_prolif$cor_vec
+# (elastic)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_p.RData")
+cor_vec_b <- e_b_obj_771_p$cor_vec
+# (boosting)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_p.RData")
+cor_vec_b <- xg_b_obj_771_p$cor_vec
 
 cor_vec_b_finite <- cor_vec_b[is.finite(cor_vec_b)]
 data1 <- data.frame(correlation = cor_vec_b_finite)
@@ -26,7 +49,13 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_ROR_
 cor_vec_b_ROR <- r_b_obj_771_ROR_p$cor_vec
 # (lasso)
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lb_obj_771_RORprolif.RData")
-cor_vec_b_ROR <- lb_obj_771_RORprolif
+cor_vec_b_ROR <- lb_obj_771_RORprolif$cor_vec
+# (elastic Net)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_b_obj_771_ROR_p.RData")
+cor_vec_b_ROR <- e_b_obj_771_ROR_p$cor_vec
+# (boosting)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_b_obj_771_ROR_p.RData")
+cor_vec_b_ROR <- xg_b_obj_771_ROR_p$cor_vec
 
 cor_vec_b_ROR_finite <- cor_vec_b_ROR[is.finite(cor_vec_b_ROR)]
 data2 <- data.frame(correlation = cor_vec_b_ROR_finite)
@@ -38,25 +67,35 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_prol
 cor_vec_c <- r_c_obj_771_prolif$cor_vec
 # (lasso)
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_prolif.RData")
-cor_vec_c <- lc_obj_771_prolif
+cor_vec_c <- lc_obj_771_prolif$cor_vec
+# (elastic Net)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_prolif.RData")
+cor_vec_c <- e_c_obj_771_prolif$cor_vec
+# (boosting) 
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_prolif.RData")
+cor_vec_c <- xg_c_obj_771_prolif$cor_vec
 
 cor_vec_c_finite <- cor_vec_c[is.finite(cor_vec_c)]
 data3 <- data.frame(correlation = cor_vec_c_finite)
 
 
-# 771 genes -> ROR-proliferation score (repeated cross-validation)
+# 771 genes -> ROR-proliferation score - repeated cross-validation
 # (ridge)
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_RORprolif.RData")
 cor_vec_c_ROR <- r_c_771_RORprolif$cor_vec
 # (lasso)
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_RORprolif.RData")
-cor_vec_c_ROR <- report02_out(lc_obj_771_RORprolif)
+cor_vec_c_ROR <- lc_obj_771_RORprolif$cor_vec
+# (elastic Net)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_RORprolif.RData")
+cor_vec_c_ROR <- e_c_obj_771_RORprolif$cor_vec
+# (boosting)
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_RORprolif.RData")
+cor_vec_c_ROR <- xg_c_obj_771_RORprolif$cor_vec
+
 
 cor_vec_c_ROR_finite <- cor_vec_c_ROR[is.finite(cor_vec_c_ROR)]
 data4 <- data.frame(correlation = cor_vec_c_ROR_finite)
-
-
-
 
 
 
@@ -86,6 +125,9 @@ grid_histograms <- grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
 ggsave("figures/ridge_histogram.pdf", grid_histograms, width = 11, height = 8.5)
 ggsave("figures/lasso_histogram.pdf", grid_histograms, width = 11, height = 8.5)
 ggsave("figures/elastic_histogram.pdf", grid_histograms, width = 11, height = 8.5)
+ggsave("figures/boosting_histogram.pdf", grid_histograms, width = 11, height = 8.5)
+
+
 
 
 
