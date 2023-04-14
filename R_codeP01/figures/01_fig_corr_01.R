@@ -6,24 +6,6 @@ library(extrafont)
 library(ggplot2)
 library(gridExtra)
 
-# Boosting with stumps as base learner - bootstrap
-### 771 genes -> proliferation score 
-
-
-
-### 771 genes -> ROR-proliferation score
-
-
-
-# Boosting with stumps as base learner cross-validation
-### 771 genes -> proliferation score  
-
-
-
-### 771 genes -> ROR-proliferation score   #
-
-
-
 
 # 771 genes -> proliferation score - bootstrap
 # (ridge)
