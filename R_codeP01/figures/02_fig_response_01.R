@@ -26,7 +26,7 @@ h1 <- ggplot(data1, aes(x = value)) +
 
 h2 <- ggplot(data2, aes(x = value)) + 
   geom_histogram(bins = 30, fill = "steelblue", alpha = 0.8) +
-  labs(title = "ab") +
+  labs(title = "b") +
   theme_custom +
   xlab("ROR score") +
   theme(axis.title.y = element_blank(),
