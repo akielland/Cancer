@@ -53,7 +53,7 @@ ridge_rep_cv <- function(df_data, func=ridge_sample, folds=5, repeats=200, metho
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
 
-# Lasso base function returning a trained object
+# ridge base function returning a trained object
 ridge_sample <- function(train_data, alpha=0){
   X_ <- as.matrix(train_data |> select(-1))
   Y_ <- as.matrix(train_data |>  select(1))
