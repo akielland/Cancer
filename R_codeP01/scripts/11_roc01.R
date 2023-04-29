@@ -101,7 +101,7 @@ my.coords[(my.coords$specificity >= Sp.lower & my.coords$specificity <= Sp.upper
 # This allows to visually compare the survival probabilities between these two groups over time
 
 
-ROR_cut_off <- 0.275
+ROR_cut_off <- 30
 
 # predict on cohort data
 pred_ROR_cohort = predict(ridge_model_all_trail_data, newx = as.matrix(ext.X_Z), type = "response", s = "lambda.min") 
@@ -113,7 +113,7 @@ df_pred_PFS <- df_pred_PFS  |> mutate(pred_ROR_cohort = pred_ROR_cohort[,1])
 
 
 # Create a new column with the groups based on the cut-off value
-df_pred_PFS$group <- ifelse(df_pred_PFS$pred_ROR_cohort >  0.275, "high", "low")
+df_pred_PFS$group <- ifelse(df_pred_PFS$pred_ROR_cohort >  ROR_cut_off, "high", "low")
 
 # Create the survival objects
 PFS_surv <- Surv(df_pred_PFS$PFS_months, df_pred_PFS$PFS_status)
