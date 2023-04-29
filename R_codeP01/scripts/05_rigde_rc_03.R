@@ -84,8 +84,6 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_RORproli
 
 
 
-
-
 # RUN: r_c_nodes_prolif
 set.seed(123)
 r_c_nodes_prolif <- ridge_rep_cv(prolif_nodes, func=ridge_sample, folds, repeats, method="pearson")

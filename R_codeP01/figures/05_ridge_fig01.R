@@ -1,94 +1,101 @@
 ###################################
 # Ridge Figures
 ###################################
-
+library(dplyr)
+library(tidyr)
 # objects / dataframes
 # cor_vec=cor_vec, co_matrix=co_matrix, MSE_vec = MSE_vec))
 
 ## IMPORT AND PREPARE DATA
 
 # 1000 bootstrap fits
+
+## 771 genes -> proliferation score - bootstrap
 # RUN: r_b_obj_771_p <- ridge_boot(X, Y, X, Y)
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_p.RData")
 head(r_b_obj_771_p$co_matrix)[,1:6]
 
+# Make data_frame for coefficients
+co_matrix <- r_b_obj_771_p$co_matrix
+# Convert matrix to a data_frame and add row names as a new column (gene names)
+cof_df_b_p <- as.data.frame(co_matrix)
+cof_df_b_p$gene <- rownames(cof_df_b_p)
+
+# Make data frame for correlations
+cor_vec_b <- r_b_obj_771_p$cor_vec
+cor_vec_b_finite <- cor_vec_b[is.finite(cor_vec_b)]
+corr_df_b_p <- data.frame(correlation = cor_vec_b_finite)
+
+
+# 771 genes -> ROR score - bootstrap
 # RUN: r_b_obj_771_ROR_p <- ridge_boot(X, Y, X, Y)
-head(r_b_obj_771_ROR_p$co_matrix)[,1:6]
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_ROR_p.RData")
+head(r_b_obj_771_ROR_p$co_matrix)[,1:6]
+
+# Make data_frame for coefficients
+co_matrix <- r_b_obj_771_p$co_matrix
+# Convert matrix to a data_frame and add row names as a new column (gene names)
+cof_df_b_ROR <- as.data.frame(co_matrix)
+cof_df_b_ROR$gene <- rownames(cof_df_b_ROR)
+
+# Make data frame for correlations
+cor_vec_b_ROR <- r_b_obj_771_ROR_p$cor_vec
+cor_vec_b_ROR_finite <- cor_vec_b_ROR[is.finite(cor_vec_b_ROR)]
+corr_df_b_ROR <- data.frame(correlation = cor_vec_b_ROR_finite)
+
 
 # 200 repeats 5-folds cross-validations
 
-# RUN: r_c_771_prolif <- ridge_rep_cv(prolif_771genes, func=ridge_sample, folds, repeats, method="pearson")
-head(r_c_771_prolif$coef_matrix)[,1:6]
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_prolif.RData")
-
-# RUN: r_c_771_RORprolif <- ridge_rep_cv(ROR_prolif_771genes, func=ridge_sample, folds, repeats, method="pearson")
-head(r_c_771_RORprolif$coef_matrix)[,1:6]
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_RORprolif.RData")
-
-
-
-# 771 genes -> proliferation score - bootstrap
-# RUN: r_b_obj_771_p <- ridge_boot(X, Y, X, Y)
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_p.RData")
-head(r_b_obj_771_p$co_matrix)[,1:6]
-
-# Assuming the coefficient matrix is stored in r_b_obj_771_p$co_matrix
-co_matrix <- r_b_obj_771_p$co_matrix
-# Convert the matrix to a data frame and add row names as a new column (gene names)
-co_df <- as.data.frame(co_matrix)
-co_df$gene <- rownames(co_df)
-
-# Make data frame of correlations
-cor_vec_b <- r_b_obj_771_p$cor_vec
-cor_vec_b_finite <- cor_vec_b[is.finite(cor_vec_b)]
-data1 <- data.frame(correlation = cor_vec_b_finite)
-
-
-
-# 771 genes -> ROR-proliferation score - bootstrap
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_ROR_p.RData")
-cor_vec_b_ROR <- r_b_obj_771_ROR_p$cor_vec
-vec_b_ROR <- xg_b_obj_771_ROR_p$cor_vec
-
-cor_vec_b_ROR_finite <- cor_vec_b_ROR[is.finite(cor_vec_b_ROR)]
-data2 <- data.frame(correlation = cor_vec_b_ROR_finite)
-
-
 ### 771 genes -> proliferation score - repeated cross-validation
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_obj_771_prolif.RData")
+# RUN: r_c_771_prolif <- ridge_rep_cv(prolif_771genes, func=ridge_sample, folds, repeats, method="pearson")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_prolif.RData")
+head(r_c_771_prolif$coef_matrix)[,1:6]
+
+# Make data_frame for coefficients
+co_matrix <- r_b_obj_771_p$co_matrix
+# Convert matrix to a data_frame and add row names as a new column (gene names)
+cof_df_r_p <- as.data.frame(co_matrix)
+cof_df_r_p$gene <- rownames(cof_df_r_p)
+
+# Make data frame for correlations
 cor_vec_c <- r_c_obj_771_prolif$cor_vec
-
 cor_vec_c_finite <- cor_vec_c[is.finite(cor_vec_c)]
-data3 <- data.frame(correlation = cor_vec_c_finite)
+corr_df_r_p <- data.frame(correlation = cor_vec_c_finite)
 
 
-# 771 genes -> ROR-proliferation score - repeated cross-validation
-# (ridge)
+
+# 771 genes -> ROR score - repeated cross-validation
+# RUN: r_c_771_RORprolif <- ridge_rep_cv(ROR_prolif_771genes, func=ridge_sample, folds, repeats, method="pearson")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_RORprolif.RData")
+head(r_c_771_RORprolif$coef_matrix)[,1:6]
+
+# Make data_frame for coefficients
+co_matrix <- r_b_obj_771_p$co_matrix
+# Convert matrix to a data_frame and add row names as a new column (gene names)
+cof_df_r_ROR <- as.data.frame(co_matrix)
+cof_df_r_ROR$gene <- rownames(cof_df_r_ROR)
+
+# Make data frame for correlations
 cor_vec_c_ROR <- r_c_771_RORprolif$cor_vec
-
 cor_vec_c_ROR_finite <- cor_vec_c_ROR[is.finite(cor_vec_c_ROR)]
-data4 <- data.frame(correlation = cor_vec_c_ROR_finite)
+datcorr_df_r_ROR <- data.frame(correlation = cor_vec_c_ROR_finite)
 
 
+##########################
+## COEFFICIENT ANALYSIS ##
+##########################
 
 
-###########
-## COEFFICIENT ANALYSIS
-############
+## Coefficient size distributions 
 
-
-## Coefficient size distributions
-
-# Calculate the average coefficient for each gene
-co_df$avg_coefficient <- rowMeans(co_df[, 1:ncol(co_matrix)])
+# Calculate the average coefficient for each gene one the model ridge_b_p
+cof_df_b_p$avg_coefficient <- rowMeans(cof_df_b_p[, 1:ncol(co_matrix)])
 
 # Create a histogram of the average coefficients with a specified range using ggplot2
 histogram_plot <- ggplot(co_df, aes(x = avg_coefficient)) +
   geom_histogram(binwidth = 0.001, fill = "blue", color = "black", alpha = 0.7) +
   theme_minimal() +
-  labs(x = "Average Coefficient", y = "Frequency") +
+  labs(x = "Mean Coefficient", y = "Frequency") +
   scale_x_continuous(limits = c(-0.015, 0.015))
 
 # Display the histogram plot
@@ -97,44 +104,85 @@ print(histogram_plot)
 # Save the plot as a PDF file
 ggsave("figures/ridge_histogram_plot.pdf", plot = histogram_plot, width = 10, height = 8)
 
-
+############################################
 ## Selecting top 20 coefficients by size
 
-# Melt the data frame to a long format
-co_df_long <- melt(co_df, id.vars = "gene", variable.name = "ridge_run", value.name = "coefficient")
+top20 <- function(co_df, name){
+  # Melt the data frame to a long format
+  co_df_long <- melt(co_df, id.vars = "gene", variable.name = "model", value.name = "coefficient")
+  
+  # Calculate the absolute values of coefficients and find the top 20 genes with largest coefficients
+  co_df_long$abs_coefficient <- abs(co_df_long$coefficient)
+  top_genes <- co_df_long %>% group_by(gene) %>% summarise(mean_abs_coefficient = mean(abs_coefficient)) %>%
+    top_n(20, mean_abs_coefficient) %>% select(gene)
+  
+  # Filter the coefficients of the top 20 genes
+  co_df_long_top_genes <- co_df_long %>% filter(gene %in% top_genes$gene)
+  
+  # Update the gene column to be a factor with levels sorted in reverse alphabetical order
+  co_df_long_top_genes$gene <- factor(co_df_long_top_genes$gene, levels = sort(unique(co_df_long_top_genes$gene), decreasing = TRUE))
+  
+  # Create the horizontal box plot and store it in a variable
+  box_plot <- ggplot(co_df_long_top_genes, aes(x = gene, y = coefficient)) +
+    geom_boxplot() +
+    coord_flip() +
+    theme_minimal() +
+    labs(x = "Gene", y = "Coefficient values") +
+    theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
+          axis.text.y = element_text(size = 12),
+          axis.title.x = element_text(size = 14),
+          axis.title.y = element_text(size = 14))
+  
+  # Save the plot as a PDF file with a custom name
+  ggsave(paste0("figures/", name, ".pdf"), plot = box_plot, width = 10, height = 8)
+  print(box_plot)
+}
 
-# Calculate the absolute values of coefficients and find the top 20 genes with largest coefficients
-co_df_long$abs_coefficient <- abs(co_df_long$coefficient)
-top_genes <- co_df_long %>% group_by(gene) %>% summarise(mean_abs_coefficient = mean(abs_coefficient)) %>%
-  top_n(20, mean_abs_coefficient) %>% select(gene)
+top20(cof_df_b_p, "ridge_top20_b_p")
+top20(cof_df_b_ROR, "ridge_top20_b_ROR")
+top20(cof_df_r_p, "ridge_top20_r_p") 
+top20(cof_df_r_ROR, "ridge_top20_r_ROR")
 
-# Filter the coefficients of the top 20 genes
-co_df_long_top_genes <- co_df_long %>% filter(gene %in% top_genes$gene)
+#############
+# Table of the top 20 genes for each model: with mean and SD
+
+# Function to process the data frame and calculate mean and SD for each gene
+process_df <- function(df, model_name) {
+  df_long <- melt(df, id.vars = "gene", variable.name = "model", value.name = "coefficient")
+  df_summary <- df_long %>% group_by(gene) %>% 
+    summarise(mean = mean(coefficient), sd = sd(coefficient), .groups = 'drop') %>% 
+    mutate(model = model_name) %>% 
+    arrange(desc(mean))
+  return(df_summary)
+}
+
+# Process each data frame
+cof_summary_b_p <- process_df(cof_df_b_p, "Bootstrap_P")
+cof_summary_b_ROR <- process_df(cof_df_b_ROR, "Bootstrap_ROR")
+cof_summary_r_p <- process_df(cof_df_r_p, "RepeatedCV_P")
+cof_summary_r_ROR <- process_df(cof_df_r_ROR, "RepeatedCV_ROR")
+
+# Combine the top 20 genes from each model class into a single data frame
+top20_all_models <- full_join(cof_summary_b_p, cof_summary_b_ROR, by = "gene") %>%
+  full_join(cof_summary_r_p, by = "gene") %>%
+  full_join(cof_summary_r_ROR, by = "gene") %>%
+  select(gene, starts_with("mean"), starts_with("sd")) %>%
+  rename_with(~str_replace(., "mean", "Mean"), starts_with("mean")) %>%
+  rename_with(~str_replace(., "sd", "SD"), starts_with("sd")) %>%
+  slice_max(order_by = Mean_Bootstrap_P, n = 20)
+
+# Display the table
+print(top20_all_models)
+
+# Write the table to a CSV file
+write.csv(top20_all_models, "top_20_genes_all_models.csv", row.names = FALSE)
 
 
-# Update the gene column to be a factor with levels sorted in reverse alphabetical order
-co_df_long_top_genes$gene <- factor(co_df_long_top_genes$gene, levels = sort(unique(co_df_long_top_genes$gene), decreasing = TRUE))
-
-# Create the horizontal box plot and store it in a variable
-box_plot <- ggplot(co_df_long_top_genes, aes(x = gene, y = coefficient)) +
-  geom_boxplot() +
-  coord_flip() +
-  theme_minimal() +
-  # labs(title = "Horizontal Box Plot of Top 20 Coefficients", x = "Gene", y = "Coefficient values") +
-  labs(x = "Gene", y = "Coefficient values") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
-# Save the plot as a PDF file
-ggsave("figures/ridge_boxplot_top20.pdf", plot = box_plot, width = 10, height = 8)
 
 
 #########################
 # Performance Analysis ##
 #########################
-
-
-
-
 
 # Set custom theme with larger font size
 theme_custom <- theme(plot.title = element_text(size = 14, face = "bold"),
