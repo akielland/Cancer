@@ -3,6 +3,9 @@
 ###################################
 library(dplyr)
 library(tidyr)
+install.packages("xtable")
+library(xtable)
+
 # objects / dataframes
 # cor_vec=cor_vec, co_matrix=co_matrix, MSE_vec = MSE_vec))
 
@@ -33,7 +36,7 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_b_obj_771_ROR_
 head(r_b_obj_771_ROR_p$co_matrix)[,1:6]
 
 # Make data_frame for coefficients
-co_matrix <- r_b_obj_771_p$co_matrix
+co_matrix <- r_b_obj_771_ROR_p$co_matrix
 # Convert matrix to a data_frame and add row names as a new column (gene names)
 cof_df_b_ROR <- as.data.frame(co_matrix)
 cof_df_b_ROR$gene <- rownames(cof_df_b_ROR)
@@ -52,16 +55,18 @@ load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_prolif.R
 head(r_c_771_prolif$coef_matrix)[,1:6]
 
 # Make data_frame for coefficients
-co_matrix <- r_b_obj_771_p$co_matrix
+#NB: need to transpose the coef matrix for it to match with the bootstrap data
+cof_df_r_p_transposed <- t(r_c_771_prolif$coef_matrix)
+co_matrix <- cof_df_r_p_transposed
+# co_matrix <- r_c_771_prolif$co_matrix
 # Convert matrix to a data_frame and add row names as a new column (gene names)
 cof_df_r_p <- as.data.frame(co_matrix)
 cof_df_r_p$gene <- rownames(cof_df_r_p)
 
 # Make data frame for correlations
-cor_vec_c <- r_c_obj_771_prolif$cor_vec
+cor_vec_c <- r_c_771_prolif$cor_vec
 cor_vec_c_finite <- cor_vec_c[is.finite(cor_vec_c)]
 corr_df_r_p <- data.frame(correlation = cor_vec_c_finite)
-
 
 
 # 771 genes -> ROR score - repeated cross-validation
@@ -69,8 +74,9 @@ corr_df_r_p <- data.frame(correlation = cor_vec_c_finite)
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_c_771_RORprolif.RData")
 head(r_c_771_RORprolif$coef_matrix)[,1:6]
 
-# Make data_frame for coefficients
-co_matrix <- r_b_obj_771_p$co_matrix
+#NB: need to transpose the coef matrix for it to match with the bootstrap data
+cof_df_r_p_transposed <- t(r_c_771_RORprolif$coef_matrix)
+co_matrix <- cof_df_r_p_transposed
 # Convert matrix to a data_frame and add row names as a new column (gene names)
 cof_df_r_ROR <- as.data.frame(co_matrix)
 cof_df_r_ROR$gene <- rownames(cof_df_r_ROR)
@@ -81,6 +87,7 @@ cor_vec_c_ROR_finite <- cor_vec_c_ROR[is.finite(cor_vec_c_ROR)]
 datcorr_df_r_ROR <- data.frame(correlation = cor_vec_c_ROR_finite)
 
 
+
 ##########################
 ## COEFFICIENT ANALYSIS ##
 ##########################
@@ -89,7 +96,9 @@ datcorr_df_r_ROR <- data.frame(correlation = cor_vec_c_ROR_finite)
 ## Coefficient size distributions 
 
 # Calculate the average coefficient for each gene one the model ridge_b_p
+# (code below should be fixed...!!!!!!!!!!!!!!!)
 cof_df_b_p$avg_coefficient <- rowMeans(cof_df_b_p[, 1:ncol(co_matrix)])
+cof_df_b_p_tests$avg_coefficient <- rowMeans(cof_df_b_p[, 1:ncol(cof_df_b_p)])
 
 # Create a histogram of the average coefficients with a specified range using ggplot2
 histogram_plot <- ggplot(co_df, aes(x = avg_coefficient)) +
@@ -104,8 +113,9 @@ print(histogram_plot)
 # Save the plot as a PDF file
 ggsave("figures/ridge_histogram_plot.pdf", plot = histogram_plot, width = 10, height = 8)
 
-############################################
-## Selecting top 20 coefficients by size
+######################################################
+# Selecting top 20 coefficients by size in a BoxPlot #
+######################################################
 
 top20 <- function(co_df, name){
   # Melt the data frame to a long format
@@ -133,7 +143,7 @@ top20 <- function(co_df, name){
           axis.title.x = element_text(size = 14),
           axis.title.y = element_text(size = 14))
   
-  # Save the plot as a PDF file with a custom name
+  # Save plot with custom name
   ggsave(paste0("figures/", name, ".pdf"), plot = box_plot, width = 10, height = 8)
   print(box_plot)
 }
@@ -143,8 +153,9 @@ top20(cof_df_b_ROR, "ridge_top20_b_ROR")
 top20(cof_df_r_p, "ridge_top20_r_p") 
 top20(cof_df_r_ROR, "ridge_top20_r_ROR")
 
-#############
-# Table of the top 20 genes for each model: with mean and SD
+##############################################################
+# Table of the top 20 genes for each model: with mean and SD #
+##############################################################
 
 # Function to process the data frame and calculate mean and SD for each gene
 process_df <- function(df, model_name) {
@@ -152,7 +163,8 @@ process_df <- function(df, model_name) {
   df_summary <- df_long %>% group_by(gene) %>% 
     summarise(mean = mean(coefficient), sd = sd(coefficient), .groups = 'drop') %>% 
     mutate(model = model_name) %>% 
-    arrange(desc(mean))
+    slice_max(order_by = abs(mean), n = 20) %>%  # Select the top 20 genes sorted by the absolute value of the mean coefficients
+    arrange(gene)  # Arrange the rows alphabetically by gene names
   return(df_summary)
 }
 
@@ -163,22 +175,33 @@ cof_summary_r_p <- process_df(cof_df_r_p, "RepeatedCV_P")
 cof_summary_r_ROR <- process_df(cof_df_r_ROR, "RepeatedCV_ROR")
 
 # Combine the top 20 genes from each model class into a single data frame
-top20_all_models <- full_join(cof_summary_b_p, cof_summary_b_ROR, by = "gene") %>%
-  full_join(cof_summary_r_p, by = "gene") %>%
-  full_join(cof_summary_r_ROR, by = "gene") %>%
-  select(gene, starts_with("mean"), starts_with("sd")) %>%
-  rename_with(~str_replace(., "mean", "Mean"), starts_with("mean")) %>%
-  rename_with(~str_replace(., "sd", "SD"), starts_with("sd")) %>%
-  slice_max(order_by = Mean_Bootstrap_P, n = 20)
+top20_all_models <- bind_rows(cof_summary_b_p, cof_summary_b_ROR, cof_summary_r_p, cof_summary_r_ROR)
 
-# Display the table
-print(top20_all_models)
+# Reshape the data frame to a wide format an rearrange the columns
+top20_wide <- top20_all_models %>%
+  pivot_wider(id_cols = gene, names_from = model, values_from = c(mean, sd), names_sep = "_") %>%
+  arrange(gene) %>%  # Arrange the rows alphabetically by gene names
+  # Reorder the columns:
+  select(gene,
+         mean_Bootstrap_P, sd_Bootstrap_P,
+         mean_Bootstrap_ROR, sd_Bootstrap_ROR,
+         mean_RepeatedCV_P, sd_RepeatedCV_P,
+         mean_RepeatedCV_ROR, sd_RepeatedCV_ROR) 
 
-# Write the table to a CSV file
-write.csv(top20_all_models, "top_20_genes_all_models.csv", row.names = FALSE)
+# Print the combined table
+print(top20_wide, n=40)
 
+# Replace 'your_dataframe' with the actual name of your data frame
+ridge_feature_df_table <- top20_wide
 
+# Replace NAs with "-"
+ridge_feature_df_table[is.na(ridge_feature_df_table)] <- "-"
 
+# Convert the data frame to LaTeX
+latex_code <- xtable(ridge_feature_df_table)
+
+# Print the LaTeX code
+print(latex_code, type = "latex", include.rownames = FALSE)
 
 #########################
 # Performance Analysis ##
