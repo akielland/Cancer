@@ -80,14 +80,11 @@ cor_vec_c_ROR_finite <- cor_vec_c_ROR[is.finite(cor_vec_c_ROR)]
 datcorr_df_r_ROR <- data.frame(correlation = cor_vec_c_ROR_finite)
 
 
-
-
 ##############
 ## SLECTION ##
 ##############
 
-
-gene_freq <- function(object, name, n_models=1000){
+gene_freq_lasso <- function(object, name, n_models=1000){
   # Order features based on their selection frequency in a df
   coef_matrix <- object$coef_matrix
   frequency <- data.frame(Feature = colnames(coef_matrix), Frequency = colSums(coef_matrix != 0) / (n_models))
@@ -132,10 +129,10 @@ gene_freq <- function(object, name, n_models=1000){
   print(h)
 }
 
-gene_freq(lb_obj_771_prolif, "lasso_90perc_b_p")
-gene_freq(lb_obj_771_RORprolif, "lasso_90perc_b_ROR")
-gene_freq(lc_obj_771_prolif, "lasso_90perc_r_p")
-gene_freq(lc_obj_771_RORprolif, "lasso_90perc_r_ROR")
+gene_freq_lasso(lb_obj_771_prolif, "lasso_90perc_b_p")
+gene_freq_lasso(lb_obj_771_RORprolif, "lasso_90perc_b_ROR")
+gene_freq_lasso(lc_obj_771_prolif, "lasso_90perc_r_p")
+gene_freq_lasso(lc_obj_771_RORprolif, "lasso_90perc_r_ROR")
 
 
 ######################################################
