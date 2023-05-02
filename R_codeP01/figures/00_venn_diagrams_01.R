@@ -10,13 +10,15 @@ install.packages("futile.options")
 install.packages("lambda.r")
 install.packages("eulerr")
 
-
-library(eulerr)
+install.packages("ggvenn")
 
 # Create sets with named elements
 lasso_v <- c("LEFTY2", "GATA3", "CACNA1H", "EFNA3", "HOXA9", "CAMK2B", "BMPR1B", "NSD1", "CA12", "HOXA7", "JAG1", "APOE", "PLA2G2A", "TAPBP", "S100A7", "CALML5", "HDAC2", "CHIT1", "CBLC", "FGF13")
 elastic_v <- c("LEFTY2", "GATA3", "CACNA1H", "EFNA3", "CAMK2B", "NSD1", "BMPR1B", "HOXA9", "CA12", "APOE", "JAG1", "PLA2G2A", "HOXA7", "FGF13", "TAPBP", "FAM198B", "HDAC2", "CALML5", "EYA2", "S100A7")
 boosting_v <- c("EFNA3", "BMPR1B", "CHIT1", "CACNA1H", "CAMK2B", "LEFTY2", "CA12", "HOXA7", "CALML5", "EGLN2", "DKK1", "CDCA7L", "CKB", "NSD1", "OLFML2B", "SFRP4", "CD84", "KIT", "ZFYVE9", "GATA3")
+
+
+library(eulerr)
 
 # Create a named list of sets
 venn_data <- list(Lasso = lasso_v, `Elastic Net` = elastic_v, Boosting = boosting_v)
@@ -26,21 +28,13 @@ fit <- euler(venn_data)
 
 # Plot the Euler diagram
 plot(fit)
-
+# Extract the intersections
+sets
 
 pdf("figures/venn_diagram_b_p.pdf", width = 10, height = 8)
 plot(fit)
 dev.off()
 
-# Extract the intersections
-intersections <- fit$sets
-
-# Print the gene names for each intersection
-for (intersection in names(intersections)) {
-  cat(intersection, ":\n")
-  print(intersections[[intersection]])
-  cat("\n")
-}
 
 
 
@@ -84,9 +78,6 @@ latex_table <- xtable(intersection_df_sorted, caption = "Gene presence in Lasso,
 
 # Set the table positioning to 'H' (place the table exactly here)
 print(latex_table, floating.environment = "table", table.placement = "!h", sanitize.text.function = identity)
-
-
-
 
 
 
@@ -142,34 +133,10 @@ fit <- euler(venn_data)
 # Plot the Euler diagram with gene names
 plot_eulerr_with_labels(fit)
 
+################################
 
-if (!requireNamespace("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-
-BiocManager::install("nVennR")
-
-nlibrary(nVennR)
-
-# Create sets with named elements
-lasso_v <- c("LEFTY2", "GATA3", "CACNA1H", "EFNA3", "HOXA9", "CAMK2B", "BMPR1B", "NSD1", "CA12", "HOXA7", "JAG1", "APOE", "PLA2G2A", "TAPBP", "S100A7", "CALML5", "HDAC2", "CHIT1", "CBLC", "FGF13")
-elastic_v <- c("LEFTY2", "GATA3", "CACNA1H", "EFNA3", "CAMK2B", "NSD1", "BMPR1B", "HOXA9", "CA12", "APOE", "JAG1", "PLA2G2A", "HOXA7", "FGF13", "TAPBP", "FAM198B", "HDAC2", "CALML5", "EYA2", "S100A7")
-boosting_v <- c("EFNA3", "BMPR1B", "CHIT1", "CACNA1H", "CAMK2B", "LEFTY2", "CA12", "HOXA7", "CALML5", "EGLN2", "DKK1", "CDCA7L", "CKB", "NSD1", "OLFML2B", "SFRP4", "CD84", "KIT", "ZFYVE9", "GATA3")
-
-# Create a named list of sets
-venn_data <- list(Lasso = lasso_v, `Elastic Net` = elastic_v, Boosting = boosting_v)
-
-# Plot the Venn diagram
-plotNVenn(venn_data)
-saveNVenn(venn_data, "figures/venn_diagram_b_p.png")
-
-
-install.packages("ggvenn")
 library(ggvenn)
 
-# Create sets with named elements
-lasso_v <- c("LEFTY2", "GATA3", "CACNA1H", "EFNA3", "HOXA9", "CAMK2B", "BMPR1B", "NSD1", "CA12", "HOXA7", "JAG1", "APOE", "PLA2G2A", "TAPBP", "S100A7", "CALML5", "HDAC2", "CHIT1", "CBLC", "FGF13")
-elastic_v <- c("LEFTY2", "GATA3", "CACNA1H", "EFNA3", "CAMK2B", "NSD1", "BMPR1B", "HOXA9", "CA12", "APOE", "JAG1", "PLA2G2A", "HOXA7", "FGF13", "TAPBP", "FAM198B", "HDAC2", "CALML5", "EYA2", "S100A7")
-boosting_v <- c("EFNA3", "BMPR1B", "CHIT1", "CACNA1H", "CAMK2B", "LEFTY2", "CA12", "HOXA7", "CALML5", "EGLN2", "DKK1", "CDCA7L", "CKB", "NSD1", "OLFML2B", "SFRP4", "CD84", "KIT", "ZFYVE9", "GATA3")
 
 # Create a named list of sets
 venn_data <- list(Lasso = lasso_v, ElasticNet = elastic_v, Boosting = boosting_v)
@@ -193,6 +160,9 @@ venn_results <- ggvenn::ggvenn_data(venn_df, columns = c("Lasso", "ElasticNet", 
 # Print the gene names for each intersection
 print(venn_results)
 
+
+################################
+# CODE bellow not in use
 
 library(venn)
 
