@@ -5,12 +5,40 @@
 # NB: looks to be the same/or very close to 30_ensembel_01 ???
 
 # Name list og gene signature sets 
-char_list <- list(imm_inf_ = char_immune_inf,
+char_list_5 <- list(imm_inf_ = char_immune_inf,
                   prolif_ = char_prolif,
                   ER_sing_ = char_ER_signaling,
                   anti_pres_ = char_antigen_present,
                   angiogen_ = char_angiogenesis
                   )
+
+
+char_list_10 <- list(imm_inf_ = char_immune_inf,
+                    prolif_ = char_prolif,
+                    ER_sing_ = char_ER_signaling,
+                    anti_pres_ = char_antigen_present,
+                    angiogen_ = char_angiogenesis,
+                    adhesion_migr_ = char_Adhesion_Migration,
+                    apoptosis_ = char_Apoptosis,
+                    cyto_chemo_ = char_Cytokine_Chemokine,
+                    dna_rep_ = char_DNA_Repair,
+                    tumor_metabo_ = char_Tumor_Metabolism
+)
+
+
+
+# Your character list
+characters <- char_Tumor_Metabolism
+# Assuming 'prolif_771genes' is your data frame
+col_names <- colnames(prolif_771genes)
+# Find which names are not present
+not_present <- characters[!(characters %in% col_names)]
+print(not_present)
+
+
+
+
+
 
 
 
@@ -44,6 +72,27 @@ char_antigen_present <- signature_char(words)
 ## ER Signaling	
 words <- c("ADCY9	ADD1	ANXA9	BORCS7	CDCA8	DDX39A	DNAJC12	EIF3B	ELOVL2	ESR1	HEMK1	IFT140	ITPR1	MAPT	NAT1	PFDN2	PGR	PTGER3	SCUBE2	SERBP1	SHMT2	SYTL4	TBC1D9	TCEAL1	TFF1	TLE3	WDR77")
 char_ER_signaling <- signature_char(words)
+
+
+## Adhesion and Migration	
+words <- c("ANGPT1	ANLN	APOD	BAIAP2L1	BMP7	CAV1	CCL21	CCL5	CD24	CD34	CD36	CD44	CDH1	CDH2	CDH3	CDH5	CDKN2A	CLDN1	CLDN3	CLDN4	CLDN7	COL11A1	COL27A1	COL2A1	COL4A6	COL6A3	COL7A1	COL9A3	COMP	CXADR	CXCL12	CXCL13	DDR2	DPT	DSC2	FGFR3	FREM2	HAPLN1	HAS1	IBSP	ICAM1	IL1RN	ITGA6	ITGB1	ITGB3	ITGB6	JAM2	KRT14	KRT17	KRT5	KRT6B	KRT7	LAMA3	LAMB3	LAMC2	MAPK1	MAPK3	MMP11	MMP14	MMP3	MMP7	MMP9	NCAM1	NRCAM	NRXN1	NRXN3	PECAM1	PIK3CG	PIK3R1	RELN	ROCK1	ROCK2	S100A7	S1PR1	SELE	SNAI2	SPP1	TEK	THBS1	THBS2	THBS4	THY1	VCAN")
+char_Adhesion_Migration	<- signature_char(words)
+
+## Apoptosis
+words <- c("BAD	AXIN1	BAX	BBC3	BCL2	BCL2A1	BCL2L1	FZD9	HNF1A")
+char_Apoptosis <- signature_char(words)
+
+## Cytokine and Chemokine Signaling	
+words <- c("CXCL12	CXCL13	CCR2	IL1B	IL6	PTGS2	VEGFA	CCL5	CXCL5	CXCL9	CXCR6	IDO1	HLA.DOB	CCL21	IL1RN	SPP1	CCL2	CCL3L1	CCL4	CCL7	CCL8	CCR1	CCR5	CSF3R	CXCL10	CXCL8	FOXP3	IL10RA	IL11RA	IL12RB2	IL13RA1	IL1R2	IL20RA	IL20RB	IL22RA2	IL24	IL2RA	IL2RB	IL3RA	IL4R	IL6R	IL7R	JAK1	JAK2	JAK3	LTB	NOD2	OAS3	TNFSF10	TYK2")
+char_Cytokine_Chemokine <- signature_char(words)
+
+## DNA Damage Repair	
+words <- c("CDCA8	DDX39A	TCEAL1	CCNE1	ANLN	ATM	AURKA	AURKB	CCNA1	CCNA2	CCNB1	CCND1	CDC7	CDKN1C	CENPF	CEP55	CHEK2	EP300	EXO1	KIF2C	MCM2	MKI67	PCNA	PKMYT1	RBX1	RRM2	TP53	UBE2C	HLA.E	KRT6B	ADM	APH1B	ASPM	ATAD2	ATP10B	BBOX1	BLM	BRCA1	BRCA2	BTG2	C5orf38	CD68	CDC25C	CDCA5	CDCA7L	CKB	CRYAB	CYP4F3	DDB2	DLGAP5	ERCC1	EYA4	FAM198B	FAM214A	FAM83D	FANCF	FLRT3	FNBP1	FOXM1	FXYD3	GATA3	GGH	GTF2H2	HIST1H2BH	HIST3H2BB	ISG15	ISM1	KCNB1	KIAA0040	KIF11	KIF14	KIF23	KIFC1	LEMD1	LINC02381	MAD2L1	MAP2K4	MCM3	MIS18A	MLH1	MME	MRE11	MT1G	MUS81	MYBL2	NCAPH2	NEIL1	NEIL2	NEIL3	NEO1	NETO2	NPEPPS	NUDT1	PALB2	PARP1	PARP2	PARP4	PMS2	POLD1	POLQ	POLR2A	PRC1	PREP	PTTG1	RAD51	RAD51C	RAD52	RAD54L	RNF103	SKA3	SLC39A6	SPC25	ST6GALNAC2	TNKS	TNKS2	TOP2A	TRIP13	TTK	TUBA4A	TYMS	UBB	UBE2T	WRN	XRCC2	XRCC3	IL1R2	CDC25B	CDKN1A	PRKDC	TAP1	CDK1	CDKN3	CHRNA5	CKS1B	DCN	DEPDC1	ESPL1	EYA1	EYA2	GJB2	HELLS	HIST1H1C	RFC4")
+char_DNA_Repair <- signature_char(words)
+
+## Tumor Metabolism
+words <- c("ENO1	MTOR	MYC	PIK3CA	PTEN	ALDOA	EGLN3	EIF2AK3	EIF4E2	HK2	PGK1	EGLN2	EIF4EBP1	SLC2A1	TP53")
+char_Tumor_Metabolism <- signature_char(words)
 
 
 split_words <- strsplit(words, "\t")

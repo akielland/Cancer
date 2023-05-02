@@ -4,7 +4,7 @@
 ##
 ## Test against the fold
 ## Cross-validation (5-fold) used for training/tuning lambda and selecting features
-## output: selected genes; proliferation.score correlation; SEM
+## output: selected features; ROR.score correlation; SEM
 
 ## Post Lasso model is made at the bottom
 library(stats)
@@ -15,17 +15,32 @@ library(dplyr)
 library(stringr)
 
 
+
+
 ###########################################################
 ##  Repeated cross validation ##
 ###########################################################
 
 # PCA's:
-char_list <- list(imm_inf_ = char_immune_inf,
+char_list_5 <- list(imm_inf_ = char_immune_inf,
                   prolif_ = char_prolif,
                   ER_sing_ = char_ER_signaling,
                   anti_pres_ = char_antigen_present,
                   angiogen_ = char_angiogenesis
 )
+char_list_10 <- list(imm_inf_ = char_immune_inf,
+                     prolif_ = char_prolif,
+                     ER_sing_ = char_ER_signaling,
+                     anti_pres_ = char_antigen_present,
+                     angiogen_ = char_angiogenesis,
+                     adhesion_migr_ = char_Adhesion_Migration,
+                     apoptosis_ = char_Apoptosis,
+                     cyto_chemo_ = char_Cytokine_Chemokine,
+                     dna_rep_ = char_DNA_Repair,
+                     tumor_metabo_ = char_Tumor_Metabolism
+)
+
+
 
 # This function return only the best PC from a given signature gene set
 PC <- function(name, characters, data){
@@ -82,8 +97,11 @@ pca_as_features_interaction <- function(named_list, df_data){
   return(df_Y_PCA_interaction)
 }
 
-t <-pca_as_features_interaction(char_list, prolif_771genes)
-t <-pca_as_features(char_list, prolif_771genes)
+
+t <- pca_as_features(char_list_10, prolif_771genes)
+
+
+t <- pca_as_features_interaction(char_list_10, prolif_771genes)
 
 
 # Lasso function returning a trained object DONT NEED:just change alpha value in elastic net function
@@ -109,7 +127,7 @@ elastic_net_sample <- function(train_data, alpha){
 }
 
 # Function: repeated k-fold cross validation: NEED TO select if interaction terms or not
-PCA_rep_cv <- function(df_data, alpha, folds=5, repeats=1, interactions=FALSE, method="pearson") {
+PCA_rep_cv <- function(df_data, char_list, alpha, folds=5, repeats=1, interactions=FALSE, method="pearson") {
   n_models <- repeats * folds
   print(n_models)
   print(alpha)
@@ -160,57 +178,121 @@ PCA_rep_cv <- function(df_data, alpha, folds=5, repeats=1, interactions=FALSE, m
 }
 
 percentage = 0.9
-t1 <- PCA_rep_cv(prolif_771genes, alpha=0.5, folds=5, repeats=5, interactions=TRUE, method="pearson")
+t1 <- PCA_rep_cv(prolif_771genes, char_list_10, alpha=0.5, folds=5, repeats=5, interactions=TRUE, method="pearson")
+mean(t1$cor, na.rm=TRUE)
+t1$coef_matrix
+t1 <- PCA_rep_cv(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=5, interactions=FALSE, method="pearson")
+mean(t1$cor, na.rm=TRUE)
+t1$coef_matrix
+t1 <- PCA_rep_cv(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=5, interactions=TRUE, method="pearson")
 mean(t1$cor, na.rm=TRUE)
 t1$coef_matrix
 
+
+
 # Ridge
-# RUN: r_pca_c_771_RORprolif
+# RUN: r_pca_c_771_RORprolif_5
 set.seed(123)
 percentage = 0.9
-r_pca_c_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
-head(r_pca_c_771_RORprolif$coef_matrix)[,1:8]
-save(r_pca_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif.RData")
-load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif.RData")
-mean(r_pca_c_771_RORprolif$cor_vec, na.rm=T)
-sd(r_pca_c_771_RORprolif$cor_vec)
+r_pca_c_771_RORprolif_5 <- PCA_rep_cv(ROR_prolif_771genes, char_list_5, alpha=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(r_pca_c_771_RORprolif_5$coef_matrix)[,1:8]
+save(r_pca_c_771_RORprolif_5, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif_5.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif_5.RData")
+mean(r_pca_c_771_RORprolif_5$cor_vec, na.rm=T)
+sd(r_pca_c_771_RORprolif_5$cor_vec)
 
-# RUN: r_pca_c_interact_771_RORprolif
+# RUN: r_pca_c_interact_771_RORprolif_5
 set.seed(123)
-r_pca_c_interact_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=0, folds=5, repeats=200, interactions=TRUE, method="pearson")
-head(r_pca_c_interact_771_RORprolif$coef_matrix)[,1:8]
-save(r_pca_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_interact_771_RORprolif.RData")
-mean(r_pca_c_interact_771_RORprolif$cor_vec, na.rm=T)
+r_pca_c_interact_771_RORprolif_5 <- PCA_rep_cv(ROR_prolif_771genes, char_list_5, alpha=0, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(r_pca_c_interact_771_RORprolif_5$coef_matrix)[,1:8]
+save(r_pca_c_interact_771_RORprolif_5, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_interact_771_RORprolif_5.RData")
+mean(r_pca_c_interact_771_RORprolif_5$cor_vec, na.rm=T)
+
+# RUN: r_pca_c_771_RORprolif_10
+set.seed(123)
+percentage = 0.9
+r_pca_c_771_RORprolif_10 <- PCA_rep_cv(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(r_pca_c_771_RORprolif_10$coef_matrix)
+save(r_pca_c_771_RORprolif_10, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif_10.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_771_RORprolif_10.RData")
+mean(r_pca_c_771_RORprolif_10$cor_vec, na.rm=T)
+sd(r_pca_c_771_RORprolif_10$cor_vec)
+
+# RUN: r_pca_c_interact_771_RORprolif_10
+set.seed(123)
+r_pca_c_interact_771_RORprolif_10 <- PCA_rep_cv(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(r_pca_c_interact_771_RORprolif_10$coef_matrix)
+save(r_pca_c_interact_771_RORprolif_10, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_pca_c_interact_771_RORprolif_10.RData")
+mean(r_pca_c_interact_771_RORprolif_10$cor_vec, na.rm=T)
+
+
 
 # Lasso
-# RUN: l_pca_c_771_RORprolif
+# RUN: l_pca_c_771_RORprolif_5
 set.seed(123)
 percentage = 0.9
-l_pca_c_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
-head(l_pca_c_771_RORprolif$coef_matrix)[,1:8]
-save(l_pca_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_771_RORprolif.RData")
-mean(l_pca_c_771_RORprolif$cor_vec, na.rm=T)
+l_pca_c_771_RORprolif_5 <- PCA_rep_cv(ROR_prolif_771genes, char_list_5, alpha=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(l_pca_c_771_RORprolif_5$coef_matrix)[,1:10]
+save(l_pca_c_771_RORprolif_5, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_771_RORprolif_5.RData")
+mean(l_pca_c_771_RORprolif_5$cor_vec, na.rm=T)
 
-# RUN: l_pca_c_interact_771_RORprolif
+# RUN: l_pca_c_interact_771_RORprolif_5
+set.seed(1)
+l_pca_c_interact_771_RORprolif_5 <- PCA_rep_cv(ROR_prolif_771genes, char_list_5, alpha=1, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(l_pca_c_interact_771_RORprolif_5$coef_matrix)[,1:8]
+save(l_pca_c_interact_771_RORprolif_5, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_interact_771_RORprolif_5.RData")
+mean(l_pca_c_interact_771_RORprolif_5$cor_vec, na.rm=T)
+
+# RUN: l_pca_c_771_RORprolif_10
 set.seed(123)
-l_pca_c_interact_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=1, folds=5, repeats=200, interactions=TRUE, method="pearson")
-head(l_pca_c_interact_771_RORprolif$coef_matrix)[,1:8]
-save(l_pca_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_interact_771_RORprolif.RData")
-mean(l_pca_c_interact_771_RORprolif$cor_vec, na.rm=T)
+percentage = 0.9
+l_pca_c_771_RORprolif_10 <- PCA_rep_cv(ROR_prolif_771genes, char_list_10, alpha=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(l_pca_c_771_RORprolif_10$coef_matrix)[,1:8]
+save(l_pca_c_771_RORprolif_10, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_771_RORprolif_10.RData")
+mean(l_pca_c_771_RORprolif_10$cor_vec, na.rm=T)
+
+# RUN: l_pca_c_interact_771_RORprolif_10
+set.seed(123)
+l_pca_c_interact_771_RORprolif_10 <- PCA_rep_cv(ROR_prolif_771genes, char_list_10, alpha=1, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(l_pca_c_interact_771_RORprolif_10$coef_matrix)[,1:8]
+save(l_pca_c_interact_771_RORprolif_10, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_interact_771_RORprolif_10.RData")
+mean(l_pca_c_interact_771_RORprolif_10$cor_vec, na.rm=T)
+
+
 
 # Elastic
-# RUN: en_pca_c_771_RORprolif
+# RUN: en_pca_c_771_RORprolif_5
 set.seed(123)
 percentage = 0.9
-en_pca_c_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=0.5, folds=5, repeats=200, interactions=FALSE, method="pearson")
-head(en_pca_c_771_RORprolif$coef_matrix)[,1:8]
-save(en_pca_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_771_RORprolif.RData")
-mean(en_pca_c_771_RORprolif$cor_vec, na.rm=T)
+en_pca_c_771_RORprolif_5 <- PCA_rep_cv(ROR_prolif_771genes, char_list_5, alpha=0.5, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(en_pca_c_771_RORprolif_5$coef_matrix)[,1:8]
+save(en_pca_c_771_RORprolif_5, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_771_RORprolif_5.RData")
+mean(en_pca_c_771_RORprolif_5$cor_vec, na.rm=T)
 
-# RUN: en_pca_c_interact_771_RORprolif
+# RUN: en_pca_c_interact_771_RORprolif_5
 set.seed(123)
-en_pca_c_interact_771_RORprolif <- PCA_rep_cv(ROR_prolif_771genes, alpha=0.5, folds=5, repeats=200, interactions=TRUE, method="pearson")
-head(en_pca_c_interact_771_RORprolif$coef_matrix)[,1:8]
-save(en_pca_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_interact_771_RORprolif.RData")
-mean(en_pca_c_interact_771_RORprolif$cor_vec, na.rm=T)
+en_pca_c_interact_771_RORprolif_5 <- PCA_rep_cv(ROR_prolif_771genes, char_list_5, alpha=0.5, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(en_pca_c_interact_771_RORprolif_5$coef_matrix)[,1:8]
+save(en_pca_c_interact_771_RORprolif_5, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_interact_771_RORprolif_5.RData")
+mean(en_pca_c_interact_771_RORprolif_5$cor_vec, na.rm=T)
+
+
+# RUN: en_pca_c_771_RORprolif_10
+set.seed(123)
+percentage = 0.9
+en_pca_c_771_RORprolif_10 <- PCA_rep_cv(ROR_prolif_771genes, char_list_10, alpha=0.5, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(en_pca_c_771_RORprolif_10$coef_matrix)[,1:8]
+save(en_pca_c_771_RORprolif_10, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_771_RORprolif_10.RData")
+mean(en_pca_c_771_RORprolif_10$cor_vec, na.rm=T)
+
+# RUN: en_pca_c_interact_771_RORprolif_10
+set.seed(123)
+en_pca_c_interact_771_RORprolif_10 <- PCA_rep_cv(ROR_prolif_771genes, char_list_10, alpha=0.5, folds=5, repeats=200, interactions=TRUE, method="pearson")
+head(en_pca_c_interact_771_RORprolif_10$coef_matrix)[,1:8]
+save(en_pca_c_interact_771_RORprolif_10, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/en_pca_c_interact_771_RORprolif_10.RData")
+mean(en_pca_c_interact_771_RORprolif_10$cor_vec, na.rm=T)
+
+
+
+
 
