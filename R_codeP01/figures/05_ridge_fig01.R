@@ -3,8 +3,8 @@
 ###################################
 library(dplyr)
 library(tidyr)
-install.packages("xtable")
 library(xtable)
+library(reshape2)       
 
 # objects / dataframes
 # cor_vec=cor_vec, co_matrix=co_matrix, MSE_vec = MSE_vec))
@@ -153,6 +153,7 @@ top20(cof_df_b_ROR, "ridge_top20_b_ROR")
 top20(cof_df_r_p, "ridge_top20_r_p") 
 top20(cof_df_r_ROR, "ridge_top20_r_ROR")
 
+
 ##############################################################
 # Table of the top 20 genes for each model: with mean and SD #
 ##############################################################
@@ -161,12 +162,13 @@ top20(cof_df_r_ROR, "ridge_top20_r_ROR")
 process_df <- function(df, model_name) {
   df_long <- melt(df, id.vars = "gene", variable.name = "model", value.name = "coefficient")
   df_summary <- df_long %>% group_by(gene) %>% 
-    summarise(mean = mean(coefficient), sd = sd(coefficient), .groups = 'drop') %>% 
+    summarise(mean = signif(mean(coefficient), 3), sd = signif(sd(coefficient), 3), .groups = 'drop') %>% 
     mutate(model = model_name) %>% 
     slice_max(order_by = abs(mean), n = 20) %>%  # Select the top 20 genes sorted by the absolute value of the mean coefficients
     arrange(gene)  # Arrange the rows alphabetically by gene names
   return(df_summary)
 }
+
 
 # Process each data frame
 cof_summary_b_p <- process_df(cof_df_b_p, "Bootstrap_P")
@@ -194,14 +196,27 @@ print(top20_wide, n=40)
 # Replace 'your_dataframe' with the actual name of your data frame
 ridge_feature_df_table <- top20_wide
 
-# Replace NAs with "-"
-ridge_feature_df_table[is.na(ridge_feature_df_table)] <- "-"
+# Replace NAs with "-", dont work I think
+# ridge_feature_df_table[is.na(ridge_feature_df_table)] <- "-"
+
+# Convert numeric columns to character and replace NAs with ""
+ridge_feature_df_table[sapply(ridge_feature_df_table, is.numeric)] <- lapply(ridge_feature_df_table[sapply(ridge_feature_df_table, is.numeric)], function(x) { ifelse(is.na(x), "", as.character(x)) })
+
+# Merge the first two columns and the last two columns
+ridge_feature_df_table <- ridge_feature_df_table %>%
+  mutate(Bootstrap_P = paste(mean_Bootstrap_P, sd_Bootstrap_P, sep = " / "),
+         Bootstrap_ROR = paste(mean_Bootstrap_ROR, sd_Bootstrap_ROR, sep = " / "),
+         RepeatedCV_P = paste(mean_RepeatedCV_P, sd_RepeatedCV_P, sep = " / "),
+         RepeatedCV_ROR = paste(mean_RepeatedCV_ROR, sd_RepeatedCV_ROR, sep = " / ")) %>%
+  select(gene, Bootstrap_P, Bootstrap_ROR, RepeatedCV_P, RepeatedCV_ROR)
 
 # Convert the data frame to LaTeX
 latex_code <- xtable(ridge_feature_df_table)
 
 # Print the LaTeX code
 print(latex_code, type = "latex", include.rownames = FALSE)
+
+
 
 #########################
 # Performance Analysis ##
