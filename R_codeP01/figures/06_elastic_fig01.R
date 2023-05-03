@@ -108,14 +108,14 @@ gene_freq_elastic <- function(matrix, name, n_models=1000){
     ylab("Genes") +
     theme(axis.text.y = element_text(angle = 0, hjust = 0))
   
-  ggsave(paste0("figures/", name, ".pdf"), plot = h, width = 10, height = 15)
+  ggsave(paste0("figures/", name, ".pdf"), plot = h, width = 10, height = 5)
   print(h)
 }
 
 gene_freq_elastic(e_b_obj_771_p$co_matrix, "elastic_90perc_b_p")
 gene_freq_elastic(e_b_obj_771_ROR_p$co_matrix, "elastic_90perc_b_ROR")
-gene_freq_elastic(e_c_obj_771_prolif$co_matrix, "elastic_90perc_r_p")
-gene_freq_elastic(e_c_obj_771_RORprolif$co_matrix, "elastic_90perc_r_ROR")
+gene_freq_elastic(e_c_obj_771_prolif$co_matrix, "elastic_50perc_r_p")
+gene_freq_elastic(e_c_obj_771_RORprolif$co_matrix, "elastic_50perc_r_ROR")
 
 
 ######################################################
