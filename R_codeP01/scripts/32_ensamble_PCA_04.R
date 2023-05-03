@@ -98,14 +98,49 @@ PCA_rep_cv_02 <- function(df_data, char_list, alpha, folds=5, repeats=1, interac
 }
 
 percentage = 0.9
-t1 <- PCA_rep_cv_02(prolif_771genes, char_list_5, alpha=0.5, folds=5, repeats=5, interactions=TRUE, method="pearson")
+t1 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_5, alpha=0, folds=5, repeats=50, interactions=FALSE, method="pearson")
 mean(t1$cor, na.rm=TRUE)
-t1$coef_matrix
-t1 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=5, interactions=FALSE, method="pearson")
-mean(t1$cor, na.rm=TRUE)
-t1$coef_matrix
-t1 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=5, interactions=TRUE, method="pearson")
-mean(t1$cor, na.rm=TRUE)
-t1$coef_matrix
+
+t2 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_5, alpha=0, folds=5, repeats=50, interactions=TRUE, method="pearson")
+mean(t2$cor, na.rm=TRUE)
+
+t3 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=50, interactions=FALSE, method="pearson")
+mean(t3$cor, na.rm=TRUE)
+
+t4 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=50, interactions=TRUE, method="pearson")
+mean(t4$cor, na.rm=TRUE)
+
+t4_s <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=0, folds=5, repeats=50, interactions=TRUE, method="spearman")
+mean(t4_s$cor, na.rm=TRUE)
+
+
+percentage = 0.9
+t5 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_5, alpha=0.5, folds=5, repeats=50, interactions=FALSE, method="pearson")
+mean(t5$cor, na.rm=TRUE)
+
+t6 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_5, alpha=0.5, folds=5, repeats=50, interactions=TRUE, method="pearson")
+mean(t6$cor, na.rm=TRUE)
+
+t7 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=0.5, folds=5, repeats=50, interactions=FALSE, method="pearson")
+mean(t7$cor, na.rm=TRUE)
+
+t8 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=0.5, folds=5, repeats=50, interactions=TRUE, method="pearson")
+mean(t8$cor, na.rm=TRUE)
+
+t8_s <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=0.5, folds=5, repeats=50, interactions=TRUE, method="spearman")
+mean(t8_s$cor, na.rm=TRUE)
+
+percentage = 0.9
+t9 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_5, alpha=1, folds=5, repeats=50, interactions=FALSE, method="pearson")
+mean(t9$cor, na.rm=TRUE)
+
+t10 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_5, alpha=1, folds=5, repeats=50, interactions=TRUE, method="pearson")
+mean(t10$cor, na.rm=TRUE)
+
+t11 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=1, folds=5, repeats=50, interactions=FALSE, method="pearson")
+mean(t11$cor, na.rm=TRUE)
+
+t12 <- PCA_rep_cv_02(ROR_prolif_771genes, char_list_10, alpha=1, folds=5, repeats=50, interactions=TRUE, method="pearson")
+mean(t12$cor, na.rm=TRUE)
 
 
