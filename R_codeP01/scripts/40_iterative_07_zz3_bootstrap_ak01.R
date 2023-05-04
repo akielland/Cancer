@@ -1,5 +1,5 @@
 library(glmnet)
-
+set.seed(123)
 
 elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 1000) {
 
@@ -12,7 +12,7 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
   
   # Define interaction terms
   interaction_terms <- function(x, betas, group1, group2) {
-    x[, group1, drop = FALSE] %*% betas[group1] * x[, group2, drop = FALSE] %*% betas[group2]
+    (x[, group1, drop = FALSE] %*% betas[group1]) * (x[, group2, drop = FALSE] %*% betas[group2])
   }
   
   # learn betas without interaction terms to get starting beta values, using ridge
@@ -42,12 +42,13 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
   converged <- FALSE
   iter <- 0
   obj_diff <- NULL
-  betas <- rep(0, ncol(x_with_interactions))
+  betas <- rep(1, ncol(x_with_interactions))
+  dev_glmnet <- obj_dev <- Inf
   
   # Learn betas outside the interaction term until convergence
   while (!converged && iter < max_iters) {
     iter <- iter + 1
-    
+    if(!iter %% 10) cat("iter =", iter, "; dev_glmnet =", dev_glmnet, "; obj_dev =", obj_dev, "\n")
     # Calculate interaction terms using the current betas
     for (i in seq_len(nrow(interaction_indices))) {
       group1 <- groups[[interaction_indices[i, 1]]]
@@ -59,7 +60,10 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
     x_with_interactions <- cbind(x, interactions)
     
     # Fit model
-    fit_with_interactions <- cv.glmnet(x_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds)
+    pf <- betas
+    pf[pf == 0] <- 1e-2
+    pf <- 1 / pf
+    fit_with_interactions <- cv.glmnet(x_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds, penalty.factor = pf)
     best_lambda <- fit_with_interactions$lambda.min
     
     # Update betas using the new beta values
@@ -67,23 +71,28 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
     
 
     new_beta_main <- new_betas[1:ncol(x)]
-    obj_diff <- c(obj_diff, mean(abs(new_betas - betas)))
     
-    if (!any(new_beta_main != 0))
-      stop("Warning: all beta manins are zero!")
+    best_lambda_idx <- which(fit_with_interactions$lambda == best_lambda)
+    dev_glmnet_curr <-  (1 - fit_with_interactions$glmnet$dev.ratio[best_lambda_idx]) * fit_with_interactions$glmnet$nulldev
+    obj_dev <- abs(dev_glmnet_curr - dev_glmnet)/dev_glmnet_curr
     
-    beta_main0 <- beta_main[beta_main != 0]
-    new_beta_main0 <- new_beta_main[new_beta_main != 0]
+    # obj_dev <- abs(new_beta_main - beta_main)
+    # obj_dev <- max(obj_dev)
+    # if (obj_dev == 0) {
+    #   obj_dev <- 1
+    # } else {
+    #   obj_dev <- mean(abs((new_beta_main - beta_main))[new_beta_main != 0 | beta_main != 0])
+    # }
     
-    # if (mean(abs(new_beta_main - beta_main)) < tol && mean(abs(new_betas[-(1:ncol(x))] - betas[-(1:ncol(x))])) < tol*100) {  # Only check convergence for the betas without interaction terms
-    if (max(abs(new_beta_main0 - beta_main0)) < tol ) {  # Only check convergence for the betas without interaction terms
-        converged <- TRUE
-    } 
-    else {
+    if ( obj_dev < tol ) {  # Only check convergence for the betas without interaction terms
+      converged <- TRUE
+    } else {
+      dev_glmnet <- dev_glmnet_curr
       beta_main <- new_beta_main
       betas <- new_betas  # Update betas only if not converged
     }
-  
+    
+    obj_diff <- c(obj_diff, dev_glmnet)
   }
   # betas <- new_betas
   beta_interaction <- betas[(ncol(x) + 1):length(betas)]
@@ -102,25 +111,18 @@ elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = N
 }
 
 
-
 # Create a synthetic dataset with some interaction effect
 set.seed(42)
 n <- 100
+n <- 500
 p <- 20
 
+#########
+# predictors with effects
 X_df <- matrix(rnorm(n * p), n, p)
 colnames(X_df) <- paste0("X", 1:p)
-
-X_df <- cbind(X_df, matrix(rnorm(n*100, sd=0.5), nrow = n))
-
-
-# Create true betas
-true_betas <- runif(p, -1, 1)
-true_betas <- c(true_betas, rep(0,100))
-
-beta1 <- matrix(true_betas[1:5], ncol=1)
-beta2 <- matrix(true_betas[6:10], ncol=1)
-beta4 <- matrix(true_betas[16:20], ncol=1)
+# add 100 predictors which will have no effect on y
+X_df <- cbind(X_df, matrix(rnorm(n*100), nrow = n))
 
 # Define character lists for each group of features
 char_group1 <- colnames(X_df)[1:5]
@@ -128,25 +130,51 @@ char_group2 <- colnames(X_df)[6:10]
 char_group3 <- colnames(X_df)[11:15]
 char_group4 <- colnames(X_df)[16:20]
 
+char_list_sim <- list(group1 = char_group1,
+                      group2 = char_group2,
+                      group3 = char_group3,
+                      group4 = char_group4)
+
+# predictors also divided into 3 groups 
 X_group1 = X_df[, char_group1]
 X_group2 = X_df[, char_group2]
 X_group4 = X_df[, char_group4]
 
-# Add interaction effects
-interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 + (X_group1 %*% beta1) * (X_group4 %*% beta4) * 0.5
-X_mat <- as.matrix(X_df)
-y <- X_mat %*% true_betas + interaction_effect + rnorm(n)
+#######
+# Create 20 true betas: uniformly distributed (-1, 1)
+true_betas <- runif(p, -1, 1)
+# Betas for the additional 100 columns are set to zero
+betas <- c(true_betas, rep(0,100))
 
-char_list <- list(group1 = char_group1,
-                  group2 = char_group2,
-                  group3 = char_group3,
-                  group4 = char_group4)
+# Divide betas into 3 groups
+beta1 <- matrix(betas[1:5], ncol=1)
+beta2 <- matrix(betas[6:10], ncol=1)
+beta4 <- matrix(betas[16:20], ncol=1)
+
+
+
+
+# Add interaction effects (1): gr1 x gr2
+interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1
+
+# Add interaction effects (2): gr1 x gr2 + gr1 x gr4
+interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 + (X_group1 %*% beta1) * (X_group4 %*% beta4) * 1
+
+# Add interaction effects (3): gr1 x gr2 + gr1 x gr4 + gr2 x x gr4
+interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1 + (X_group1 %*% beta1) * (X_group4 %*% beta4) * 1 + (X_group2 %*% beta2) * (X_group4 %*% beta4) * 1
+
+# Create response: y
+X_mat <- as.matrix(X_df)
+y <- X_mat %*% betas + interaction_effect + rnorm(n)
+
+
 
 x_df <- scale(X_df)
 y <- scale(y)
+
 # Run the elastic net interaction function
 set.seed(123)
-result <- elastic_net_interaction(x_df, y, char_list, alpha = 1e-6, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 300)
+result <- elastic_net_interaction(X_df, y, char_list_sim, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-3, max_iters = 300)
 # Print the results
 print(result)
 plot(result$obj_diff, type = "l", lty = 1)
@@ -154,56 +182,16 @@ plot(result$obj_diff, type = "l", lty = 1)
 
 
 
-
-
-
-
-
-
-
-
-X_df <- matrix(rnorm(n * p), n, p)
-colnames(X_df) <- paste0("X", 1:p)
-
-X_df <- cbind(X_df, matrix(rnorm(n*100, sd=0.5), nrow = n))
-
-# Create true betas
-true_betas <- runif(p, -1, 1)
-true_betas <- c(true_betas, rep(0,100))
-
-beta1 <- matrix(true_betas[1:5], ncol=1)
-beta2 <- matrix(true_betas[6:10], ncol=1)
-
-# Define character lists for each group of features
-char_group1 <- colnames(X_df)[1:5]
-char_group2 <- colnames(X_df)[6:10]
-char_group3 <- colnames(X_df)[11:15]
-char_group4 <- colnames(X_df)[16:20]
-
-X_group1 = X_df[, 1:5]
-X_group2 = X_df[, char_group2]
-
-# Add interaction effects
-interaction_effect <- (X_group1 %*% beta1) * (X_group2 %*% beta2) * 1
-X_mat <- as.matrix(X_df)
-y <- X_mat %*% true_betas + interaction_effect + rnorm(n)
-
-char_list <- list(group1 = char_group1,
-                  group2 = char_group2,
-                  group3 = char_group3,
-                  group4 = char_group4)
-
+###################
+## Bootstrapping a large data set in order to capture > 1 interactions
+set.seed(123)
+boot_idx <- sample(1:n, 1000, replace = TRUE)
+x_df <- x_df[boot_idx, ]
+y <- y[boot_idx]
+  
 # Run the elastic net interaction function
-result <- elastic_net_interaction(X_df, y, char_list, alpha = 0.01, lambda_seq = NULL, nfolds = 5, tol = 1e-8, max_iters = 100)
+result <- elastic_net_interaction(x_df, y, char_list_sim, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-3, max_iters = 300)
 # Print the results
 print(result)
+plot(result$obj_diff, type = "l", lty = 1)
 
-
-# Create a synthetic dataset with just random values
-# X_df <- as.data.frame(matrix(rnorm(n * p), n, p))
-# colnames(X_df) <- paste0("X", 1:p)
-# y <- matrix(rnorm(n), n, 1)
-# Run the elastic net interaction function
-# result <- elastic_net_interaction(X_df, y, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 1000)
-# Print the results
-# print(result)
