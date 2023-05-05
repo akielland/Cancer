@@ -1,6 +1,6 @@
 
 
-synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 100) {
+synergistic_adaptive_deviance <- function(df, char_list, alpha = 0.5, adaptive=FALSE, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 100) {
   # Extract predictor matrix and response vector; assuming response variable in first column
   X <- as.matrix(df[, -1])
   X <- scale(X)
@@ -50,7 +50,7 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
   # Learn betas outside the interaction term until convergence by deviance
   while (!converged && iter < max_iters) {
     iter <- iter + 1
-    if(!iter %% 10) cat("iter =", iter, "; dev_glmnet =", dev_glmnet, "; obj_dev =", obj_dev, "\n")
+    # if(!iter %% 10) cat("iter =", iter, "; dev_glmnet =", dev_glmnet, "; obj_dev =", obj_dev, "\n")
     # Calculate interaction terms using the current betas
     for (i in seq_len(nrow(interaction_indices))) {
       group1 <- groups[[interaction_indices[i, 1]]]
@@ -66,14 +66,19 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
     X_with_interactions <- cbind(X, interactions_scaled)
     
     # Fit model using adaptive elastic-net
-    pf <- rep(1, ncol(X_with_interactions))
-    pf[1:ncol(X)] <- betas[1:ncol(X)] 
-    pf[pf == 0] <- 1e-2
-    pf <- 1 / pf
-    if (ncol(interactions_scaled) > 0) {
-      pf[(ncol(X) + 1):ncol(X_with_interactions)] <- 0
+    if (adaptive==TRUE) {
+      pf <- rep(1, ncol(X_with_interactions))
+      pf[1:ncol(X)] <- betas[1:ncol(X)] 
+      pf[pf == 0] <- 1e-2
+      pf <- 1 / pf
+      if (!is.null(ncol(interactions_scaled)) && ncol(interactions_scaled) > 0) {
+        pf[(ncol(X) + 1):ncol(X_with_interactions)] <- 0
+      }
+      fit_with_interactions <- cv.glmnet(X_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds, penalty.factor = pf)
+    # Fit model with just elastiv net
+    } else {
+      fit_with_interactions <- cv.glmnet(X_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds)
     }
-    fit_with_interactions <- cv.glmnet(X_with_interactions, y, alpha = alpha, lambda = lambda_seq, nfolds = nfolds, penalty.factor = pf)
     best_lambda <- fit_with_interactions$lambda.min
     
     # Update betas using the new beta values
@@ -111,8 +116,8 @@ synergistic <- function(df, char_list, alpha = 0.5, lambda_seq = NULL, nfolds = 
   named_beta_interaction <- setNames(beta_interaction, interaction_names)
   
   
-  return(list(model=fit_with_interactions, coef=beta_interaction))
-  # return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
+  # return(list(model=fit_with_interactions, coef=beta_interaction))
+  return(list(obj_diff=obj_diff, beta_main = named_beta_main, beta_interaction = named_beta_interaction, iterations = iter, best_lambda = best_lambda))
  }
 
 #result <- synergistic(ROR_prolif_771genes, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-5, max_iters = 100)

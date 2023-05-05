@@ -1,7 +1,8 @@
-library(glmnet)
-set.seed(123)
+################
+##
+################
 
-elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 1000) {
+syn_elastic_net_interaction <- function(x_df, y, groups, alpha = 0.5, lambda_seq = NULL, nfolds = 5, tol = 1e-4, max_iters = 1000) {
 
   x <- as.matrix(x_df)
   

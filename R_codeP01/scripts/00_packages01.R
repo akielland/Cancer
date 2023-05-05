@@ -17,12 +17,17 @@ library(mboost)
 
 library(sparsgel)
 
+library(matrixStats)
+
 
 
 install.packages("grpreg")
 install.packages("sparsegl")
 
 install.packages("gridExtra")
+install.packages("matrixStats")
+
+
 
 
 # Install and load the sparsgel package
