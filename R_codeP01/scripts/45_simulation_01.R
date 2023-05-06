@@ -107,14 +107,14 @@ n <- 100
 n <- 500
 n <- 1000
 p_gr <- 20
-p_non_gr <- 100
+p_non_gr <- 80
 interact <- 1
 interact <- 2
 interact <- 3
 
 n_simulations <- 50
-set.seed(2)
-t1 <- run_sim(n_simulations, interact, alpha = 1, adaptive = FALSE, tol=1e-4)
+set.seed(1000)
+t1 <- run_sim(n_simulations, interact, alpha = 0.5, adaptive = FALSE, tol=1e-6)
 
 
 # Count the number of non-zero and non-NA values in each column
