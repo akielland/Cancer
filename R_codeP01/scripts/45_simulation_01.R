@@ -24,6 +24,11 @@ syntetic_01 <- function(n, interact, p_gr, p_non_gr, i, scale=TRUE){
   X_group3 <- X[, char_group3]
   X_group4 <- X[, char_group4]
   
+  char_list_sim <- list(gr1 = char_group1,
+                        gr2 = char_group2,
+                        gr3 = char_group3,
+                        gr4 = char_group4)
+  
   # Create true betas
   true_betas <- runif(p_gr, -1, 1)
   # Add non effective betas = 0
@@ -59,7 +64,7 @@ syntetic_01 <- function(n, interact, p_gr, p_non_gr, i, scale=TRUE){
     y <- scale(y)
   
   df <- as.data.frame(cbind(y,X))  
-  return(df)
+  return(list(df.sim=df, char_list=char_list_sim))
 }
   
 n <- 50
@@ -83,13 +88,14 @@ hist(sim.data$y)
 
 # Function to run many simulations
 run_sim <- function(n_simulations, interact, alpha, adaptive, tol){
+
   coef_matrix <- matrix(NA, nrow = n_simulations, ncol = 6)
   row_index <- 1
   for (i in c(1:n_simulations)){
     # i = i+12345
     set.seed(i) 
     data <- syntetic_01(n, interact, p_gr, p_non_gr, i)
-    out <- synergistic_adaptive_deviance(data, char_list, alpha, adaptive, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
+    out <- synergistic_adaptive_deviance(data$df.sim, data$char_list, alpha, adaptive, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
     
     # print(out$beta_interaction)
     coef_matrix[row_index, ] <- out$beta_interaction
@@ -112,8 +118,8 @@ interact <- 1
 interact <- 2
 interact <- 3
 
-n_simulations <- 50
-set.seed(2)
+n_simulations <- 100
+set.seed(123)
 t1 <- run_sim(n_simulations, interact, alpha = 1, adaptive = FALSE, tol=1e-4)
 
 
