@@ -171,11 +171,26 @@ top20_boxplot <- function(coef_matrix, name) {
     theme(axis.text.x = element_text(size = 12),
           axis.text.y = element_text(size = 12),
           axis.title.x = element_text(size = 14),
-          axis.title.y = element_text(size = 14))
+          axis.title.y = element_text(size = 14)) +
+    geom_vline(aes(xintercept = 0), linetype = "solid", color = "black", size = 1)
+  
   
   ggsave(paste0("figures/", name, ".pdf"), plot = box_plot, width = 10, height = 8)
   print(box_plot)
 }
+
+# Create a box plot of the top 20 features with gene names on the y-axis and coefficient values on the x-axis
+box_plot <- ggplot(top20_coef_long, aes(y = gene, x = coefficient, group = gene)) +
+  geom_boxplot() +
+  scale_y_discrete(limits = rev(levels(top20_coef_long$gene))) +
+  theme_minimal() +
+  labs(y = "Gene", x = "Coefficient values") +
+  theme(axis.text.x = element_text(size = 12),
+        axis.text.y = element_text(size = 12),
+        axis.title.x = element_text(size = 14),
+        axis.title.y = element_text(size = 14)) +
+  geom_vline(aes(xintercept = 0), linetype = "dashed", color = "blue", size = 1)
+
 
 top20_boxplot(lb_obj_771_prolif$coef_matrix, "lasso_top20_b_p")
 top20_boxplot(lb_obj_771_RORprolif$coef_matrix, "lasso_top20_b_ROR")

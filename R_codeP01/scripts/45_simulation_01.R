@@ -112,14 +112,14 @@ interact <- 1
 interact <- 2
 interact <- 3
 
-n_simulations <- 100
-set.seed(123)
+n_simulations <- 50
+set.seed(2)
 t1 <- run_sim(n_simulations, interact, alpha = 1, adaptive = FALSE, tol=1e-4)
 
 
 # Count the number of non-zero and non-NA values in each column
 count_non_zero_non_na <- apply(t1, 2, function(x) sum(!is.na(x) & x != 0))
-print(count_non_zero_non_na)
+print(count_non_zero_non_na*2)
 
 
 # Replace NA values with 0
