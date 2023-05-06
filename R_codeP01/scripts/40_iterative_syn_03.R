@@ -149,7 +149,7 @@ syn_sym_rep_cv <- function(df_data=sim.data, groups=char_list, folds=5, repeats=
       test_data <- df_data[-kf[[j]],]
       
       # # Fit the function on the training data and get results
-      out <- synergistic(train_data, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-5, max_iters = 100)
+      out <- synergistic_adaptive_deviance(train_data, char_list, alpha = 0.1, lambda_seq = NULL, nfolds = 5, tol = 1e-5, max_iters = 100)
  
       model <- out$model
       coef_matrix[row_index, ] <- out$coef[-1]   # remove intercept
