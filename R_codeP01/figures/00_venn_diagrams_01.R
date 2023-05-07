@@ -1,9 +1,6 @@
 
 
 
-
-
-
 install.packages("VennDiagram")
 
 install.packages("futile.options")
@@ -14,50 +11,34 @@ install.packages("ggvenn")
 
 
 library(eulerr)
+library(gridExtra)
+
 
 # Create sets with named elements
 
 
 # ridge_b_P <- c(RPS6KA5, PSMB7 , PRKACA POLR2A PMS2, PIK3CA PFDN2 PCNA, OAZ1 NSD1 , MTOR MAPK1, HDAC2 GATA3, G6PD ERCC1 , CETN2 BAX, ADD1, SKP1)
 
-
 lasso_b_P <- c("LEFTY2", "GATA3", "CACNA1H", "EFNA3", "HOXA9", "CAMK2B", "BMPR1B", "NSD1", "CA12", "HOXA7", "JAG1", "APOE", "PLA2G2A", "TAPBP", "S100A7", "CALML5", "HDAC2", "CHIT1", "CBLC", "FGF13")
-lasso_b_ROR <- c( "CHIT1"   "LEFTY2"  "CA12"    "CACNA1H" "PMS2"    "E2F5"    "FGF13" "HOXA7"   "FZD9"    "ACTR3B"  "EFNA3"   "APOE"    "PROM1"   "BBOX1", "CETN2"   "ITGB1"   "HDAC2"   "IFT140"  "RELN"    "ACVR1B")
-lasso_rc_P <- c("GATA3"   "LEFTY2"  "CACNA1H" "HOXA9"   "CA12"    "BMPR1B"  "EFNA3" "NSD1"    "HOXA7"   "CAMK2B"  "APOE"    "THY1"    "JAG1"    "CBLC", "CHIT1"   "TAPBP"   "CALML5"  "RPS6KB1" "PIM1"    "EGLN2")
-lasso_rc_ROR <- c("CHIT1"   "CA12"    "LEFTY2"  "PMS2"    "E2F5"    "ITGB1"   "CACNA1H", "APOE"    "HOXA7"   "HDAC2"   "THY1"    "EFNA3", "PROM1", "EGF", "FGF13"   "FZD9",  "IFT140",  "WDR77",  "CCL4",  "BBOX1")
+lasso_b_ROR <- c("CHIT1", "LEFTY2", "CA12", "CACNA1H", "PMS2", "E2F5", "FGF13", "HOXA7", "FZD9", "ACTR3B", "EFNA3", "APOE", "PROM1", "BBOX1", "CETN2", "ITGB1", "HDAC2", "IFT140", "RELN", "ACVR1B")
+lasso_rc_P <- c("GATA3", "LEFTY2", "CACNA1H", "HOXA9", "CA12", "BMPR1B", "EFNA3", "NSD1", "HOXA7", "CAMK2B", "APOE", "THY1", "JAG1", "CBLC", "CHIT1", "TAPBP", "CALML5", "RPS6KB1", "PIM1", "EGLN2")
+lasso_rc_ROR <- c("CHIT1", "CA12", "LEFTY2", "PMS2", "E2F5", "ITGB1", "CACNA1H", "APOE", "HOXA7", "HDAC2", "THY1", "EFNA3", "PROM1", "EGF", "FGF13", "FZD9", "IFT140", "WDR77", "CCL4", "BBOX1")
 
 elastic_b_P <- c("LEFTY2", "GATA3", "CACNA1H", "EFNA3", "CAMK2B", "NSD1", "BMPR1B", "HOXA9", "CA12", "APOE", "JAG1", "PLA2G2A", "HOXA7", "FGF13", "TAPBP", "FAM198B", "HDAC2", "CALML5", "EYA2", "S100A7")
-elastic_b_ROR <- c() "CHIT1"   "FZD9"    "LEFTY2"  "CACNA1H" "CA12"    "PMS2"    "FGF13"   "EFNA3"   "E2F5"    "HOXA7"   "ACTR3B"  "BBOX1"   "RELN"    "APOE"    "ITGB1"   "EYA2"   
-"IFT140"  "CETN2"   "WDR77"   "ACVR1B")
-
-elastic_rc_P <- c(  "LEFTY2"  "GATA3"   "EFNA3"   "BMPR1B"  "CACNA1H" "NSD1"    "CAMK2B"  "CA12"    "HOXA9"   "APOE"    "PLA2G2A" "HOXA7"   "THY1"    "CHIT1"   "EGLN2"   "HDAC2"  
-                  "PMS2"    "CALML5"  "JAG1"    "CBLC" )
-
-elastic_rc_ROR <- c("CHIT1"   "CA12"    "LEFTY2"  "PMS2"    "FZD9"    "CACNA1H" "E2F5"    "EFNA3"   "BBOX1"   "ACTR3B"  "HOXA7"   "APOE"    "FGF13"   "ITGB1"   "WDR77"   "HDAC2"  
-                     "PROM1"   "RELN"    "TMPRSS2" "EIF3B"  )
+elastic_b_ROR <- c("CHIT1", "FZD9", "LEFTY2", "CACNA1H", "CA12", "PMS2", "FGF13", "EFNA3", "E2F5", "HOXA7", "ACTR3B", "BBOX1", "RELN", "APOE", "ITGB1", "EYA2", "IFT140", "CETN2", "WDR77", "ACVR1B")
+elastic_rc_P <- c("LEFTY2", "GATA3", "EFNA3", "BMPR1B", "CACNA1H", "NSD1", "CAMK2B", "CA12", "HOXA9", "APOE", "PLA2G2A", "HOXA7", "THY1", "CHIT1", "EGLN2", "HDAC2", "PMS2", "CALML5", "JAG1", "CBLC")
+elastic_rc_ROR <- c("CHIT1", "CA12", "LEFTY2", "PMS2", "FZD9", "CACNA1H", "E2F5", "EFNA3", "BBOX1", "ACTR3B", "HOXA7", "APOE", "FGF13", "ITGB1", "WDR77", "HDAC2", "PROM1", "RELN", "TMPRSS2", "EIF3B")
 
 boosting_b_P <- c("EFNA3", "BMPR1B", "CHIT1", "CACNA1H", "CAMK2B", "LEFTY2", "CA12", "HOXA7", "CALML5", "EGLN2", "DKK1", "CDCA7L", "CKB", "NSD1", "OLFML2B", "SFRP4", "CD84", "KIT", "ZFYVE9", "GATA3")
-
-boosting_b_ROR <- c("HDAC2"   "CHIT1"   "HOXA7"   "RELN"    "PROM1"   "CA12"    "LEFTY2"  "APOE"    "WDR77"   "CACNA1H" "E2F5"    "SFRP4"   "APOD"    "ADM"     "FZD9"    "RPS6KB2"
-                    "EFNA3"   "CYBB"    "CCNA2"   "ELF3")
- 
-
-
-boosting_rc_ROR <- ("CHIT1"   "CALML5"  "EFNA3"   "CA12"    "HOXA7"   "CAMK2B"  "LEFTY2"  "CDCA7L"  "BMPR1B"  "IDO1"    "OLFML2B" "EGLN2"   "PDGFB"   "MAP2K4"  "SFRP4"   "CACNA1H"
- "CD84"    "PMS2"    "G6PD"    "NSD1"   )
-
-boosting_rc_ROR <-c("HDAC2"   "HOXA7"   "CHIT1"   "CYBB"    "CA12"    "RELN"    "E2F5"    "PROM1"   "LEFTY2"  "APOE"    "SFRP4"   "ADCY9"   "CACNA1H" "RPS6KB2" "APOD"    "ELF3"   
-"CCNE2"   "PIK3R5"  "DLL4"    "IGF1R"  )
-
-
-
-
-
-# Create a named list of sets
-venn_data_b_P <- list(Lasso = lasso_v, `Elastic Net` = elastic_v, Boosting = boosting_v)
-venn_data_b_ROR <- list(Lasso = lasso_v, `Elastic Net` = elastic_v, Boosting = boosting_v)
-venn_data_rc_P <- list(Lasso = lasso_v, `Elastic Net` = elastic_v, Boosting = boosting_v)
-venn_data_rc_ROR <- list(Lasso = lasso_v, `Elastic Net` = elastic_v, Boosting = boosting_v)
+boosting_b_ROR <- c("CHIT1", "HOXA7", "RELN", "PROM1", "CA12", "LEFTY2", "APOE", "WDR77", "CACNA1H", "E2F5", "SFRP4", "APOD", "ADM", "FZD9", "RPS6KB2", "EFNA3", "CYBB", "CCNA2", "ELF3")
+boosting_b_ROR <- c("HDAC2", "CHIT1", "HOXA7", "RELN", "PROM1", "CA12", "LEFTY2", "APOE", "WDR77", "CACNA1H", "E2F5", "SFRP4", "APOD", "ADM", "FZD9", "RPS6KB2", "EFNA3", "CYBB", "CCNA2", "ELF3")
+boosting_rc_P <- c("CHIT1", "CALML5", "EFNA3", "CA12", "HOXA7", "CAMK2B", "LEFTY2", "CDCA7L", "BMPR1B", "IDO1", "OLFML2B", "EGLN2", "PDGFB", "MAP2K4", "SFRP4", "CACNA1H", "CD84", "PMS2", "G6PD", "NSD1")
+boosting_rc_ROR <- c("HDAC2", "HOXA7", "CHIT1", "CYBB", "CA12", "RELN", "E2F5", "PROM1", "LEFTY2", "APOE", "SFRP4", "ADCY9", "CACNA1H", "RPS6KB2", "APOD", "ELF3", "CCNE2", "PIK3R5", "DLL4", "IGF1R")
+# 
+venn_data_b_P <- list(Lasso = lasso_b_P, `Elastic net` = elastic_b_P, Boosting = boosting_b_P)
+venn_data_b_ROR <- list(Lasso = lasso_b_ROR, `Elastic net` = elastic_b_ROR, Boosting = boosting_b_ROR)
+venn_data_rc_P <- list(Lasso = lasso_rc_P, `Elastic Net` = elastic_rc_P, Boosting = boosting_rc_P)
+venn_data_rc_ROR <- list(Lasso = lasso_rc_ROR, `Elastic net` = elastic_rc_ROR, Boosting = boosting_rc_ROR)
 
 # Fit the Euler diagram
 fit_b_P <- euler(venn_data_b_P)
@@ -65,22 +46,28 @@ fit_b_ROR <- euler(venn_data_b_ROR)
 fit_rc_P <- euler(venn_data_rc_P)
 fit_rc_ROR <- euler(venn_data_rc_ROR)
 
-
 # Plot the Euler diagram
-plot(fit...?)
-# Extract the intersections
-sets
+plot_b_P <- plot(fit_b_P, main = "Proliferation (bootstrap)")
+plot_b_ROR <- plot(fit_b_ROR, main = "ROR (bootstrap)")
+plot_rc_P <- plot(fit_rc_P, main = "Proliferation (repeated CV)")
+plot_rc_ROR <- plot(fit_rc_ROR, main = "ROR (repeated CV)")
 
-pdf("figures/venn_diagram_b_p.pdf", width = 10, height = 8)
-plot(fit)
+
+combined_plot <- grid.arrange(plot_b_P, plot_b_ROR, plot_rc_P, plot_rc_ROR, ncol = 2, nrow = 2)
+
+pdf("figures/venn_diagram_naive_ana.pdf", width = 10, height = 8)
+grid.arrange(plot_b_P, plot_b_ROR, plot_rc_P, plot_rc_ROR, ncol = 2, nrow = 2)
 dev.off()
-
-
 
 
 ##############################
 # 
 ##############################
+venn_data = venn_data_b_P
+venn_data = venn_data_b_ROR 
+venn_data = venn_data_rc_P
+venn_data = venn_data_rc_ROR
+
 
 # Create a matrix with 0's
 intersection_matrix <- matrix(0, nrow = length(unique(unlist(venn_data))), ncol = length(venn_data))

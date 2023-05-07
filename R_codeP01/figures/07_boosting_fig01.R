@@ -59,7 +59,7 @@ datcorr_df_r_ROR <- data.frame(correlation = cor_vec_c_ROR_finite)
 ##############
 
 
-gene_freq_boost <- function(matrix, name, n_models=1000){
+gene_freq_boost <- function(matrix, name, n_models=1000, hight=15){
   # Order features based on their selection frequency in a df
   coef_matrix <- matrix
   frequency <- data.frame(Feature = colnames(coef_matrix), Frequency = colSums(!is.na(coef_matrix)) / (n_models))
@@ -107,62 +107,20 @@ gene_freq_boost <- function(matrix, name, n_models=1000){
     ylab("Genes") +
     theme(axis.text.y = element_text(angle = 0, hjust = 0))
 
-  ggsave(paste0("figures/", name, ".pdf"), plot = h, width = 10, height = 15)
+  ggsave(paste0("figures/", name, ".pdf"), plot = h, width = 10, height = hight)
   print(h)
 }
 
-gene_freq_boost(xg_b_obj_771_p$coef_matrix, "boost_90perc_b_p")
-gene_freq_boost(xg_b_obj_771_ROR_p$coef_matrix, "boost_90perc_b_ROR")
-gene_freq_boost(xg_c_obj_771_prolif$coef_matrix, "boost_90perc_rc_p")
-gene_freq_boost(xg_c_obj_771_RORprolif$coef_matrix, "boost_90perc_rc_ROR")
+gene_freq_boost(xg_b_obj_771_p$coef_matrix, "boost_90perc_b_p", hight = 12.2)
+gene_freq_boost(xg_b_obj_771_ROR_p$coef_matrix, "boost_90perc_b_ROR", hight = 10.1)
+gene_freq_boost(xg_c_obj_771_prolif$coef_matrix, "boost_90perc_rc_p", hight = 7.8)
+gene_freq_boost(xg_c_obj_771_RORprolif$coef_matrix, "boost_90perc_rc_ROR", hight = 3.7)
 
 
 ######################################################
 # Selecting top 20 coefficients by size in a BoxPlot #
 ######################################################
-
-
-top20_boxplot <- function(coef_matrix, name) {
-  # Calculate the frequency of each feature being selected (non-zero coefficients)
-  frequency <- colSums(coef_matrix != 0)
-  
-  # Find the top 20 features based on frequency
-  top20_features <- names(sort(frequency, decreasing = TRUE))[1:20]
-  
-  # Filter the coef_matrix to keep only the top 20 features
-  top20_coef_matrix <- coef_matrix[, top20_features]
-  
-  # Convert the filtered matrix to a long format data frame
-  top20_coef_long <- melt(top20_coef_matrix, varnames = "model", value.name = "coefficient")
-  
-  # Add the gene names to the data frame
-  top20_coef_long$gene <- rep(top20_features, each = nrow(top20_coef_matrix))
-  
-  # Remove zero coefficient values from the data frame
-  top20_coef_long <- top20_coef_long[top20_coef_long$coefficient != 0, ]
-  
-  # Update the gene column to be a factor with levels sorted in alphabetical order
-  top20_coef_long$gene <- factor(top20_coef_long$gene, levels = sort(unique(top20_coef_long$gene), decreasing = FALSE))
-  
-  # Create a box plot of the top 20 features with gene names on the y-axis and coefficient values on the x-axis
-  box_plot <- ggplot(top20_coef_long, aes(y = gene, x = coefficient, group = gene)) +
-    geom_boxplot() +
-    scale_y_discrete(limits = rev(levels(top20_coef_long$gene))) +
-    theme_minimal() +
-    labs(y = "Gene", x = "Coefficient values") +
-    theme(axis.text.x = element_text(size = 12),
-          axis.text.y = element_text(size = 12),
-          axis.title.x = element_text(size = 14),
-          axis.title.y = element_text(size = 14))
-  
-  ggsave(paste0("figures/", name, ".pdf"), plot = box_plot, width = 10, height = 8)
-  print(box_plot)
-}
-
-top20_boxplot(e_b_obj_771_p$co_matrix, "elastic_top20_b_p")
-top20_boxplot(e_b_obj_771_ROR_p$co_matrix, "elastic_top20_b_ROR")
-top20_boxplot(e_c_obj_771_prolif$co_matrix, "elastic_top20_r_p")
-top20_boxplot(e_c_obj_771_RORprolif$co_matrix, "elastic_top20_r_ROR")
+# No sizes for stumps
 
 
 #################

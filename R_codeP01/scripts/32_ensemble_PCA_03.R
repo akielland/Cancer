@@ -207,6 +207,15 @@ mean(t1$cor, na.rm=TRUE)
 t1$coef_matrix
 
 
+# Funtion to calculate selection freq
+freq_non_zero_non_na <- function(matrix) {
+  col_freq <- colSums(!is.na(matrix) & matrix != 0) / nrow(matrix) * 100
+  result <- data.frame(column_name = names(col_freq), percentage = col_freq)
+  result <- data.frame(percentage = col_freq)
+  return(result)
+}
+
+
 
 
 # Ridge
@@ -237,7 +246,11 @@ l_pca_c_771_RORprolif_6 <- PCA_rep_cv(ROR_prolif_771genes, char_list_6, alpha=1,
 head(l_pca_c_771_RORprolif_6$coef_matrix)
 apply(l_pca_c_771_RORprolif_6$coef_matrix, 2, function(x) sum(x != 0))/1000
 save(l_pca_c_771_RORprolif_6, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_771_RORprolif_6.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_pca_c_771_RORprolif_6.RData")
 mean(l_pca_c_771_RORprolif_6$cor_vec, na.rm=T)
+dim(l_pca_c_771_RORprolif_6$coef_matrix)
+freq_non_zero_non_na(l_pca_c_771_RORprolif_6$coef_matrix)
+
 
 # RUN: l_pca_c_interact_771_RORprolif_6
 set.seed(123)

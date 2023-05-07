@@ -46,7 +46,7 @@ level_0_test <- function(named_list, test_data, fits){
 
 
 # Function: repeated k-fold cross validation
-stacking_rep_cv <- function(df_data, named_list, alpha0=0, alpha1=0.5, folds=5, repeats=1, interactions=FALSE, method="pearson") {
+stacking_rep_cv <- function(df_data, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=1, interactions=FALSE, method="pearson") {
   n_models <- repeats * folds
   print(n_models)
   
@@ -96,7 +96,7 @@ stacking_rep_cv <- function(df_data, named_list, alpha0=0, alpha1=0.5, folds=5, 
       ####################################################################
       # test data prediction from level 0 
       # level_0_test returns the predictions from the the model fits of the individual sign.gene.sets
-      pred_test_L0 <- level_0_test(named_list, test_data, fits)
+      pred_test_L0 <- level_0_test(char_list, test_data, fits)
       # here make interaction matrix
       if (interactions){
         input_matrix <- model.matrix(~ .^2 - 1, data = pred_test_L0)
@@ -118,28 +118,52 @@ stacking_rep_cv <- function(df_data, named_list, alpha0=0, alpha1=0.5, folds=5, 
   
   return(list(cor_vec=cor_vec, coef_matrix=coef_matrix, MSE_vec=MSE_vec))
 }
+
 set.seed(1)
 t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=20, interactions=FALSE, method="pearson")
 t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=20, interactions=TRUE, method="pearson")
 mean(t3$cor_vec)
 
+# Funtion to calculate selection freq
+freq_non_zero_non_na <- function(matrix) {
+  col_freq <- colSums(!is.na(matrix) & matrix != 0) / nrow(matrix) * 100
+  result <- data.frame(column_name = names(col_freq), percentage = col_freq)
+  result <- data.frame(percentage = col_freq)
+  return(result)
+}
+
 
 # Ridge
-# RUN: r_stack_c_771_RORprolif
+# RUN: r_stack_c_771_RORprolif_6
 set.seed(123)
-r_stack_c_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
+r_stack_c_771_RORprolif_6 <- stacking_rep_cv(ROR_prolif_771genes, char_list_6, alpha0=0, alpha1=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
 head(r_stack_c_771_RORprolif$coef_matrix)
 save(r_stack_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_771_RORprolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_771_RORprolif.RData")
 mean(r_stack_c_771_RORprolif$cor_vec, na.rm=T)
 sd(r_stack_c_771_RORprolif$cor_vec)
+freq_non_zero_non_na(r_stack_c_771_RORprolif$coef_matrix)
 
-# RUN: r_stack_interact_771_RORprolif
+mean(r_stack_c_771_RORprolif_6$cor_vec, na.rm=T)
+r_stack_c_771_RORprolif_6$cor_vec
+
+
+
+# RUN: r_stack_771_RORprolif_5
 set.seed(123)
-r_stack_c_interact_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes,char_list, alpha0=0, alpha1=0, folds=5, repeats=200, interactions=TRUE, method="pearson")
-head(r_stack_c_interact_771_RORprolif$coef_matrix)
-save(r_stack_c_interact_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_c_interact_771_RORprolif.RData")
-mean(r_stack_c_interact_771_RORprolif$cor_vec, na.rm=T)
+r_stack_771_RORprolif_5 <- stacking_rep_cv(ROR_prolif_771genes,char_list_5, alpha0=0, alpha1=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(r_stack_771_RORprolif_5$coef_matrix)
+save(r_stack_771_RORprolif_5, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_771_RORprolif_5.RData")
+mean(r_stack_771_RORprolif_5$cor_vec, na.rm=T)
+sd(r_stack_771_RORprolif_5$cor_vec, na.rm=T)
+
+# RUN: r_stack_771_RORprolif_10
+set.seed(123)
+r_stack_771_RORprolif_10 <- stacking_rep_cv(ROR_prolif_771genes,char_list_10, alpha0=0, alpha1=0, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(r_stack_771_RORprolif_10$coef_matrix)
+save(r_stack_771_RORprolif_10, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/r_stack_771_RORprolif_10.RData")
+mean(r_stack_771_RORprolif_10$cor_vec, na.rm=T)
+sd(r_stack_771_RORprolif_10$cor_vec, na.rm=T)
 
 # Lasso
 # RUN: l_stack_c_771_RORprolif
@@ -147,7 +171,36 @@ set.seed(123)
 l_stack_c_771_RORprolif <- stacking_rep_cv(ROR_prolif_771genes,char_list, alpha0=0, alpha1=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
 head(l_stack_c_771_RORprolif$coef_matrix)
 save(l_stack_c_771_RORprolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif.RData")
 mean(l_stack_c_771_RORprolif$cor_vec, na.rm=T)
+freq_non_zero_non_na(l_stack_c_771_RORprolif$coef_matrix)
+
+# RUN: l_stack_c_771_RORprolif_6
+set.seed(123)
+l_stack_c_771_RORprolif_6 <- stacking_rep_cv(ROR_prolif_771genes, char_list_6, alpha0=0, alpha1=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(l_stack_c_771_RORprolif_6$coef_matrix)
+save(l_stack_c_771_RORprolif_6, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif_6.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif_6.RData")
+mean(l_stack_c_771_RORprolif_6$cor_vec, na.rm=T)
+sd(l_stack_c_771_RORprolif_6$cor_vec, na.rm=T)
+freq_non_zero_non_na(l_stack_c_771_RORprolif_6$coef_matrix)
+
+
+# RUN: l_stack_c_771_RORprolif_10
+set.seed(123)
+l_stack_c_771_RORprolif_10 <- stacking_rep_cv(ROR_prolif_771genes, char_list_10, alpha0=0, alpha1=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
+head(l_stack_c_771_RORprolif_10$coef_matrix)
+save(l_stack_c_771_RORprolif_10, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif_10.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/l_stack_c_771_RORprolif_10.RData")
+mean(l_stack_c_771_RORprolif_10$cor_vec, na.rm=T)
+sd(l_stack_c_771_RORprolif_10$cor_vec, na.rm=T)
+freq_non_zero_non_na(l_stack_c_771_RORprolif_10$coef_matrix)
+
+
+
+
+
+
 
 # RUN: l_stack_c_interact_771_RORprolif
 set.seed(123)

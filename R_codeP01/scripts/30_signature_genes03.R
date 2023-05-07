@@ -13,6 +13,15 @@ char_list_5 <- list(imm_inf_ = char_immune_inf,
                   )
 
 
+char_list_6 <- list(dna_rep_ = char_DNA_Repair,
+                    imm_inf_ = char_immune_inf,
+                    prolif_ = char_prolif,
+                    ER_sing_ = char_ER_signaling,
+                    angiogen_ = char_angiogenesis,
+                    adhesion_migr_ = char_Adhesion_Migration
+)
+
+
 char_list_10 <- list(imm_inf_ = char_immune_inf,
                     prolif_ = char_prolif,
                     ER_sing_ = char_ER_signaling,
@@ -34,12 +43,6 @@ col_names <- colnames(prolif_771genes)
 # Find which names are not present
 not_present <- characters[!(characters %in% col_names)]
 print(not_present)
-
-
-
-
-
-
 
 
 

@@ -84,7 +84,7 @@ datcorr_df_r_ROR <- data.frame(correlation = cor_vec_c_ROR_finite)
 ## SLECTION ##
 ##############
 
-gene_freq_lasso <- function(object, name, n_models=1000){
+gene_freq_lasso <- function(object, name, n_models=1000, hight=15){
   # Order features based on their selection frequency in a df
   coef_matrix <- object$coef_matrix
   frequency <- data.frame(Feature = colnames(coef_matrix), Frequency = colSums(coef_matrix != 0) / (n_models))
@@ -125,14 +125,14 @@ gene_freq_lasso <- function(object, name, n_models=1000){
     ylab("Genes") +
     theme(axis.text.y = element_text(angle = 0, hjust = 0))
   
-  ggsave(paste0("figures/", name, ".pdf"), plot = h, width = 10, height = 15)
+  ggsave(paste0("figures/", name, ".pdf"), plot = h, width = 10, height = hight)
   print(h)
 }
 
-gene_freq_lasso(lb_obj_771_prolif, "lasso_90perc_b_p")
-gene_freq_lasso(lb_obj_771_RORprolif, "lasso_90perc_b_ROR")
-gene_freq_lasso(lc_obj_771_prolif, "lasso_90perc_r_p")
-gene_freq_lasso(lc_obj_771_RORprolif, "lasso_90perc_r_ROR")
+gene_freq_lasso(lb_obj_771_prolif, "lasso_90perc_b_p", hight = 15.4)
+gene_freq_lasso(lb_obj_771_RORprolif, "lasso_90perc_b_ROR", hight = 14.2)
+gene_freq_lasso(lc_obj_771_prolif, "lasso_90perc_r_p", hight=10.3)
+gene_freq_lasso(lc_obj_771_RORprolif, "lasso_90perc_r_ROR", hight=3.7)
 
 
 ######################################################

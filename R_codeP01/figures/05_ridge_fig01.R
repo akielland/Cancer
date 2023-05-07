@@ -3,8 +3,11 @@
 ###################################
 library(dplyr)
 library(tidyr)
+library(ggplot2)
 library(xtable)
-library(reshape2)       
+library(reshape2)
+library(grid)
+
 
 # objects / dataframes
 # cor_vec=cor_vec, co_matrix=co_matrix, MSE_vec = MSE_vec))
@@ -95,23 +98,40 @@ datcorr_df_r_ROR <- data.frame(correlation = cor_vec_c_ROR_finite)
 
 ## Coefficient size distributions 
 
-# Calculate the average coefficient for each gene one the model ridge_b_p
-# (code below should be fixed...!!!!!!!!!!!!!!!)
-cof_df_b_p$avg_coefficient <- rowMeans(cof_df_b_p[, 1:ncol(co_matrix)])
-cof_df_b_p_tests$avg_coefficient <- rowMeans(cof_df_b_p[, 1:ncol(cof_df_b_p)])
+# Calculate the average coefficient for each gene
+avg_cof_df_b_p <- rowMeans(cof_df_b_p[, 1:ncol(co_matrix)])
+avg_cof_df_b_ROR <- rowMeans(cof_df_b_ROR[, 1:ncol(co_matrix)])
+
+# Create a data frame containing the average coefficients
+avg_cof_df_b_p <- data.frame(avg_cof = avg_cof_df_b_p)
+avg_cof_df_b_ROR <- data.frame(avg_cof = avg_cof_df_b_ROR)
 
 # Create a histogram of the average coefficients with a specified range using ggplot2
-histogram_plot <- ggplot(co_df, aes(x = avg_coefficient)) +
+h1 <- ggplot(avg_cof_df_b_p, aes(x = avg_cof)) +
   geom_histogram(binwidth = 0.001, fill = "blue", color = "black", alpha = 0.7) +
   theme_minimal() +
-  labs(x = "Mean Coefficient", y = "Frequency") +
-  scale_x_continuous(limits = c(-0.015, 0.015))
+  labs(x = "Mean coefficient", y = "Count") +
+  scale_x_continuous(limits = c(-0.015, 0.015)) +
+  scale_y_continuous(limits = c(0, 200))
 
-# Display the histogram plot
-print(histogram_plot)
+h2 <- ggplot(avg_cof_df_b_ROR, aes(x = avg_cof)) +
+  geom_histogram(binwidth = 0.045, fill = "blue", color = "black", alpha = 0.7) +
+  theme_minimal() +
+  labs(x = "Mean coefficient")  +
+  labs(y = NULL) +  # Remove y-axis label
+  scale_y_continuous(limits = c(0, 200), labels = NULL) + # Remove y-axis numbering 
+  scale_x_continuous(limits = c(-0.65, 0.65))
+  
+comb_hist <- grid.arrange(h1, h2, ncol = 2, nrow = 1)
+ggsave("figures/ridge_coef_distribution.pdf", plot = comb_hist, width = 10, height = 8)
 
-# Save the plot as a PDF file
-ggsave("figures/ridge_histogram_plot.pdf", plot = histogram_plot, width = 10, height = 8)
+
+
+pdf("figures/ridge_coef_distribution.pdf", width = 10, height = 8)
+grid.arrange(grid.arrange(h1, h2, ncol = 2, nrow = 1))
+dev.off()
+
+
 
 ######################################################
 # Selecting top 20 coefficients by size in a BoxPlot #
@@ -138,10 +158,11 @@ top20 <- function(co_df, name){
     coord_flip() +
     theme_minimal() +
     labs(x = "Gene", y = "Coefficient values") +
-    theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
+    theme(axis.text.x = element_text(size = 12),    # , hjust=1, angle = 45
           axis.text.y = element_text(size = 12),
           axis.title.x = element_text(size = 14),
-          axis.title.y = element_text(size = 14))
+          axis.title.y = element_text(size = 14)) +
+    geom_vline(aes(xintercept = 0), linetype = "dashed", color = "blue", linewidth = 6)
   
   # Save plot with custom name
   ggsave(paste0("figures/", name, ".pdf"), plot = box_plot, width = 10, height = 8)
@@ -152,6 +173,51 @@ top20(cof_df_b_p, "ridge_top20_b_p")
 top20(cof_df_b_ROR, "ridge_top20_b_ROR")
 top20(cof_df_r_p, "ridge_top20_r_p") 
 top20(cof_df_r_ROR, "ridge_top20_r_ROR")
+
+
+#### SOME TESTING CODE FOR GETTING vertical line
+top20 <- function(co_df, name){
+  # Melt the data frame to a long format
+  co_df_long <- melt(co_df, id.vars = "gene", variable.name = "model", value.name = "coefficient")
+  
+  # Calculate the absolute values of coefficients and find the top 20 genes with largest coefficients
+  co_df_long$abs_coefficient <- abs(co_df_long$coefficient)
+  top_genes <- co_df_long %>% group_by(gene) %>% summarise(mean_abs_coefficient = mean(abs_coefficient)) %>%
+    top_n(20, mean_abs_coefficient) %>% select(gene)
+  
+  # Filter the coefficients of the top 20 genes
+  co_df_long_top_genes <- co_df_long %>% filter(gene %in% top_genes$gene)
+  
+  # Update the gene column to be a factor with levels sorted in reverse alphabetical order
+  co_df_long_top_genes$gene <- factor(co_df_long_top_genes$gene, levels = sort(unique(co_df_long_top_genes$gene), decreasing = TRUE))
+  
+  # Create the horizontal box plot and store it in a variable
+  box_plot <- ggplot(co_df_long_top_genes, aes(x = gene, y = coefficient)) +
+    geom_boxplot() +
+    coord_flip() +
+    # geom_segment(aes(x = "", xend = "", y = 0, yend = 0), linetype = "solid", color = "blue", size = 1) +
+    # geom_vline(xintercept = 0, linetype = "solid", color = "blue", size = 1) +
+    theme_minimal() +
+    labs(x = "Gene", y = "Coefficient values") +
+    theme(axis.text.x = element_text(size = 12, angle = 45, hjust = 1),
+          axis.text.y = element_text(size = 12),
+          axis.title.x = element_text(size = 14),
+          axis.title.y = element_text(size = 14))
+  
+  # Add a vertical line at 0
+  box_plot <- box_plot + geom_vline(aes(xintercept = 0), linetype = "solid", color = "blue", size = 1)
+  #box_plot <- box_plot + coord_cartesian(clip = 'off')
+  
+  
+  # Save plot with custom name
+  ggsave(paste0("figures/", name, ".pdf"), plot = box_plot, width = 10, height = 8)
+  print(box_plot)
+}
+
+top20(cof_df_b_p, "ridge_top20_b_p")
+
+
+
 
 
 ##############################################################
