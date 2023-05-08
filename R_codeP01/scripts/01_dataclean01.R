@@ -47,9 +47,17 @@ df03 <- read_excel(path) |>
 # residuals = ??
 path <- "/Users/anders/Documents/Master/data/COR_and_validation_data_with_model_prediction/CORALLEEN_data_with_model_prediction.xlsx"
 # df_03r <- read_excel(path, range = cell_cols("A:V")) |> mutate(residuals = Proliferation.Score - model_prediction)
-df03r <- read_excel(path) |>
-  mutate(residuals = Proliferation.Score - model_prediction) |> 
+df03r <- read_excel(path) 
+
+scaled_mech_pred <- (df03r$model_prediction - min(df03r$model_prediction)) / max(df03r$model_prediction)
+scaled_prolif.score <- (df03r$Proliferation.Score - min(df03r$Proliferation.Score)) / max(df03r$Proliferation.Score)
+
+df03r|>
+  mutate(residuals_mech = scaled_mech_pred) |> 
   rename(TrialArmNeo = "Trial Arm Neo")
+
+
+
 
 #############
 ## 6 GENES ##

@@ -1,6 +1,6 @@
-##################################
-## Last synergistic with George ##
-##################################
+########################
+## Last synergistic. ##
+#######################
 
 library(glmnet)
 
@@ -101,8 +101,8 @@ simulation_rc <- function(df_data, alpha, groups, folds=5, repeats=2, method="pe
       out <- synergistic_adaptive_deviance02(train_data, test_data[,-1], groups, alpha, adaptive=FALSE, lambda_seq = NULL, nfolds = 5, tol = 1e-6, max_iters = 100)
       
       model <- out$model
-      print(out$beta_interaction)
-      print(out$beta_main)
+      # print(out$beta_interaction)
+      # print(out$beta_main)
       # coef_matrix[row_index, ] <- out$coef[-1]   # remove intercept
       
       
@@ -131,6 +131,7 @@ run_sim_02 <- function(n_simulations, interact, alpha, adaptive, tol){
 
   #coef_matrix <- matrix(NA, nrow = n_simulations, ncol = 6)
   correlation_mean <- rep(NA, n_simulations)
+  MSE_mean <- rep(NA, n_simulations)
   
   row_index <- 1
   for (i in c(1:n_simulations)){
@@ -147,9 +148,10 @@ run_sim_02 <- function(n_simulations, interact, alpha, adaptive, tol){
     row_index <- row_index + 1
     
     correlation_mean[i] <- results$cor_mean
+    MSE_mean[i] <- results$MSE_mean
   }
   # colnames(coef_matrix) <- c("1x2", "1x3", "1x4", "2x3", "2x4", "3x4")
-  return(correlation_mean)
+  return(list(cor_mean = correlation_mean, MSE_mean = MSE_mean))
 }
 
 
@@ -165,18 +167,18 @@ interact <- 1
 interact <- 2
 interact <- 3
 
-n_simulations <- 10
+n_simulations <- 50
 
 t1 <- run_sim_02(n_simulations, interact, alpha = 1, adaptive = FALSE, tol=1e-4)
 t1 <- run_sim02(n_simulations, interact, alpha = 0.5, adaptive = FALSE, tol=1e-6)
+
+mean(t1, na.rm=T)
+sd(t1, na.rm=T)
 
 # Count the number of non-zero and non-NA values in each column
 count_non_zero_non_na <- apply(t1, 2, function(x) sum(!is.na(x) & x != 0))
 print(count_non_zero_non_na*2)
 
-
-
-t <- syn_sym_rep_cv()
 
 
 
@@ -243,7 +245,7 @@ synergistic_adaptive_deviance02 <- function(df, X_test, char_list, alpha = 0.5, 
   # Learn betas outside the interaction term until convergence by deviance
   while (!converged && iter < max_iters) {
     iter <- iter + 1
-    # if(!iter %% 10) cat("iter =", iter, "; dev_glmnet =", dev_glmnet, "; obj_dev =", obj_dev, "\n")
+    if(!iter %% 10) cat("iter =", iter, "; dev_glmnet =", dev_glmnet, "; obj_dev =", obj_dev, "\n")
     # Calculate interaction terms using the current betas
     for (i in seq_len(nrow(interaction_indices))) {
       group1 <- groups[[interaction_indices[i, 1]]]
