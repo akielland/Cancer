@@ -133,6 +133,7 @@ e_c_obj_771_prolif <- elastic_rep_cv(prolif_771genes, func=elastic_sample, folds
 head(e_c_obj_771_prolif$coef_matrix)[,1:6]
 save(e_c_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_prolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/e_c_obj_771_prolif.RData")
+freq_non_zero_non_na(e_c_obj_771_prolif$co_matrix)
 
 # RUN: e_c_obj_771_RORprolif
 set.seed(123)

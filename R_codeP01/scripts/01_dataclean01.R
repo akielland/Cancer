@@ -183,7 +183,7 @@ Y <- as.matrix(select(Nodes_Proliferation, Y))
 ## 771 GENES + MECH prediction ##
 #################################
 # select all gene names from original data table structure
-genes <- colnames(df03 |> select(41:811))
+genes <- colnames(df03 |> select(42:812))
 length(genes)
 
 df_genes_with_mech.pred_and_output <- function(df, predictors, output){
@@ -210,6 +210,9 @@ df_genes_with_mech.pred_and_output <- function(df, predictors, output){
 }
 
 df_771genes_mech_pred_prolif <- df_genes_with_mech.pred_and_output(df03, genes, "Proliferation.Score") 
+df_771genes_mech_pred_ROR <- df_genes_with_mech.pred_and_output(df03, genes, "ROR.P..Subtype...Proliferation.") 
+df_771genes_mech_pred_ROR$Y <- as.numeric(df_771genes_mech_pred_ROR$Y)
+df_771genes_mech_pred_ROR$Y
 
 ## scale mech model prediction to scale of proliferation score by a linear model
 # fit model

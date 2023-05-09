@@ -88,6 +88,9 @@ lc_obj_771_prolif <- lasso_rep_cv(prolif_771genes, func=lasso_sample, folds, rep
 head(lc_obj_771_prolif$coef_matrix)[,1:6]
 save(lc_obj_771_prolif, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_prolif.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_771_prolif.RData")
+freq_non_zero_non_na(lc_obj_771_prolif$coef_matrix)
+
+
 
 # RUN: lc_obj_771_RORprolif
 set.seed(123)

@@ -30,25 +30,47 @@ lasso_residual_rep_cv <- function(df_data, pred_mech, additive=TRUE, func=lasso_
   pred_mech <- as.matrix(pred_mech)
   
   # calculating the residuals
-  if (additive==TRUE){res <- df_data$Y - pred_mech}
-  else{res <- df_data$Y / pred_mech}
+  if (additive==TRUE)
+  {res <- df_data$Y - pred_mech}
+  else
+  {res <- df_data$Y / pred_mech}
   
   # create df with training data and update the training data with residuals instead of Y
-  df_train_res <- df_data
-  df_train_res$Y <- res
+  df_data_res <- df_data
+  df_data_res$Y <- res
+  
+  
+  if (TRUE){
+    # scale data to same scale
+    y_scaled <- df_data$Y - min(df_data$Y)
+    y_scaled <- y_scaled / max(y_scaled)
+    pred_mech_scaled <- df_771genes_mech_pred_prolif$model_prediction - min(df_771genes_mech_pred_prolif$model_prediction)
+    pred_mech_scaled <- pred_mech_scaled/max(pred_mech_scaled) 
+    res <- y_scaled - pred_mech_scaled
+    df_data_res$Y <- res
+    df_data$Y <- y_scaled
+    print(min(y_scaled))
+    print(max(y_scaled))
+    print(min(pred_mech_scaled))
+    print(max(pred_mech_scaled))
+  }
+
+  
+
   
   # Repeat the cross-validation process
   for (i in 1:repeats) {
     # Create the folds for evaluating the performance
-    kf <- caret::createFolds(df_data[,1], k = folds, list = TRUE, returnTrain = TRUE)
+    kf <- caret::createFolds(df_data_res$Y, k = folds, list = TRUE, returnTrain = TRUE)
     # Loop through the folds
     for (j in 1:folds) {
       # Get the training and testing data: here picked from two different df
-      train_data_res <- df_train_res[kf[[j]],]
+      train_data_res <- df_data_res[kf[[j]],]
       test_data <- df_data[-kf[[j]],]
       
       test_pred_mech <- pred_mech[-kf[[j]]]
       
+
       # Fit the function on the training data and get results
       fit <- func(train_data_res)
       
@@ -56,14 +78,17 @@ lasso_residual_rep_cv <- function(df_data, pred_mech, additive=TRUE, func=lasso_
       
       pred_res = predict(fit, newx = as.matrix(test_data)[,-1], type = "response", s = "lambda.min") 
       
-      if (additive==TRUE){pred <- test_pred_mech + pred_res}
-      else{pred <- test_pred_mech * pred_res}
+      if (additive==TRUE)
+        {pred <- test_pred_mech + pred_res}
+      else
+        {pred <- test_pred_mech * pred_res}
       
-      #pred <- as.matrix(pred)
+      pred <- as.matrix(pred)
+      test_data <- as.matrix(test_data)
       
       cor_vec[coef_matrix_row_index]  <- suppressWarnings(cor(pred, test_data[,1], method=method))
       MSE_vec[coef_matrix_row_index] <- mean((pred - test_data[,1])^2)
-      
+
       cat(coef_matrix_row_index, "")
       coef_matrix_row_index <- coef_matrix_row_index + 1
     }
@@ -81,16 +106,50 @@ lasso_sample <- function(train_data){
   return(fit.cv)
 }
 
+
+# Elastic base function returning a trained object
+elastic_sample <- function(train_data){
+  X_ <- as.matrix(train_data |> select(-1))
+  Y_ <- as.matrix(train_data |>  select(1))
+  # NB: NEED TO LOOK INTO the SETTINGS of Lasso
+  # fit.cv <- cv.glmnet(X_, Y_, family = "gaussian", alpha = 1, standardize = TRUE, nlambda = 100, nfolds = 5)
+  fit.cv <- cv.glmnet(X_, Y_, alpha=0.5, nfolds = 5)
+  return(fit.cv)
+}
+
+# Funtion to calculate selection freq
+freq_non_zero_non_na <- function(matrix) {
+  col_freq <- colSums(!is.na(matrix) & matrix != 0) / nrow(matrix) * 100
+  result <- data.frame(column_name = names(col_freq), percentage = col_freq)
+  result <- data.frame(percentage = col_freq)
+  return(result)
+}
+
+
+
 # Set repeats and folds of the cross-validations
-repeats = 200
+repeats = 10
 folds = 5
+
+
+m1 <- lasso_residual_rep_cv(df_771genes_mech_pred_ROR, pred_mech, additive=TRUE, func=elastic_sample, folds, repeats, method="pearson")
+mean(m1$cor_vec)
+sd(m1$cor_vec)
+mean(m1$MSE_vec)
+sd(m1$MSE_vec)
+freq_non_zero_non_na(m1$coef_matrix)
+report02_out(m1)
+gene_freq_elastic(m1$coef_matrix, "mech_90perc_r_p", hight = 15)
+
 
 # RUN: lc_obj_residuals_771_p_a (additive)
 set.seed(123)
-lc_obj_residuals_771_p_a <- lasso_residual_rep_cv(prolif_771genes, pred_mech, additive=TRUE, func=lasso_sample, folds, repeats, method="pearson")
+lc_obj_residuals_771_p_a <- lasso_residual_rep_cv(df_771genes_mech_pred_prolif, pred_mech, additive=TRUE, func=lasso_sample, folds, repeats, method="pearson")
 head(lc_obj_residuals_771_p_a$coef_matrix)[,1:6]
 save(lc_obj_residuals_771_p_a, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_p_a.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_p_a.RData")
+freq_non_zero_non_na(lc_obj_residuals_771_p_a$coef_matrix)
+report02_out(lc_obj_residuals_771_p_a)
 
 # RUN: lc_obj_residuals_771_p_m (multiplicative)
 set.seed(123)
@@ -98,6 +157,8 @@ lc_obj_residuals_771_p_m <- lasso_residual_rep_cv(prolif_771genes, pred_mech, ad
 head(lc_obj_residuals_771_p_m$coef_matrix)[,1:6]
 save(lc_obj_residuals_771_p_m, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_p_m.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/lc_obj_residuals_771_p_m.RData")
+
+
 
 # RUN: lc_obj_residuals_771_ROR_p_a (additive)
 set.seed(123)

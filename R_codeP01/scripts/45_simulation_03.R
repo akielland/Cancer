@@ -170,10 +170,14 @@ interact <- 3
 n_simulations <- 50
 
 t1 <- run_sim_02(n_simulations, interact, alpha = 1, adaptive = FALSE, tol=1e-4)
-t1 <- run_sim02(n_simulations, interact, alpha = 0.5, adaptive = FALSE, tol=1e-6)
+t2 <- run_sim_02(n_simulations, interact, alpha = 0.5, adaptive = FALSE, tol=1e-6)
 
-mean(t1, na.rm=T)
-sd(t1, na.rm=T)
+mean(t2$cor_mean, na.rm=T)
+sd(t2$cor_mean, na.rm=T)
+
+mean(t2$MSE_mean, na.rm=T)
+sd(t2$MSE_mean, na.rm=T)
+
 
 # Count the number of non-zero and non-NA values in each column
 count_non_zero_non_na <- apply(t1, 2, function(x) sum(!is.na(x) & x != 0))
@@ -181,7 +185,8 @@ print(count_non_zero_non_na*2)
 
 
 
-
+save(t1, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_500n_interact3.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_500n_interact3.RData")
 
 
 
