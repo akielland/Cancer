@@ -129,7 +129,7 @@ simulation_rc <- function(df_data, alpha, groups, folds=5, repeats=2, method="pe
 # Function to run many simulations
 run_sim_02 <- function(n_simulations, interact, alpha, adaptive, tol){
 
-  #coef_matrix <- matrix(NA, nrow = n_simulations, ncol = 6)
+  coef_matrix <- matrix(NA, nrow = n_simulations, ncol = 6)
   correlation_mean <- rep(NA, n_simulations)
   MSE_mean <- rep(NA, n_simulations)
   
@@ -143,15 +143,16 @@ run_sim_02 <- function(n_simulations, interact, alpha, adaptive, tol){
     results <- simulation_rc(df_data=data$df.sim, alpha, data$char_list)
     
     # print(out$beta_interaction)
-    #coef_matrix[row_index, ] <- out$beta_interaction
+
+    #coef_matrix[row_index, ] <- results$coef_matrix
     cat(row_index, "")
     row_index <- row_index + 1
     
     correlation_mean[i] <- results$cor_mean
     MSE_mean[i] <- results$MSE_mean
   }
-  # colnames(coef_matrix) <- c("1x2", "1x3", "1x4", "2x3", "2x4", "3x4")
-  return(list(cor_mean = correlation_mean, MSE_mean = MSE_mean))
+  colnames(coef_matrix) <- c("1x2", "1x3", "1x4", "2x3", "2x4", "3x4")
+  return(list(cor_mean = correlation_mean, MSE_mean = MSE_mean, coef_matrix=coef_matrix))
 }
 
 
@@ -167,7 +168,7 @@ interact <- 1
 interact <- 2
 interact <- 3
 
-n_simulations <- 50
+n_simulations <- 100
 
 t1 <- run_sim_02(n_simulations, interact, alpha = 1, adaptive = FALSE, tol=1e-4)
 t2 <- run_sim_02(n_simulations, interact, alpha = 0.5, adaptive = FALSE, tol=1e-6)
@@ -184,9 +185,43 @@ count_non_zero_non_na <- apply(t1, 2, function(x) sum(!is.na(x) & x != 0))
 print(count_non_zero_non_na*2)
 
 
+syn_sim_rc_50n_interact1 <- run_sim_02(n_simulations, interact, alpha = 0.5, adaptive = FALSE, tol=1e-6)
+save(syn_sim_rc_50n_interact1, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_50n_interact1.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_50n_interact1.RData")
+mean(syn_sim_rc_50n_interact1$cor_mean, na.rm=T)
+mean(syn_sim_rc_50n_interact1$MSE_mean)
 
-save(t1, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_500n_interact3.RData")
+syn_sim_rc_100n_interact1 <- run_sim_02(n_simulations, interact, alpha = 0.5, adaptive = FALSE, tol=1e-6)
+save(syn_sim_rc_100n_interact1, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_100n_interact1.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_100n_interact1.RData")
+mean(syn_sim_rc_100n_interact1$cor_mean, na.rm=T)
+mean(syn_sim_rc_100n_interact1$MSE_mean)
+
+syn_sim_rc_500n_interact1 <- run_sim_02(n_simulations, interact=1, alpha = 0.5, adaptive = FALSE, tol=1e-6)
+save(syn_sim_rc_500n_interact1, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_500n_interact1.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_500n_interact1.RData")
+mean(syn_sim_rc_500n_interact1$cor_mean, na.rm=T)
+mean(syn_sim_rc_500n_interact1$MSE_mean)
+
+
+syn_sim_rc_50n_interact3 <- run_sim_02(n_simulations, interact=3, alpha = 0.5, adaptive = FALSE, tol=1e-6)
+save(syn_sim_rc_50n_interact3, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_50n_interact3.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_50n_interact3.RData")
+mean(syn_sim_rc_50n_interact3$cor_mean, na.rm=T)
+mean(syn_sim_rc_50n_interact3$MSE_mean)
+
+syn_sim_rc_100n_interact3 <- run_sim_02(n_simulations, interact=3, alpha = 0.5, adaptive = FALSE, tol=1e-6)
+save(syn_sim_rc_100n_interact3, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_100n_interact3.RData")
+load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_100n_interact3.RData")
+mean(syn_sim_rc_100n_interact3$cor_mean, na.rm=T)
+mean(syn_sim_rc_100n_interact3$MSE_mean)
+
+syn_sim_rc_500n_interact3 <- run_sim_02(n_simulations, interact=3, alpha = 0.5, adaptive = FALSE, tol=1e-6)
+save(syn_sim_rc_500n_interact3, file="/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_500n_interact3.RData")
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/syn_sim_rc_500n_interact3.RData")
+mean(syn_sim_rc_500n_interact3$cor_mean, na.rm=T)
+mean(syn_sim_rc_500n_interact3$MSE_mean)
+
 
 
 
