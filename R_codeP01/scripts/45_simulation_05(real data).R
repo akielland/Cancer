@@ -15,7 +15,7 @@ real_data_rc <- function(df_data, alpha, groups, folds=5, repeats=2, method="pea
   # coef_matrix <- matrix(NA, nrow = n_models, ncol = ncol(df_data[,-1]))
   # colnames(coef_matrix) <- colnames(df_data[,-1])
   
-  coef_matrix <- matrix(NA, nrow = n_models, ncol = 6)
+  coef_matrix <- matrix(NA, nrow = n_models, ncol = 1)
   
   row_index <- 1
   
@@ -55,12 +55,23 @@ real_data_rc <- function(df_data, alpha, groups, folds=5, repeats=2, method="pea
 
 
 
+prolif_771genes
+
+char_list_5 <- list(dna_rep_ = char_DNA_Repair,
+                    imm_inf_ = char_immune_inf,
+                    prolif_ = char_prolif,
+                    ER_sing_ = char_ER_signaling,
+                    angiogen_ = char_angiogenesis
+)
+
+char_list_2 <- list(prolif_ = char_prolif,
+                    ER_sing_ = char_ER_signaling
+)
+
+real_t1 <- real_data_rc(prolif_771genes, alpha=0.5, char_list_2, folds=5, repeats=200, method="pearson")
 
 
-real_t1 <- 
-
-
-mean(t2$cor_mean, na.rm=T)
+mean(real_t1$cor_mean, na.rm=T)
 sd(t2$cor_mean, na.rm=T)
 
 mean(t2$MSE_mean, na.rm=T)
