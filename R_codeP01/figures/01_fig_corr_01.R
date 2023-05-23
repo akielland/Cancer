@@ -75,7 +75,6 @@ cor_vec_c_ROR <- e_c_obj_771_RORprolif$cor_vec
 load("/Users/anders/Documents/MASTER/Cancer/R_codeP01/instances/xg_c_obj_771_RORprolif.RData")
 cor_vec_c_ROR <- xg_c_obj_771_RORprolif$cor_vec
 
-
 cor_vec_c_ROR_finite <- cor_vec_c_ROR[is.finite(cor_vec_c_ROR)]
 data4 <- data.frame(correlation = cor_vec_c_ROR_finite)
 
@@ -88,17 +87,21 @@ theme_custom <- theme(plot.title = element_text(size = 14, face = "bold"),
 
 
 # Create individual ggplot histograms
-p1 <- ggplot(data1, aes(x = correlation)) + geom_histogram(bins = 30, fill = "steelblue", alpha = 0.8) +
-  labs(title = "a)") + theme_custom + ylab("Count") + theme(axis.title.x = element_blank())
+p1 <- ggplot(data1, aes(x = correlation)) + geom_histogram(bins = 40, fill = "steelblue", alpha = 0.8) +
+  labs(title = "a)") + theme_custom + ylab("Count") + theme(axis.title.x = element_blank()) + 
+  scale_x_continuous(limits = c(-0.5, 1.0)) + scale_y_continuous(limits = c(0, 200))
 
-p2 <- ggplot(data2, aes(x = correlation)) + geom_histogram(bins = 30, fill = "steelblue", alpha = 0.8) +
-  labs(title = "b)") + theme_custom + theme(axis.title.x = element_blank(), axis.title.y = element_blank())
+p2 <- ggplot(data2, aes(x = correlation)) + geom_histogram(bins = 40, fill = "steelblue", alpha = 0.8) +
+  labs(title = "b)") + theme_custom + theme(axis.title.x = element_blank(), axis.title.y = element_blank()) +
+  scale_x_continuous(limits = c(-0.5, 1.0)) + scale_y_continuous(limits = c(0, 200))
 
-p3 <- ggplot(data3, aes(x = correlation)) + geom_histogram(bins = 30, fill = "steelblue", alpha = 0.8) +
-  labs(title = "c)") + theme_custom + xlab("correlation") + ylab("Count")
+p3 <- ggplot(data3, aes(x = correlation)) + geom_histogram(bins = 40, fill = "steelblue", alpha = 0.8) +
+  labs(title = "c)") + theme_custom + xlab("correlation") + ylab("Count")  + 
+  scale_x_continuous(limits = c(-0.5, 1.0)) + scale_y_continuous(limits = c(0, 80))
 
-p4 <- ggplot(data4, aes(x = correlation)) + geom_histogram(bins = 30, fill = "steelblue", alpha = 0.8) +
-  labs(title = "d)") + theme_custom + xlab("correlation") + theme(axis.title.y = element_blank())
+p4 <- ggplot(data4, aes(x = correlation)) + geom_histogram(bins = 40, fill = "steelblue", alpha = 0.8) +
+  labs(title = "d)") + theme_custom + xlab("correlation") + theme(axis.title.y = element_blank())  + 
+  scale_x_continuous(limits = c(-0.5, 1.0)) + scale_y_continuous(limits = c(0, 80))
 
 # Combine the histograms in a 2x2 grid
 grid_histograms <- grid.arrange(p1, p2, p3, p4, ncol = 2, nrow = 2)
