@@ -46,7 +46,7 @@ level_0_test <- function(named_list, test_data, fits){
 
 
 # Function: repeated k-fold cross validation
-stacking_rep_cv <- function(df_data, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=1, interactions=FALSE, method="pearson") {
+stacking_rep_cv <- function(df_data, char_list, alpha0=0, alpha1, folds=5, repeats=1, interactions=FALSE, method="pearson") {
   n_models <- repeats * folds
   print(n_models)
   
@@ -120,17 +120,41 @@ stacking_rep_cv <- function(df_data, char_list, alpha0=0, alpha1=0.5, folds=5, r
 }
 
 set.seed(1)
-t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=20, interactions=FALSE, method="pearson")
-t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list, alpha0=0, alpha1=0.5, folds=5, repeats=20, interactions=TRUE, method="pearson")
-mean(t3$cor_vec)
+t3 <- stacking_rep_cv(ROR_prolif_771genes, char_list_6, alpha0=0, alpha1=0.5, folds=5, repeats=200, interactions=FALSE, method="pearson")
+t4 <- stacking_rep_cv(ROR_prolif_771genes, char_list_6, alpha0=0, alpha1=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
+t5 <- stacking_rep_cv(ROR_prolif_771genes, char_list_10, alpha0=0, alpha1=1, folds=5, repeats=200, interactions=FALSE, method="pearson")
+t6 <- stacking_rep_cv(ROR_prolif_771genes, char_list_10, alpha0=0, alpha1=0.5, folds=5, repeats=200, interactions=FALSE, method="pearson")
 
-# Funtion to calculate selection freq
+
+mean(t3$cor_vec)
+freq_non_zero_non_na(t3$coef_matrix)
+mean(t4$cor_vec)
+freq_non_zero_non_na(t4$coef_matrix)
+mean(t5$cor_vec)
+freq_non_zero_non_na(t5$coef_matrix)
+mean(t3$cor_vec)
+freq_non_zero_non_na(t3$coef_matrix)
+
+# Funtion to calculate selection freq and coeff size
 freq_non_zero_non_na <- function(matrix) {
-  col_freq <- colSums(!is.na(matrix) & matrix != 0) / nrow(matrix) * 100
-  result <- data.frame(column_name = names(col_freq), percentage = col_freq)
-  result <- data.frame(percentage = col_freq)
+  non_na_matrix <- !is.na(matrix)
+  non_zero_matrix <- matrix != 0
+  non_zero_non_na_matrix <- non_na_matrix & non_zero_matrix
+  
+  col_freq <- colSums(non_zero_non_na_matrix) / nrow(matrix) * 100
+  col_avg <- colSums(matrix * non_zero_non_na_matrix) / colSums(non_zero_non_na_matrix)
+  
+  col_sd <- apply(matrix * non_zero_non_na_matrix, 2, function(x) sd(x[x != 0], na.rm = TRUE))
+  
+  result <- data.frame(column_name = names(col_freq), Percentage = col_freq, Mean = col_avg, SD = col_sd)
   return(result)
 }
+
+
+
+
+
+
 
 
 # Ridge
